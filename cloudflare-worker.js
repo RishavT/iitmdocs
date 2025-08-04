@@ -69,7 +69,7 @@ export default {
                       type: "document",
                       relevance: doc.relevance,
                       text: doc.content.substring(0, 500) + (doc.content.length > 500 ? '...' : ''),
-                      link: `https://github.com/prudhvi1709/iitmdocs/blob/main/src/${doc.filename}`
+                      link: `https://github.com/study-iitm/iitmdocs/blob/main/src/${doc.filename}`
                     })
                   },
                   finish_reason: null

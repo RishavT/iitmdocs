@@ -11,7 +11,12 @@
 </head>
 
 <body class="d-flex flex-column vh-100 p-2 small">
-  <h6 class="text-center mb-2 flex-shrink-0">IITM BS Admissions</h6>
+  <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0" style="background-color: #724ae8; color: white; padding: 8px; border-radius: 5px;">
+    <h6 class="text-center mb-0">IITM BS Admissions</h6>
+    <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
+      <i class="bi bi-arrow-repeat"></i>
+    </button>
+  </div>
   <div id="chat-area" class="flex-grow-1 overflow-auto mb-2"></div>
   <div class="input-group flex-shrink-0">
     <input id="question-input" type="text" class="form-control" placeholder="Ask a question" onkeypress="handleKeyPress(event)">
@@ -32,6 +37,7 @@
     const askButton = document.getElementById('ask-button')
     const questionInput = document.getElementById('question-input')
     const micButton = document.getElementById('mic-button')
+    const clearChatButton = document.getElementById('clear-chat-button')
     
     // Initialize speech recognition
     const recognition = ('webkitSpeechRecognition' in window) 
@@ -139,6 +145,12 @@
         details
       }
     }
+
+    function clearChat() {
+      chatArea.innerHTML = '';
+      entryId = 0;
+    }
+
     async function askQuestion() {
       const q = questionInput.value.trim()
       if (!q) return
@@ -190,9 +202,12 @@
       }
     }
     questionInput.focus()
+    clearChatButton.addEventListener('click', clearChat);
+
     window.askQuestion = askQuestion
     window.handleKeyPress = handleKeyPress
     window.toggleSpeechRecognition = toggleSpeechRecognition
+    window.clearChat = clearChat
 
   </script>
 </body>
