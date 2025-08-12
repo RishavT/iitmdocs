@@ -115,11 +115,7 @@ async function generateAnswer(question, documents, env) {
 Answer directly in VERY simple, CONCISE Markdown.
 If the question is unclear, infer, state your assumption, and then respond accordingly.
 Current date: ${new Date().toISOString().split("T")[0]}.
-Use the information below.
-
-<documents>
-${context}
-</documents>`;
+Use the information from documents provided.`;
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -128,8 +124,10 @@ ${context}
       model: "gpt-5-mini",
       messages: [
         { role: "system", content: systemPrompt },
+        { role: "assistant", content: context },
         { role: "user", content: question },
       ],
+      store: true,
       stream: true,
     }),
   });
