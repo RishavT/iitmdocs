@@ -1,5 +1,5 @@
-name = "semantic-qa-worker"
-main = "cloudflare-worker.js"
+name = "iitm-bs-chatbot"
+main = "worker.js"
 compatibility_date = "2025-07-28"
 compatibility_flags = ["nodejs_compat"]
 
@@ -7,10 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 enabled = true
 head_sampling_rate = 1
 
-[vars]
-# Add any non-secret environment variables here if needed
-
-# Secrets (use `wrangler secret put <KEY>` to set these):
-# WEAVIATE_URL
-# WEAVIATE_API_KEY  
-# OPENAI_API_KEY 
+[assets]
+directory = "./static"
+binding = "ASSETS"
