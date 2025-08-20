@@ -17,6 +17,7 @@ const chat = [];
 const marked = new Marked();
 let sessionId = localStorage.getItem('currentSessionId') || crypto.randomUUID();
 const sessions = JSON.parse(localStorage.getItem('chatSessions') || '{}');
+const sessionTimestamps = JSON.parse(localStorage.getItem('sessionTimestamps') || '{}');
 let lastResponseId = null;
 
 let autoScroll = true;
@@ -80,6 +81,10 @@ async function askQuestion(e) {
   
   // Save session
   sessions[sessionId] = [...chat];
+  if (!sessionTimestamps[sessionId]) {
+    sessionTimestamps[sessionId] = Date.now();
+    localStorage.setItem('sessionTimestamps', JSON.stringify(sessionTimestamps));
+  }
   localStorage.setItem('chatSessions', JSON.stringify(sessions));
   localStorage.setItem('currentSessionId', sessionId);
 
@@ -94,7 +99,7 @@ function updateSessionList() {
   const sessionEntries = Object.entries(sessions).map(([id, msgs]) => {
     const firstQ = msgs[0]?.q || 'Empty chat';
     const msgCount = msgs.length;
-    const date = new Date(parseInt(id.slice(0,8), 16) * 1000).toLocaleDateString();
+    const date = sessionTimestamps[id] ? new Date(sessionTimestamps[id]).toLocaleDateString() : 'Unknown date';
     return `
       <div class="d-flex justify-content-between align-items-center p-2 border-bottom session-item ${id === sessionId ? 'bg-light' : ''}" 
            style="cursor: pointer;" data-session-id="${id}">
@@ -124,7 +129,9 @@ sessionList.addEventListener("click", function(e) {
   if (deleteBtn) {
     const id = deleteBtn.dataset.sessionId;
     delete sessions[id];
+    delete sessionTimestamps[id];
     localStorage.setItem('chatSessions', JSON.stringify(sessions));
+    localStorage.setItem('sessionTimestamps', JSON.stringify(sessionTimestamps));
     updateSessionList();
     return;
   }
@@ -144,7 +151,9 @@ newChatButton.addEventListener("click", () => {
   chat.length = 0;
   sessionId = crypto.randomUUID();
   lastResponseId = null;
+  sessionTimestamps[sessionId] = Date.now();
   localStorage.setItem('currentSessionId', sessionId);
+  localStorage.setItem('sessionTimestamps', JSON.stringify(sessionTimestamps));
   redraw();
   historyModal.hide();
 });
@@ -153,7 +162,9 @@ clearChatButton.addEventListener("click", function () {
   chat.length = 0;
   sessionId = crypto.randomUUID();
   lastResponseId = null;
+  sessionTimestamps[sessionId] = Date.now();
   localStorage.setItem('currentSessionId', sessionId);
+  localStorage.setItem('sessionTimestamps', JSON.stringify(sessionTimestamps));
   redraw();
 });
 
