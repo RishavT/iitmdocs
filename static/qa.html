@@ -13,15 +13,41 @@
 <body class="d-flex flex-column vh-100 p-3">
   <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0" style="background-color: #724ae8; color: white; padding: 8px; border-radius: 5px;">
     <h6 class="text-center mb-0">IITM BS Admissions</h6>
-    <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
-      <i class="bi bi-arrow-repeat"></i>
-    </button>
+    <div>
+      <button id="history-toggle" class="btn btn-sm btn-light me-2" title="Chat History">
+        <i class="bi bi-clock-history"></i>
+      </button>
+      <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
+        <i class="bi bi-arrow-repeat"></i>
+      </button>
+    </div>
   </div>
+  
+  <!-- Professional Modal for History -->
+  <div class="modal fade" id="historyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title">Chat History</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+          <div id="session-list"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="new-chat" class="btn btn-primary btn-sm">New Chat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <div id="chat-area" class="flex-grow-1 overflow-auto my-2"></div>
   <form id="chat-form" class="input-group flex-shrink-0">
     <input id="question-input" type="text" class="form-control" placeholder="Ask a question">
     <button id="ask-button" class="btn btn-primary">Ask</button>
   </form>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="qa.js" type="module"></script>
 </body>
 
