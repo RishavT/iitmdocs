@@ -22,9 +22,15 @@ export default {
   },
 };
 
+// Store for conversation sessions (in production, use a proper database)
+const sessions = new Map();
+
 async function answer(request, env) {
-  const { q: question, ndocs = 5 } = await request.json();
+  const { q: question, ndocs = 5, session_id, previous_response_id } = await request.json();
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
+  
+  // Generate session ID if not provided
+  const sessionId = session_id || crypto.randomUUID();
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -63,11 +69,38 @@ async function answer(request, env) {
       }
 
       // Generate AI answer using documents as context and stream via piping
-      const answer = await generateAnswer(question, documents, env);
+      const answer = await generateAnswer(question, documents, sessionId, previous_response_id, env);
+      let responseContent = "";
+      
       await answer.body.pipeTo(
         new WritableStream({
-          write: (chunk) => controller.enqueue(chunk),
-          close: () => controller.close(),
+          write: (chunk) => {
+            const text = new TextDecoder().decode(chunk);
+            // Extract content from SSE format for storage
+            const lines = text.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.output?.[0]?.content) {
+                    responseContent += data.output[0].content;
+                  }
+                } catch (e) {
+                  // Ignore parsing errors for non-JSON lines
+                }
+              }
+            }
+            controller.enqueue(chunk);
+          },
+          close: () => {
+            // Store the complete response in session history
+            if (responseContent) {
+              const sessionHistory = sessions.get(sessionId) || [];
+              sessionHistory.push({ role: "assistant", content: responseContent });
+              sessions.set(sessionId, sessionHistory);
+            }
+            controller.close();
+          },
           abort: (reason) => controller.error(reason),
         }),
       );
@@ -108,7 +141,7 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.distance ? 1 - doc._additional.distance : 0 }));
 }
 
-async function generateAnswer(question, documents, env) {
+async function generateAnswer(question, documents, sessionId, previousResponseId, env) {
   const context = documents.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
@@ -117,21 +150,39 @@ If the question is unclear, infer, state your assumption, and then respond accor
 Current date: ${new Date().toISOString().split("T")[0]}.
 Use the information from documents provided.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  // Get or initialize conversation history for this session
+  let sessionHistory = sessions.get(sessionId) || [];
+  
+  // Add context and current question to history
+  const input = [
+    { role: "system", content: systemPrompt },
+    { role: "assistant", content: context },
+    ...sessionHistory,
+    { role: "user", content: question },
+  ];
+
+  const requestBody = {
+    model: "gpt-5-mini",
+    input: input,
+    store: true,
+    stream: true,
+  };
+  
+  if (previousResponseId) {
+    requestBody.previous_response_id = previousResponseId;
+  }
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` },
-    body: JSON.stringify({
-      model: "gpt-5-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "assistant", content: context },
-        { role: "user", content: question },
-      ],
-      store: true,
-      stream: true,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+  
+  // Store the question in session history (response will be stored after streaming completes)
+  sessionHistory.push({ role: "user", content: question });
+  sessions.set(sessionId, sessionHistory);
+  
   return response;
 }
