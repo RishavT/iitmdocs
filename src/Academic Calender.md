@@ -51,7 +51,7 @@
 | Quiz1    | Friday, January 10, 2025 | Friday, January 24, 2025  |
 | Quiz2    | Friday, January 10, 2025 | Friday, February 14, 2025 |
 | End Term | Friday, January 10, 2025 | Friday, March 14, 2025    |
-| Paradox  | Wednesday, June 4, 2025  | Sunday, June 8, 2025      |
+| Paradox 2026 | Thursday, June 4, 2026 | Sunday, June 7, 2026 |
 
 ---
 
@@ -79,7 +79,6 @@
 | Quiz1                          | Sunday, July 13, 2025     |                              |
 | Publishing results for Quiz1   | Monday, July 21, 2025     |                              |
 | Programming Quiz1 (Day1)       | Saturday, July 19, 2025   | Sunday, July 20, 2025        |
-| Programming Quiz1 (Day2)       |                           |                              |
 | OPPE1 Result Release           | Thursday, July 24, 2025   | Tuesday, July 29, 2025       |
 | Quiz2                          | Sunday, August 3, 2025    |                              |
 | Publishing results for Quiz2   | Monday, August 11, 2025   |                              |
@@ -106,7 +105,7 @@
 | Quiz1    | Friday, May 9, 2025     | Friday, June 13, 2025  |
 | Quiz2    | Friday, May 9, 2025     | Friday, July 4, 2025   |
 | End Term | Friday, May 9, 2025     | Friday, August 1, 2025 |
-| Paradox  | Wednesday, June 4, 2025 | Sunday, June 8, 2025   |
+| Paradox 2026 | Thursday, June 4, 2026 | Sunday, June 7, 2026 |
 
 ---
 
@@ -161,7 +160,7 @@
 | Quiz1    | Friday, September 19, 2025 | Friday, September 26, 2025 |
 | Quiz2    | Friday, September 19, 2025 | Sunday, October 26, 2025   |
 | End Term | Friday, September 19, 2025 | Sunday, December 21, 2025  |
-| Paradox  | Wednesday, June 4, 2025    | Sunday, June 8, 2025       |
+| Paradox 2026 | Thursday, June 4, 2026 | Sunday, June 7, 2026 |
 
 ---
 

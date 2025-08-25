@@ -149,8 +149,6 @@ called End Term Score (E).
 
 Pass criteria for each course
 
-Total Course Score (T) = Average Quiz Score Q (out of 50) + End Term Score E (out of 50)
-
 A candidate is deemed to have passed a course IF Total Course Score (T) >= 50/100.   
 This
 criteria is the same for all learners in the course.

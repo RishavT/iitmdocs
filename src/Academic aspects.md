@@ -98,7 +98,7 @@ Each course has 3 types of assessments - online weekly assignments, monthly in-p
 - Eligibility to write the End sem exam: Pls check the grading document for details.
 - The final exam score accounts for 50% of the Total Course Score T - called End Semester Score (E)
 
-**Exam City Details** (we have added few new cities from Sept 2024 term):  
+**Exam City Details**:
 https://docs.google.com/spreadsheets/d/e/2PACX-1vT6KKXyQjldD7sUVpinTd9oW1dpaDhkm3cq1b2RM5wqGNHrComOQbXR3C9jh14arLmxhnxc9jNUbC8O/pubhtml
 
 ---

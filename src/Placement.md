@@ -235,9 +235,3 @@ IIT Madras Campus, Chennai, INDIA
 ### Industry Collaboration
 
 (Internship and Placements)
-
-**Suraj Srivastava**
-
-Head - Industry Relations & Career Services
-
-✆ +91-98869 25462, ✉ suraj@study.iitm.ac.in

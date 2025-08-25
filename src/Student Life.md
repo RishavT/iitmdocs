@@ -167,7 +167,7 @@ given below.
 | 17. Boundless - IITM BS Travel Club | [Social Media Link](https://www.instagram.com/boundless_iitmbs/) | [boundless.club@study.iitm.ac.in](mailto:boundless.club@study.iitm.ac.in) |
 | 18. Elan - Fashion Society | [Social Media Link](https://instagram.com/elan_iitm?igshid=MzRlODBiNWFlZA==) | [fashion.society@study.iitm.ac.in](mailto:fashion.society@study.iitm.ac.in) |
 | 19. IIT Madras BS Film Society | [Social Media Link](https://www.youtube.com/redirect?event=channel_header&redir_token=QUFFLUhqa1dUZFUxejhhd2FZeTVOUUpnZzdsWTFxdGh2UXxBQ3Jtc0trTDl6QkVYbEZUVEZ0WWtqVHp2NDJ6MVN4UmE4UE5pYjZ5WEFZSlFIS1pTeDNlU2hMeTFLRmJQTngzZXg4Y1IwRWY4SU54UTFWR3lONC0wR012cW0tbFNzVVNjYjZXR3Z5RVVJdm00U0dMbU9tTmZVOA&q=https%3A%2F%2Fwww.instagram.com%2Fiitm_bsfilmsociety%2F) | [film.society@study.iitm.ac.in](mailto:film.society@study.iitm.ac.in) |
-| 20. Diplomacia | [Social Media Link](https://instagram.com/iitm_diplomacia?igshid=NzZlODBkYWE4Ng==) | [diplomacia@study.iiym.ac.in](mailto:diplomacia@study.iiym.ac.in) |
+| 20. Diplomacia | [Social Media Link](https://instagram.com/iitm_diplomacia?igshid=NzZlODBkYWE4Ng==) | [diplomacia@study.iitm.ac.in](mailto:diplomacia@study.iitm.ac.in) |
 | 21. JITSIE IIT Madras | [Social Media Link](https://www.linkedin.com/company/tata-society-entrepreneurship-jitsie-iit-madras/) | [jitsie@study.iitm.ac.in](mailto:jitsie@study.iitm.ac.in) |
 | 22. General Management Club | [Social Media Link](https://sites.google.com/study.iitm.ac.in/gmc) | [gm.club@study.iitm.ac.in](mailto:gm.club@study.iitm.ac.in) |
 | 23. CodeCrafters Coding Society | [Social Media Link](https://linktr.ee/codecraftersclub) | [codecrafters.society@study.iitm.ac.in](mailto:codecrafters.society@study.iitm.ac.in) |
