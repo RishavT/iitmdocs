@@ -157,9 +157,13 @@ Use the information from documents provided.`;
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
   const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
 
+  // Use CHAT_API_KEY if provided (for custom endpoints like AI Pipe), otherwise fall back to OPENAI_API_KEY
+  // This allows using different providers while maintaining backwards compatibility
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+
   const response = await fetch(chatEndpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
     body: JSON.stringify({
       model: chatModel,
       messages: [
