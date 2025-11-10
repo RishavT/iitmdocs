@@ -92,6 +92,7 @@ EMBEDDING_MODEL=embed-multilingual-v3.0  # or any Cohere embedding model
 | `CHAT_MODEL` | No | `gpt-4o-mini` | Chat model to use |
 | `EMBEDDING_PROVIDER` | No | `openai` | Embedding provider (`openai` or `cohere`) |
 | `EMBEDDING_MODEL` | No | Provider default | Embedding model to use |
+| `GITHUB_REPO_URL` | No | `https://github.com/study-iitm/iitmdocs` | GitHub repository URL for document links |
 
 \* Can be OpenAI key, AI Pipe token, or any OpenAI-compatible API token
 

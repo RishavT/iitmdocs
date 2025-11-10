@@ -29,48 +29,61 @@ async function answer(request, env) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // Search Weaviate for relevant documents
-      const documents = await searchWeaviate(question, ndocs, env);
-      // Stream documents first (single enqueue)
-      if (documents?.length) {
-        const sseDocs = documents
-          .map(
-            (doc) =>
-              `data: ${JSON.stringify({
-                role: "assistant",
-                choices: [
-                  {
-                    delta: {
-                      tool_calls: [
-                        {
-                          function: {
-                            name: "document",
-                            arguments: JSON.stringify({
-                              relevance: doc.relevance,
-                              name: doc.filename.replace(/\.md$/, ""),
-                              link: `https://github.com/study-iitm/iitmdocs/blob/main/src/${doc.filename}`,
-                            }),
+      try {
+        // Search Weaviate for relevant documents
+        const documents = await searchWeaviate(question, ndocs, env);
+        // Stream documents first (single enqueue)
+        if (documents?.length) {
+          // Use configurable repository URL or default
+          const repoUrl = env.GITHUB_REPO_URL || "https://github.com/study-iitm/iitmdocs";
+          const sseDocs = documents
+            .map(
+              (doc) =>
+                `data: ${JSON.stringify({
+                  role: "assistant",
+                  choices: [
+                    {
+                      delta: {
+                        tool_calls: [
+                          {
+                            function: {
+                              name: "document",
+                              arguments: JSON.stringify({
+                                relevance: doc.relevance,
+                                name: doc.filename.replace(/\.md$/, ""),
+                                link: `${repoUrl}/blob/main/src/${doc.filename}`,
+                              }),
+                            },
                           },
-                        },
-                      ],
+                        ],
+                      },
                     },
-                  },
-                ],
-              })}\n\n`,
-          )
-          .join("");
-        controller.enqueue(encoder.encode(sseDocs));
-      }
+                  ],
+                })}\n\n`,
+            )
+            .join("");
+          controller.enqueue(encoder.encode(sseDocs));
+        }
 
-      // Generate AI answer using documents as context and stream via piping
-      const answer = await generateAnswer(question, documents, env);
-      await answer.body.pipeTo(
-        new WritableStream({
-          write: (chunk) => controller.enqueue(chunk),
-          close: () => controller.close(),
-          abort: (reason) => controller.error(reason),
-        }),
-      );
+        // Generate AI answer using documents as context and stream via piping
+        const answer = await generateAnswer(question, documents, env);
+        await answer.body.pipeTo(
+          new WritableStream({
+            write: (chunk) => controller.enqueue(chunk),
+            close: () => controller.close(),
+            abort: (reason) => controller.error(reason),
+          }),
+        );
+      } catch (error) {
+        const errorMessage = `data: ${JSON.stringify({
+          error: {
+            message: error.message || "An error occurred while processing your request",
+            type: "server_error",
+          },
+        })}\n\n`;
+        controller.enqueue(encoder.encode(errorMessage));
+        controller.close();
+      }
     },
   });
   return new Response(stream, {

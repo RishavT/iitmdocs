@@ -66,30 +66,39 @@ def embed_documents(weaviate_client, src_directory: str, embedding_provider="ope
     successful_embeds = 0
 
     for file_path in files:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        doc_data = {
-            "filename": file_path.name,
-            "filepath": str(file_path),
-            "content": content,
-            "file_size": file_path.stat().st_size,
-            "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
-            "file_extension": file_path.suffix,
-        }
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except (UnicodeDecodeError, IOError) as e:
+            logger.warning(f"Skipping {file_path}: {e}")
+            continue
 
-        existing = collection.query.fetch_objects(
-            filters=Filter.by_property("filepath").equal(doc_data["filepath"]), limit=1
-        )
+        try:
+            doc_data = {
+                "filename": file_path.name,
+                "filepath": str(file_path),
+                "content": content,
+                "file_size": file_path.stat().st_size,
+                "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+                "file_extension": file_path.suffix,
+            }
 
-        if existing.objects:
-            existing_doc = existing.objects[0]
-            if existing_doc.properties["content_hash"] == doc_data["content_hash"]:
-                continue
-            collection.data.update(uuid=existing_doc.uuid, properties=doc_data)
-        else:
-            collection.data.insert(doc_data)
+            existing = collection.query.fetch_objects(
+                filters=Filter.by_property("filepath").equal(doc_data["filepath"]), limit=1
+            )
 
-        successful_embeds += 1
+            if existing.objects:
+                existing_doc = existing.objects[0]
+                if existing_doc.properties["content_hash"] == doc_data["content_hash"]:
+                    continue
+                collection.data.update(uuid=existing_doc.uuid, properties=doc_data)
+            else:
+                collection.data.insert(doc_data)
+
+            successful_embeds += 1
+        except Exception as e:
+            logger.error(f"Failed to embed {file_path}: {e}")
+            continue
 
     logger.info(f"Embedded {successful_embeds} documents")
     return True
@@ -102,6 +111,14 @@ def main():
     # Get configuration from environment (default to openai for backwards compatibility)
     embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
     embedding_model = os.getenv("EMBEDDING_MODEL")
+
+    # Validate embedding provider
+    valid_providers = ["openai", "cohere"]
+    if embedding_provider not in valid_providers:
+        raise ValueError(
+            f"Invalid EMBEDDING_PROVIDER: '{embedding_provider}'. "
+            f"Must be one of: {', '.join(valid_providers)}"
+        )
 
     # Configure headers based on embedding provider
     headers = {}
