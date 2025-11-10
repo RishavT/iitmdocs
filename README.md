@@ -92,15 +92,34 @@ EMBEDDING_MODEL=embed-multilingual-v3.0  # or any Cohere embedding model
 |----------|----------|---------|-------------|
 | `WEAVIATE_URL` | Yes | - | Weaviate cluster URL |
 | `WEAVIATE_API_KEY` | Yes | - | Weaviate API key |
-| `OPENAI_API_KEY` | Yes* | - | OpenAI API key or AI Pipe token |
+| `OPENAI_API_KEY` | Yes* | - | OpenAI API key (required for OpenAI embeddings or as fallback for chat) |
 | `COHERE_API_KEY` | If using Cohere | - | Cohere API key for embeddings |
+| `CHAT_API_KEY` | No | Falls back to `OPENAI_API_KEY` | API key for chat endpoint (use for AI Pipe, OpenRouter, etc.) |
 | `CHAT_API_ENDPOINT` | No | `https://api.openai.com/v1/chat/completions` | Chat completion endpoint |
 | `CHAT_MODEL` | No | `gpt-4o-mini` | Chat model to use |
 | `EMBEDDING_PROVIDER` | No | `openai` | Embedding provider (`openai` or `cohere`) |
 | `EMBEDDING_MODEL` | No | Provider default | Embedding model to use |
 | `GITHUB_REPO_URL` | No | `https://github.com/study-iitm/iitmdocs` | GitHub repository URL for document links |
 
-\* Can be OpenAI key, AI Pipe token, or any OpenAI-compatible API token
+\* At least one of `OPENAI_API_KEY` or `COHERE_API_KEY` is required depending on your embedding provider
+
+### ⚠️ CRITICAL: Embedding Provider Compatibility
+
+**The embedding provider used during document ingestion (embed.py) MUST match the provider configured in the worker (worker.js).**
+
+If embeddings were created with OpenAI but the worker uses Cohere (or vice versa), semantic search will **fail silently** because the vector spaces are incompatible:
+
+- **OpenAI embeddings**: 1536-dimensional vectors using `text-embedding-3-small` model
+- **Cohere embeddings**: Different dimensional vectors using `embed-multilingual-v3.0` model
+
+**These vector spaces are NOT compatible.** Queries using one provider cannot find documents embedded with another provider.
+
+**To switch embedding providers:**
+1. Update `EMBEDDING_PROVIDER` in `.env` and `.dev.vars`
+2. Run `docker-compose run --rm embed` to recreate embeddings with the new provider
+3. Restart the worker to use the matching provider
+
+The embed service now validates the vectorizer configuration and only deletes the collection when the provider changes, preventing accidental data loss.
 
 ## Embedding
 
