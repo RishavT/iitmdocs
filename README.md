@@ -11,6 +11,12 @@
    ```bash
    docker-compose run --rm embed
    ```
+
+   **⚠️ WARNING**: Running the embed service will **delete and recreate** the Document collection in Weaviate. This is necessary when switching embedding providers (OpenAI ↔ Cohere), but means:
+   - All existing embeddings will be lost
+   - The collection will be rebuilt from scratch
+   - Only run this when you need to update documents or switch providers
+
 5. Start the worker service:
    ```bash
    docker-compose up worker

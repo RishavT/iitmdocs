@@ -26,12 +26,18 @@ async function answer(request, env) {
   const { q: question, ndocs = 5 } = await request.json();
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
+  // Validate ndocs to prevent resource exhaustion
+  const numDocs = parseInt(ndocs);
+  if (isNaN(numDocs) || numDocs < 1 || numDocs > 20) {
+    return new Response('Invalid "ndocs" parameter. Must be between 1 and 20', { status: 400 });
+  }
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
         // Search Weaviate for relevant documents
-        const documents = await searchWeaviate(question, ndocs, env);
+        const documents = await searchWeaviate(question, numDocs, env);
         // Stream documents first (single enqueue)
         if (documents?.length) {
           // Use configurable repository URL or default
@@ -108,13 +114,16 @@ async function searchWeaviate(query, limit, env) {
     embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
   }
 
+  // Escape special characters in query to prevent GraphQL injection
+  const sanitizedQuery = query.replace(/"/g, '\\"').replace(/\n/g, " ");
+
   const response = await fetch(`${env.WEAVIATE_URL}/v1/graphql`, {
     method: "POST",
     headers: embeddingHeaders,
     body: JSON.stringify({
       query: `{
         Get {
-          Document(nearText: { concepts: ["${query}"] } limit: ${limit}) {
+          Document(nearText: { concepts: ["${sanitizedQuery}"] } limit: ${limit}) {
             filename filepath content file_size
             _additional { distance }
           }

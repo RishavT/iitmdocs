@@ -40,10 +40,18 @@ First, populate Weaviate with document embeddings:
 docker-compose --profile embed up embed
 ```
 
+**⚠️ IMPORTANT WARNING**: This command will **delete and recreate** the entire Document collection in Weaviate, which means:
+- **All existing embeddings will be permanently deleted**
+- The collection will be rebuilt from scratch
+- This is necessary when switching embedding providers (OpenAI ↔ Cohere)
+- Only run this when you need to update documents or change providers
+- There is no undo - make sure you understand this before running
+
 This will:
 - Build the Python environment
+- **Delete existing Document collection** (if it exists)
 - Process all markdown files in `src/`
-- Upload embeddings to Weaviate Cloud
+- Upload new embeddings to Weaviate Cloud
 - Exit when complete
 
 ### 3. Start the Worker Service
