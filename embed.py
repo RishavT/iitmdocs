@@ -108,6 +108,15 @@ def main():
     """Main function to run the embedding process"""
     load_dotenv()
 
+    # Validate required environment variables
+    required_vars = ["WEAVIATE_URL", "WEAVIATE_API_KEY"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(
+            f"Missing required environment variables: {', '.join(missing_vars)}. "
+            f"Please set them in .env file."
+        )
+
     # Get configuration from environment (default to openai for backwards compatibility)
     embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
     embedding_model = os.getenv("EMBEDDING_MODEL")
@@ -123,9 +132,21 @@ def main():
     # Configure headers based on embedding provider
     headers = {}
     if embedding_provider == "cohere":
-        headers["X-Cohere-Api-Key"] = os.getenv("COHERE_API_KEY")
+        cohere_key = os.getenv("COHERE_API_KEY")
+        if not cohere_key:
+            raise ValueError(
+                "COHERE_API_KEY is required when EMBEDDING_PROVIDER=cohere. "
+                "Please set it in .env file."
+            )
+        headers["X-Cohere-Api-Key"] = cohere_key
     else:
-        headers["X-OpenAI-Api-Key"] = os.getenv("OPENAI_API_KEY")
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            raise ValueError(
+                "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. "
+                "Please set it in .env file."
+            )
+        headers["X-OpenAI-Api-Key"] = openai_key
 
     client = weaviate.connect_to_weaviate_cloud(
         cluster_url=os.getenv("WEAVIATE_URL"),
