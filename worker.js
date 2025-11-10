@@ -87,7 +87,7 @@ async function searchWeaviate(query, limit, env) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.WEAVIATE_API_KEY}`,
-      "X-OpenAI-Api-Key": env.OPENAI_API_KEY,
+      "X-Cohere-Api-Key": env.COHERE_API_KEY,
     },
     body: JSON.stringify({
       query: `{
@@ -117,11 +117,11 @@ If the question is unclear, infer, state your assumption, and then respond accor
 Current date: ${new Date().toISOString().split("T")[0]}.
 Use the information from documents provided.`;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("https://aipipe.org/openrouter/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.OPENAI_API_KEY}` },
     body: JSON.stringify({
-      model: "gpt-5-mini",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "assistant", content: context },

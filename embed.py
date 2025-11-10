@@ -3,12 +3,11 @@
 # requires-python = ">=3.8"
 # dependencies = [
 #     "weaviate-client>=4.4.0",
-#     "openai>=1.0.0",
 #     "python-dotenv>=1.0.0",
 # ]
 # ///
 """
-Script to embed all files from src/ directory into Weaviate cloud using OpenAI text-embedding-3-small
+Script to embed all files from src/ directory into Weaviate cloud using Cohere embeddings
 """
 
 import hashlib
@@ -28,7 +27,8 @@ logger = logging.getLogger(__name__)
 def create_schema(weaviate_client):
     """Create or update the Document class schema in Weaviate"""
     if weaviate_client.collections.exists("Document"):
-        return weaviate_client.collections.get("Document")
+        logger.info("Deleting existing Document collection to recreate with OpenAI embeddings")
+        weaviate_client.collections.delete("Document")
     properties = [
         Property(name="filename", data_type=DataType.TEXT, description="Name of the source file"),
         Property(name="filepath", data_type=DataType.TEXT, description="Full path to the source"),
@@ -39,7 +39,7 @@ def create_schema(weaviate_client):
     ]
     return weaviate_client.collections.create(
         name="Document",
-        vectorizer_config=Configure.Vectorizer.text2vec_openai(model="text-embedding-3-small"),
+        vectorizer_config=Configure.Vectorizer.text2vec_cohere(model="embed-multilingual-v3.0"),
         properties=properties,
     )
 
@@ -90,7 +90,7 @@ def main():
     client = weaviate.connect_to_weaviate_cloud(
         cluster_url=os.getenv("WEAVIATE_URL"),
         auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-        headers={"X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")},
+        headers={"X-Cohere-Api-Key": os.getenv("COHERE_API_KEY")},
     )
     embed_documents(client, "src")
     client.close()
