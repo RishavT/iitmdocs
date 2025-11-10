@@ -1,0 +1,22 @@
+FROM node:20-slim
+
+# Install CA certificates for HTTPS connections
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy worker code and static files
+COPY worker.js wrangler.toml ./
+COPY static ./static
+
+# Expose port for wrangler dev
+EXPOSE 8787
+
+# Run wrangler dev with proper host binding
+CMD ["npx", "wrangler", "dev", "--port", "8787", "--ip", "0.0.0.0"]
