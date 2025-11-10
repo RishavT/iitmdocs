@@ -115,7 +115,12 @@ async function searchWeaviate(query, limit, env) {
   }
 
   // Escape special characters in query to prevent GraphQL injection
-  const sanitizedQuery = query.replace(/"/g, '\\"').replace(/\n/g, " ");
+  const sanitizedQuery = query
+    .replace(/\\/g, "\\\\")  // Escape backslashes first
+    .replace(/"/g, '\\"')     // Escape quotes
+    .replace(/\n/g, " ")      // Replace newlines with spaces
+    .replace(/\r/g, " ")      // Replace carriage returns with spaces
+    .replace(/\t/g, " ");     // Replace tabs with spaces
 
   const response = await fetch(`${env.WEAVIATE_URL}/v1/graphql`, {
     method: "POST",
@@ -167,6 +172,6 @@ Use the information from documents provided.`;
     }),
   });
 
-  if (!response.ok) throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+  if (!response.ok) throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
   return response;
 }

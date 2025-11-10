@@ -27,9 +27,36 @@ logger = logging.getLogger(__name__)
 
 def create_schema(weaviate_client, embedding_provider="openai", embedding_model=None):
     """Create or update the Document class schema in Weaviate"""
+    # Configure vectorizer based on provider (default to openai for backwards compatibility)
+    if embedding_provider == "cohere":
+        model = embedding_model or "embed-multilingual-v3.0"
+        vectorizer_config = Configure.Vectorizer.text2vec_cohere(model=model)
+        expected_vectorizer = "text2vec-cohere"
+    else:
+        model = embedding_model or "text-embedding-3-small"
+        vectorizer_config = Configure.Vectorizer.text2vec_openai(model=model)
+        expected_vectorizer = "text2vec-openai"
+
+    # Check if collection exists and validate vectorizer configuration
     if weaviate_client.collections.exists("Document"):
-        logger.info(f"Deleting existing Document collection to recreate with {embedding_provider} embeddings")
-        weaviate_client.collections.delete("Document")
+        try:
+            collection = weaviate_client.collections.get("Document")
+            existing_vectorizer = collection.config.get().vectorizer.value if hasattr(collection.config.get().vectorizer, 'value') else str(collection.config.get().vectorizer)
+
+            # Only delete if vectorizer has changed
+            if existing_vectorizer != expected_vectorizer:
+                logger.warning(
+                    f"Vectorizer mismatch! Existing: {existing_vectorizer}, Expected: {expected_vectorizer}. "
+                    f"Deleting and recreating collection with {embedding_provider} embeddings. "
+                    f"ALL EXISTING EMBEDDINGS WILL BE LOST."
+                )
+                weaviate_client.collections.delete("Document")
+            else:
+                logger.info(f"Collection exists with correct vectorizer ({expected_vectorizer}). Reusing existing collection.")
+                return collection
+        except Exception as e:
+            logger.warning(f"Could not validate existing collection config: {e}. Recreating collection.")
+            weaviate_client.collections.delete("Document")
 
     properties = [
         Property(name="filename", data_type=DataType.TEXT, description="Name of the source file"),
@@ -40,14 +67,7 @@ def create_schema(weaviate_client, embedding_provider="openai", embedding_model=
         Property(name="file_extension", data_type=DataType.TEXT, description="File extension"),
     ]
 
-    # Configure vectorizer based on provider (default to openai for backwards compatibility)
-    if embedding_provider == "cohere":
-        model = embedding_model or "embed-multilingual-v3.0"
-        vectorizer_config = Configure.Vectorizer.text2vec_cohere(model=model)
-    else:
-        model = embedding_model or "text-embedding-3-small"
-        vectorizer_config = Configure.Vectorizer.text2vec_openai(model=model)
-
+    logger.info(f"Creating new Document collection with {embedding_provider} embeddings (model: {model})")
     return weaviate_client.collections.create(
         name="Document",
         vectorizer_config=vectorizer_config,
