@@ -1,0 +1,38 @@
+services:
+  # Embedding service - runs once to populate Weaviate
+  embed:
+    build:
+      context: .
+      dockerfile: Dockerfile.embed
+    container_name: iitm-chatbot-embed
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src:ro
+      - ./embed.py:/app/embed.py:ro
+    profiles:
+      - embed
+    networks:
+      - iitm-network
+
+  # Cloudflare Worker dev server
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: iitm-chatbot-worker
+    env_file:
+      - .env
+    ports:
+      - "8787:8787"
+    volumes:
+      - ./worker.js:/app/worker.js:ro
+      - ./wrangler.toml:/app/wrangler.toml:ro
+      - ./static:/app/static:ro
+      - ./.dev.vars:/app/.dev.vars:ro
+    networks:
+      - iitm-network
+
+networks:
+  iitm-network:
+    driver: bridge

@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install uv for dependency management
+RUN pip install --no-cache-dir uv
+
+# Copy the embed script and source files
+COPY embed.py ./
+COPY src ./src
+
+# Create a requirements file for the dependencies
+RUN echo "weaviate-client>=4.4.0" > requirements.txt && \
+    echo "python-dotenv>=1.0.0" >> requirements.txt
+
+# Install dependencies
+RUN uv pip install --system -r requirements.txt
+
+# Default command: run the embedding script
+CMD ["python", "embed.py"]
