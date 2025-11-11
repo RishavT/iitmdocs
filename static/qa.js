@@ -11,6 +11,59 @@ const clearChatButton = document.getElementById("clear-chat-button");
 
 const chat = [];
 const marked = new Marked();
+const HISTORY_KEY = "iitm-chatbot-history";
+const MAX_HISTORY_PAIRS = 5;
+
+// SessionStorage utilities for conversation history
+function loadHistoryFromStorage() {
+  try {
+    const stored = sessionStorage.getItem(HISTORY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error("Failed to load history from sessionStorage:", e);
+    return [];
+  }
+}
+
+function saveHistoryToStorage(history) {
+  try {
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.error("Failed to save history to sessionStorage:", e);
+  }
+}
+
+function buildConversationHistory() {
+  // Build history from last N Q&A pairs (excluding current incomplete exchange)
+  const history = [];
+  const completedChats = chat.filter((msg) => msg.content); // Only completed Q&A pairs
+  const recentChats = completedChats.slice(-MAX_HISTORY_PAIRS);
+
+  for (const msg of recentChats) {
+    history.push({ role: "user", content: msg.q });
+    history.push({ role: "assistant", content: msg.content });
+  }
+
+  return history;
+}
+
+// Initialize chat from sessionStorage on page load
+const storedHistory = loadHistoryFromStorage();
+if (storedHistory.length > 0) {
+  // Rebuild chat array from stored history
+  for (let i = 0; i < storedHistory.length; i += 2) {
+    if (storedHistory[i]?.role === "user" && storedHistory[i + 1]?.role === "assistant") {
+      chat.push({
+        q: storedHistory[i].content,
+        content: storedHistory[i + 1].content,
+      });
+    }
+  }
+  // Render restored conversation
+  if (chat.length > 0) {
+    redraw();
+  }
+}
 
 let autoScroll = true;
 chatArea.addEventListener("scroll", () => {
@@ -56,14 +109,21 @@ async function askQuestion(e) {
   chat.push({ q });
   redraw();
 
+  // Build conversation history from previous exchanges
+  const history = buildConversationHistory();
+
   for await (const event of asyncLLM("./answer", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ q, ndocs: 5 }),
+    body: JSON.stringify({ q, ndocs: 5, history }),
   })) {
     Object.assign(chat.at(-1), event);
     redraw();
   }
+
+  // Save updated conversation history to sessionStorage
+  const updatedHistory = buildConversationHistory();
+  saveHistoryToStorage(updatedHistory);
 
   askButton.disabled = false;
   askButton.innerHTML = "Ask";
@@ -74,5 +134,6 @@ chatForm.addEventListener("submit", askQuestion);
 
 clearChatButton.addEventListener("click", function () {
   chat.length = 0;
+  sessionStorage.removeItem(HISTORY_KEY);
   redraw();
 });
