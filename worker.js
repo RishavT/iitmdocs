@@ -23,7 +23,7 @@ export default {
 };
 
 async function answer(request, env) {
-  const { q: question, ndocs = 5 } = await request.json();
+  const { q: question, ndocs = 5, history = [] } = await request.json();
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Validate ndocs to prevent resource exhaustion
@@ -72,7 +72,7 @@ async function answer(request, env) {
         }
 
         // Generate AI answer using documents as context and stream via piping
-        const answer = await generateAnswer(question, documents, env);
+        const answer = await generateAnswer(question, documents, history, env);
         await answer.body.pipeTo(
           new WritableStream({
             write: (chunk) => controller.enqueue(chunk),
@@ -144,7 +144,7 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.distance ? 1 - doc._additional.distance : 0 }));
 }
 
-async function generateAnswer(question, documents, env) {
+async function generateAnswer(question, documents, history, env) {
   const context = documents.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
@@ -161,16 +161,25 @@ Use the information from documents provided.`;
   // This allows using different providers while maintaining backwards compatibility
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
+  // Validate and sanitize conversation history
+  const validatedHistory = Array.isArray(history)
+    ? history.filter((msg) => msg?.role && msg?.content && typeof msg.content === "string")
+    : [];
+
+  // Build messages array with conversation history
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "assistant", content: context },
+    ...validatedHistory,
+    { role: "user", content: question },
+  ];
+
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
     body: JSON.stringify({
       model: chatModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "assistant", content: context },
-        { role: "user", content: question },
-      ],
+      messages,
       store: true,
       stream: true,
     }),
