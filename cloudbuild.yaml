@@ -38,8 +38,22 @@ steps:
       - '--allow-unauthenticated'
       - '--port'
       - '8787'
+      - '--set-env-vars'
+      - 'WEAVIATE_URL=${_WEAVIATE_URL},WEAVIATE_API_KEY=${_WEAVIATE_API_KEY},OPENAI_API_KEY=${_OPENAI_API_KEY},COHERE_API_KEY=${_COHERE_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},EMBEDDING_PROVIDER=${_EMBEDDING_PROVIDER},EMBEDDING_MODEL=${_EMBEDDING_MODEL}'
 
 # Store images in Google Container Registry
 images:
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
+
+# Substitutions for environment variables
+# These should be configured in the Cloud Build trigger settings
+substitutions:
+  _WEAVIATE_URL: ''
+  _WEAVIATE_API_KEY: ''
+  _OPENAI_API_KEY: ''
+  _COHERE_API_KEY: ''
+  _CHAT_API_ENDPOINT: 'https://aipipe.org/openrouter/v1/chat/completions'
+  _CHAT_MODEL: 'gpt-4o-mini'
+  _EMBEDDING_PROVIDER: 'cohere'
+  _EMBEDDING_MODEL: 'embed-multilingual-v3.0'
