@@ -162,8 +162,27 @@ Use the information from documents provided.`;
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
   // Validate and sanitize conversation history
+  const MAX_MESSAGE_LENGTH = 10000; // 10KB per message to prevent DoS
+  const MAX_HISTORY_MESSAGES = 10; // Maximum 5 Q&A pairs
+
   const validatedHistory = Array.isArray(history)
-    ? history.filter((msg) => msg?.role && msg?.content && typeof msg.content === "string")
+    ? history
+        .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
+        .filter((msg) => {
+          // Validate message structure
+          if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
+            return false;
+          }
+          // Validate role is either 'user' or 'assistant'
+          if (msg.role !== "user" && msg.role !== "assistant") {
+            return false;
+          }
+          // Validate message length to prevent DoS
+          if (msg.content.length > MAX_MESSAGE_LENGTH) {
+            return false;
+          }
+          return true;
+        })
     : [];
 
   // Build messages array with conversation history
