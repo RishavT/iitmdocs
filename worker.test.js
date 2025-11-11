@@ -356,6 +356,191 @@ describe("Worker - Conversation History", () => {
       const openAIBody = JSON.parse(openAICall[1].body);
       expect(openAIBody.messages).toHaveLength(3); // No history added
     });
+
+    it("should reject messages exceeding maximum length (DoS protection)", async () => {
+      const longContent = "a".repeat(15000); // 15KB - exceeds 10KB limit
+      const historyWithLongMessage = [
+        { role: "user", content: "Valid message" },
+        { role: "assistant", content: longContent }, // Too long
+        { role: "user", content: "Another valid message" },
+        { role: "assistant", content: "Valid response" },
+      ];
+
+      const request = createRequest("http://localhost/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: "Test question?",
+          ndocs: 5,
+          history: historyWithLongMessage,
+        }),
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { Get: { Document: [] } } }),
+      });
+
+      const mockReadableStream = new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        body: mockReadableStream,
+      });
+
+      const mockAssets = { fetch: vi.fn() };
+      const response = await worker.fetch(request, { ...mockEnv, ASSETS: mockAssets });
+
+      expect(response.status).toBe(200);
+
+      // Consume the stream
+      const reader = response.body.getReader();
+      let done = false;
+      while (!done) {
+        const result = await reader.read();
+        done = result.done;
+      }
+
+      // Verify long message was filtered out
+      const openAICall = global.fetch.mock.calls.find((call) => {
+        const url = typeof call[0] === "string" ? call[0] : call[0]?.url || "";
+        return url.includes("chat/completions");
+      });
+      const openAIBody = JSON.parse(openAICall[1].body);
+
+      // Should have: system, context, 3 valid messages (long one filtered), current question = 6 total
+      expect(openAIBody.messages).toHaveLength(6);
+      // Verify the long message is not present
+      expect(openAIBody.messages.find((m) => m.content === longContent)).toBeUndefined();
+    });
+
+    it("should reject messages with invalid roles", async () => {
+      const historyWithInvalidRoles = [
+        { role: "user", content: "Valid user message" },
+        { role: "assistant", content: "Valid assistant message" },
+        { role: "system", content: "Invalid system role" }, // Invalid role in history
+        { role: "hacker", content: "Invalid custom role" }, // Invalid role
+        { role: "user", content: "Another valid message" },
+      ];
+
+      const request = createRequest("http://localhost/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: "Test question?",
+          ndocs: 5,
+          history: historyWithInvalidRoles,
+        }),
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { Get: { Document: [] } } }),
+      });
+
+      const mockReadableStream = new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        body: mockReadableStream,
+      });
+
+      const mockAssets = { fetch: vi.fn() };
+      const response = await worker.fetch(request, { ...mockEnv, ASSETS: mockAssets });
+
+      expect(response.status).toBe(200);
+
+      // Consume the stream
+      const reader = response.body.getReader();
+      let done = false;
+      while (!done) {
+        const result = await reader.read();
+        done = result.done;
+      }
+
+      // Verify only valid roles were included
+      const openAICall = global.fetch.mock.calls.find((call) => {
+        const url = typeof call[0] === "string" ? call[0] : call[0]?.url || "";
+        return url.includes("chat/completions");
+      });
+      const openAIBody = JSON.parse(openAICall[1].body);
+
+      // Should have: system, context, 3 valid messages, current question = 6 total
+      expect(openAIBody.messages).toHaveLength(6);
+      // Verify only user and assistant roles are in history portion
+      const historyMessages = openAIBody.messages.slice(2, -1); // Exclude system, context, and current question
+      historyMessages.forEach((msg) => {
+        expect(["user", "assistant"]).toContain(msg.role);
+      });
+    });
+
+    it("should limit total number of history messages", async () => {
+      // Create 20 messages (10 pairs) - should be truncated to 10
+      const excessiveHistory = [];
+      for (let i = 0; i < 20; i++) {
+        excessiveHistory.push({
+          role: i % 2 === 0 ? "user" : "assistant",
+          content: `Message ${i}`,
+        });
+      }
+
+      const request = createRequest("http://localhost/answer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: "Test question?",
+          ndocs: 5,
+          history: excessiveHistory,
+        }),
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { Get: { Document: [] } } }),
+      });
+
+      const mockReadableStream = new ReadableStream({
+        start(controller) {
+          controller.close();
+        },
+      });
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        body: mockReadableStream,
+      });
+
+      const mockAssets = { fetch: vi.fn() };
+      const response = await worker.fetch(request, { ...mockEnv, ASSETS: mockAssets });
+
+      expect(response.status).toBe(200);
+
+      // Consume the stream
+      const reader = response.body.getReader();
+      let done = false;
+      while (!done) {
+        const result = await reader.read();
+        done = result.done;
+      }
+
+      // Verify history was limited to 10 messages
+      const openAICall = global.fetch.mock.calls.find((call) => {
+        const url = typeof call[0] === "string" ? call[0] : call[0]?.url || "";
+        return url.includes("chat/completions");
+      });
+      const openAIBody = JSON.parse(openAICall[1].body);
+
+      // Should have: system, context, max 10 history messages, current question = 13 total
+      expect(openAIBody.messages).toHaveLength(13);
+    });
   });
 
   describe("POST /answer - Error Handling", () => {

@@ -13,8 +13,12 @@ const chat = [];
 const marked = new Marked();
 const HISTORY_KEY = "iitm-chatbot-history";
 const MAX_HISTORY_PAIRS = 5;
+let requestCounter = 0; // Track requests to prevent race conditions
 
-// SessionStorage utilities for conversation history
+/**
+ * Loads conversation history from sessionStorage
+ * @returns {Array} Array of message objects with role and content
+ */
 function loadHistoryFromStorage() {
   try {
     const stored = sessionStorage.getItem(HISTORY_KEY);
@@ -25,6 +29,10 @@ function loadHistoryFromStorage() {
   }
 }
 
+/**
+ * Saves conversation history to sessionStorage
+ * @param {Array} history - Array of message objects to save
+ */
 function saveHistoryToStorage(history) {
   try {
     sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
@@ -33,6 +41,11 @@ function saveHistoryToStorage(history) {
   }
 }
 
+/**
+ * Builds conversation history from completed chat messages
+ * Only includes last MAX_HISTORY_PAIRS Q&A pairs
+ * @returns {Array} Array of message objects with role and content
+ */
 function buildConversationHistory() {
   // Build history from last N Q&A pairs (excluding current incomplete exchange)
   const history = [];
@@ -62,6 +75,8 @@ if (storedHistory.length > 0) {
   // Render restored conversation
   if (chat.length > 0) {
     redraw();
+    // After restoring, scroll to bottom and enable autoscroll
+    chatArea.scrollTop = chatArea.scrollHeight;
   }
 }
 
@@ -97,6 +112,11 @@ function redraw() {
   if (autoScroll) chatArea.scrollTop = chatArea.scrollHeight;
 }
 
+/**
+ * Handles asking a question and streaming the response
+ * Prevents race conditions by tracking request order
+ * @param {Event} e - Submit event from the form
+ */
 async function askQuestion(e) {
   if (e) e.preventDefault();
 
@@ -109,24 +129,31 @@ async function askQuestion(e) {
   chat.push({ q });
   redraw();
 
-  // Build conversation history from previous exchanges
+  // Track this request to prevent race conditions
+  const currentRequest = ++requestCounter;
+
+  // Build conversation history from previous exchanges (before current question)
   const history = buildConversationHistory();
 
-  for await (const event of asyncLLM("./answer", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ q, ndocs: 5, history }),
-  })) {
-    Object.assign(chat.at(-1), event);
-    redraw();
+  try {
+    for await (const event of asyncLLM("./answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q, ndocs: 5, history }),
+    })) {
+      Object.assign(chat.at(-1), event);
+      redraw();
+    }
+
+    // Only save history if this is still the most recent request
+    // This prevents out-of-order saves if multiple requests were somehow triggered
+    if (currentRequest === requestCounter) {
+      saveHistoryToStorage(buildConversationHistory());
+    }
+  } finally {
+    askButton.disabled = false;
+    askButton.innerHTML = "Ask";
   }
-
-  // Save updated conversation history to sessionStorage
-  const updatedHistory = buildConversationHistory();
-  saveHistoryToStorage(updatedHistory);
-
-  askButton.disabled = false;
-  askButton.innerHTML = "Ask";
 }
 questionInput.focus();
 
