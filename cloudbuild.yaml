@@ -57,3 +57,6 @@ substitutions:
   _CHAT_MODEL: 'gpt-4o-mini'
   _EMBEDDING_PROVIDER: 'cohere'
   _EMBEDDING_MODEL: 'embed-multilingual-v3.0'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
