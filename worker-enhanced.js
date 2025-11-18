@@ -1,17 +1,9 @@
-// Validation helpers for hallucination detection
-const OUT_OF_SCOPE_KEYWORDS = [
-  'capital', 'country', 'cook', 'recipe', 'weather', 'sports',
-  'movie', 'music', 'celebrity', 'politics', 'quantum physics',
-  'fix.*car', 'lose.*weight', 'stock market', 'cryptocurrency',
-  'world cup', 'pizza', 'guitar', 'hack'
-];
+/**
+ * Enhanced Worker with Response Validation
+ * This is an improved version with real-time hallucination detection
+ */
 
-function isLikelyOutOfScope(question) {
-  const questionLower = question.toLowerCase();
-  return OUT_OF_SCOPE_KEYWORDS.some(keyword =>
-    new RegExp(`\\b${keyword}`, 'i').test(questionLower)
-  );
-}
+import { quickValidate, validateResponse, getSafeFallbackResponse, OUT_OF_SCOPE_KEYWORDS } from './worker-validator.js';
 
 export default {
   async fetch(request, env) {
@@ -38,7 +30,7 @@ export default {
 };
 
 async function answer(request, env) {
-  const { q: question, ndocs = 5, history = [] } = await request.json();
+  const { q: question, ndocs = 5, history = [], validate = true } = await request.json();
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Validate ndocs to prevent resource exhaustion
@@ -47,19 +39,28 @@ async function answer(request, env) {
     return new Response('Invalid "ndocs" parameter. Must be between 1 and 20', { status: 400 });
   }
 
-  // Early detection: Check if question is obviously out of scope
-  if (isLikelyOutOfScope(question)) {
+  // Pre-check: Is this an obviously out-of-scope question?
+  const questionLower = question.toLowerCase();
+  const isObviouslyOutOfScope = OUT_OF_SCOPE_KEYWORDS.some(keyword =>
+    new RegExp(`\\b${keyword}\\b`, 'i').test(questionLower)
+  );
+
+  if (isObviouslyOutOfScope) {
+    // Return early with safe response for obviously out-of-scope questions
     const encoder = new TextEncoder();
-    const safeResponse = "I don't have information about this topic. I can only answer questions about the IIT Madras BS programme, including admissions, courses, fees, academic policies, and related topics. Please ask a question related to the IIT Madras BS programme.";
+    const safeResponse = getSafeFallbackResponse();
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-          choices: [{ delta: { content: safeResponse } }]
+          choices: [{
+            delta: { content: safeResponse }
+          }]
         })}\n\n`));
         controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         controller.close();
       }
     });
+
     return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
@@ -74,9 +75,9 @@ async function answer(request, env) {
       try {
         // Search Weaviate for relevant documents
         const documents = await searchWeaviate(question, numDocs, env);
+
         // Stream documents first (single enqueue)
         if (documents?.length) {
-          // Use configurable repository URL or default
           const repoUrl = env.GITHUB_REPO_URL || "https://github.com/study-iitm/iitmdocs";
           const sseDocs = documents
             .map(
@@ -107,15 +108,68 @@ async function answer(request, env) {
           controller.enqueue(encoder.encode(sseDocs));
         }
 
-        // Generate AI answer using documents as context and stream via piping
+        const hasRelevantDocs = documents && documents.length > 0 &&
+                                documents.some(d => d.relevance > 0.3);
+
+        // Generate AI answer with validation
         const answer = await generateAnswer(question, documents, history, env);
-        await answer.body.pipeTo(
-          new WritableStream({
-            write: (chunk) => controller.enqueue(chunk),
-            close: () => controller.close(),
-            abort: (reason) => controller.error(reason),
-          }),
-        );
+
+        // Stream with validation if enabled
+        if (validate) {
+          let accumulatedResponse = '';
+          let validationFailed = false;
+
+          await answer.body.pipeTo(
+            new WritableStream({
+              write: (chunk) => {
+                if (validationFailed) return; // Stop processing if validation failed
+
+                // Decode and accumulate
+                const text = new TextDecoder().decode(chunk);
+                accumulatedResponse += text;
+
+                // Quick validation on accumulated response
+                const isValid = quickValidate(accumulatedResponse, question, hasRelevantDocs);
+
+                if (!isValid) {
+                  validationFailed = true;
+                  // Send safe fallback response
+                  const safeMsg = `data: ${JSON.stringify({
+                    choices: [{
+                      delta: { content: getSafeFallbackResponse() }
+                    }]
+                  })}\n\n`;
+                  controller.enqueue(encoder.encode(safeMsg));
+                  controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                  controller.close();
+                  return;
+                }
+
+                // If valid, pass through
+                controller.enqueue(chunk);
+              },
+              close: () => {
+                if (!validationFailed) {
+                  controller.close();
+                }
+              },
+              abort: (reason) => {
+                if (!validationFailed) {
+                  controller.error(reason);
+                }
+              },
+            }),
+          );
+        } else {
+          // Stream without validation
+          await answer.body.pipeTo(
+            new WritableStream({
+              write: (chunk) => controller.enqueue(chunk),
+              close: () => controller.close(),
+              abort: (reason) => controller.error(reason),
+            }),
+          );
+        }
       } catch (error) {
         const errorMessage = `data: ${JSON.stringify({
           error: {
@@ -128,6 +182,7 @@ async function answer(request, env) {
       }
     },
   });
+
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
@@ -137,7 +192,6 @@ async function answer(request, env) {
 }
 
 async function searchWeaviate(query, limit, env) {
-  // Configure embedding provider headers (default to openai for backwards compatibility)
   const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
   const embeddingHeaders = {
     "Content-Type": "application/json",
@@ -150,13 +204,12 @@ async function searchWeaviate(query, limit, env) {
     embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
   }
 
-  // Escape special characters in query to prevent GraphQL injection
   const sanitizedQuery = query
-    .replace(/\\/g, "\\\\")  // Escape backslashes first
-    .replace(/"/g, '\\"')     // Escape quotes
-    .replace(/\n/g, " ")      // Replace newlines with spaces
-    .replace(/\r/g, " ")      // Replace carriage returns with spaces
-    .replace(/\t/g, " ");     // Replace tabs with spaces
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ")
+    .replace(/\t/g, " ");
 
   const response = await fetch(`${env.WEAVIATE_URL}/v1/graphql`, {
     method: "POST",
@@ -181,13 +234,11 @@ async function searchWeaviate(query, limit, env) {
 }
 
 async function generateAnswer(question, documents, history, env) {
-  // Filter documents by relevance threshold to reduce noise
-  const RELEVANCE_THRESHOLD = 0.3; // Only use documents with relevance > 30%
+  const RELEVANCE_THRESHOLD = 0.3;
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
 
   const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
 
-  // Add a note about document quality to the prompt
   let contextNote = "";
   if (relevantDocs.length === 0) {
     contextNote = "\n\nNOTE: No relevant documents found. The question may be outside the scope of IIT Madras BS programme documentation.";
@@ -202,40 +253,32 @@ CRITICAL RULES - Follow these STRICTLY:
 2. If the documents don't contain the answer, say "I don't have this information in the available documentation"
 3. NEVER make up facts, dates, numbers, names, or any specific details
 4. NEVER answer questions unrelated to IIT Madras BS programme (e.g., general knowledge, other topics)
-5. NEVER provide specific salary figures, placement guarantees, or success rate statistics unless explicitly stated in documents
-6. If unsure, explicitly state your uncertainty
-7. Quote or reference specific documents when possible
-8. Keep answers CONCISE and in simple Markdown
+5. If unsure, explicitly state your uncertainty
+6. Quote or reference specific documents when possible
+7. Keep answers CONCISE and in simple Markdown
+8. NEVER provide specific salary figures, placement statistics, or guarantees unless explicitly mentioned in documents
 
 Current date: ${new Date().toISOString().split("T")[0]}.
 
 The documents below are your ONLY source of truth. Do not use any other knowledge.${contextNote}`;
 
-  // Configure chat API endpoint and model (defaults to OpenAI for backwards compatibility)
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
   const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
-
-  // Use CHAT_API_KEY if provided (for custom endpoints like AI Pipe), otherwise fall back to OPENAI_API_KEY
-  // This allows using different providers while maintaining backwards compatibility
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
-  // Validate and sanitize conversation history
-  const MAX_MESSAGE_LENGTH = 10000; // 10KB per message to prevent DoS
-  const MAX_HISTORY_MESSAGES = 10; // Maximum 5 Q&A pairs
+  const MAX_MESSAGE_LENGTH = 10000;
+  const MAX_HISTORY_MESSAGES = 10;
 
   const validatedHistory = Array.isArray(history)
     ? history
-        .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
+        .slice(0, MAX_HISTORY_MESSAGES)
         .filter((msg) => {
-          // Validate message structure
           if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
             return false;
           }
-          // Validate role is either 'user' or 'assistant'
           if (msg.role !== "user" && msg.role !== "assistant") {
             return false;
           }
-          // Validate message length to prevent DoS
           if (msg.content.length > MAX_MESSAGE_LENGTH) {
             return false;
           }
@@ -243,7 +286,6 @@ The documents below are your ONLY source of truth. Do not use any other knowledg
         })
     : [];
 
-  // Build messages array with conversation history
   const messages = [
     { role: "system", content: systemPrompt },
     { role: "assistant", content: context },
@@ -257,7 +299,7 @@ The documents below are your ONLY source of truth. Do not use any other knowledg
     body: JSON.stringify({
       model: chatModel,
       messages,
-      temperature: 0.3, // Lower temperature = more deterministic, less creative/hallucination
+      temperature: 0.3,
       store: true,
       stream: true,
     }),
