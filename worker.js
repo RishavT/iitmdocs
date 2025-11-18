@@ -145,13 +145,34 @@ async function searchWeaviate(query, limit, env) {
 }
 
 async function generateAnswer(question, documents, history, env) {
-  const context = documents.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
+  // Filter documents by relevance threshold to reduce noise
+  const RELEVANCE_THRESHOLD = 0.3; // Only use documents with relevance > 30%
+  const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
+
+  const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
+
+  // Add a note about document quality to the prompt
+  let contextNote = "";
+  if (relevantDocs.length === 0) {
+    contextNote = "\n\nNOTE: No relevant documents found. The question may be outside the scope of IIT Madras BS programme documentation.";
+  } else if (relevantDocs.length < documents.length) {
+    contextNote = `\n\nNOTE: ${relevantDocs.length} of ${documents.length} documents passed relevance threshold.`;
+  }
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
-Answer directly in VERY simple, CONCISE Markdown.
-If the question is unclear, infer, state your assumption, and then respond accordingly.
+
+CRITICAL RULES - Follow these STRICTLY:
+1. ONLY answer using information from the documents provided below
+2. If the documents don't contain the answer, say "I don't have this information in the available documentation"
+3. NEVER make up facts, dates, numbers, names, or any specific details
+4. NEVER answer questions unrelated to IIT Madras BS programme (e.g., general knowledge, other topics)
+5. If unsure, explicitly state your uncertainty
+6. Quote or reference specific documents when possible
+7. Keep answers CONCISE and in simple Markdown
+
 Current date: ${new Date().toISOString().split("T")[0]}.
-Use the information from documents provided.`;
+
+The documents below are your ONLY source of truth. Do not use any other knowledge.${contextNote}`;
 
   // Configure chat API endpoint and model (defaults to OpenAI for backwards compatibility)
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
@@ -199,6 +220,7 @@ Use the information from documents provided.`;
     body: JSON.stringify({
       model: chatModel,
       messages,
+      temperature: 0.3, // Lower temperature = more deterministic, less creative/hallucination
       store: true,
       stream: true,
     }),
