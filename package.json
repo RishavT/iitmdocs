@@ -10,9 +10,12 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "wrangler": "^4.28.1",
-    "vitest": "^2.1.0",
     "@cloudflare/workers-types": "^4.20241218.0",
-    "jsdom": "^25.0.0"
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.28.1"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }
