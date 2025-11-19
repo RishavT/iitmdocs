@@ -47,26 +47,27 @@ async function answer(request, env) {
     return new Response('Invalid "ndocs" parameter. Must be between 1 and 20', { status: 400 });
   }
 
-  // Early detection: Check if question is obviously out of scope
-  if (isLikelyOutOfScope(question)) {
-    const encoder = new TextEncoder();
-    const safeResponse = "I don't have information about this topic. I can only answer questions about the IIT Madras BS programme, including admissions, courses, fees, academic policies, and related topics. Please ask a question related to the IIT Madras BS programme.";
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({
-          choices: [{ delta: { content: safeResponse } }]
-        })}\n\n`));
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-        controller.close();
-      }
-    });
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  }
+  // Early detection: Check if question is VERY obviously out of scope (only extreme cases)
+  // Disabled for now to avoid false positives - let the LLM handle it with the prompt
+  // if (isLikelyOutOfScope(question)) {
+  //   const encoder = new TextEncoder();
+  //   const safeResponse = "I don't have information about this topic. I can only answer questions about the IIT Madras BS programme, including admissions, courses, fees, academic policies, and related topics. Please ask a question related to the IIT Madras BS programme.";
+  //   const stream = new ReadableStream({
+  //     start(controller) {
+  //       controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+  //         choices: [{ delta: { content: safeResponse } }]
+  //       })}\n\n`));
+  //       controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+  //       controller.close();
+  //     }
+  //   });
+  //   return new Response(stream, {
+  //     headers: {
+  //       "Content-Type": "text/event-stream",
+  //       "Access-Control-Allow-Origin": "*",
+  //     },
+  //   });
+  // }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -182,7 +183,7 @@ async function searchWeaviate(query, limit, env) {
 
 async function generateAnswer(question, documents, history, env) {
   // Filter documents by relevance threshold to reduce noise
-  const RELEVANCE_THRESHOLD = 0.3; // Only use documents with relevance > 30%
+  const RELEVANCE_THRESHOLD = 0.15; // Only use documents with relevance > 15% (lowered for better recall)
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
 
   const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
@@ -197,19 +198,18 @@ async function generateAnswer(question, documents, history, env) {
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
 
-CRITICAL RULES - Follow these STRICTLY:
-1. ONLY answer using information from the documents provided below
-2. If the documents don't contain the answer, say "I don't have this information in the available documentation"
-3. NEVER make up facts, dates, numbers, names, or any specific details
-4. NEVER answer questions unrelated to IIT Madras BS programme (e.g., general knowledge, other topics)
-5. NEVER provide specific salary figures, placement guarantees, or success rate statistics unless explicitly stated in documents
-6. If unsure, explicitly state your uncertainty
-7. Quote or reference specific documents when possible
-8. Keep answers CONCISE and in simple Markdown
+Answer based on the documents provided below. If the information is not in the documents, say so clearly.
 
-Current date: ${new Date().toISOString().split("T")[0]}.
+IMPORTANT RULES:
+1. Use information from the provided documents as your primary source
+2. If information is not in the documents, state "This information is not available in the current documentation"
+3. Do not make up specific facts, numbers, dates, or statistics
+4. For questions clearly outside the scope of IITM BS programme, politely redirect
+5. Avoid providing salary figures or placement guarantees unless explicitly mentioned in documents
+6. Keep answers clear and concise in simple Markdown
+7. Reference documents when helpful
 
-The documents below are your ONLY source of truth. Do not use any other knowledge.${contextNote}`;
+Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   // Configure chat API endpoint and model (defaults to OpenAI for backwards compatibility)
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
@@ -257,7 +257,7 @@ The documents below are your ONLY source of truth. Do not use any other knowledg
     body: JSON.stringify({
       model: chatModel,
       messages,
-      temperature: 0.3, // Lower temperature = more deterministic, less creative/hallucination
+      temperature: 0.5, // Balanced temperature for natural responses while reducing hallucinations
       store: true,
       stream: true,
     }),
