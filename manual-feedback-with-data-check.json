@@ -1,0 +1,981 @@
+[
+  {
+    "Question asked": "What is the full form of MLT in BS Degree Course?",
+    "Reply given ": "The full form of MLT in the BS Degree Course is Machine Learning Techniques.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academics.md, Admissions.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Grading Policy for PDSA ?",
+    "Reply given ": "Grading Formula: T = 0.1GAA +0.4F+0.2OP+ max(0.2max(Qz1, Qz2), (0.15Qz1+0.15Qz2 ))",
+    "Feedback ": "Correct",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Grading Document-2.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 19 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "How to get advanced certification?",
+    "Reply given ": "The Advanced Certificate will be given by default to ALL students who complete the required theory courses at the Diploma level. The Advanced Certificate will be made available in the Student Dashboard.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic Documents for students.md, Academic policies-2.md",
+    "reasoning": "Found 27 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "should i complete projects too? for getting advance certificate?",
+    "Reply given ": "Students who have completed all 6 theory courses of the Diploma in Programming, with one or both projects pending, will be awarded the Advanced Certificate in Programming and Application Development. Students who have completed all 6 theory courses of the Diploma in Data Science, with one or both projects pending, will be awarded the Advanced Certificate in Machine Learning and Data Science.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, About IIT Madras.md, Academic Documents for students.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Difference between Reattempt and Reapply Qualifier?",
+    "Reply given ": "Reattempt Qualifier Exam: This is for learners who were eligible to take the qualifier exam but did not pass or were absent. They can retake the exam in the same term without repeating the assignments.\r\n\r\nReapply Qualifier Exam: This is for learners who were not eligible to take the qualifier exam in the first attempt. They have to reapply in the next semester, redo the assignments, and pay the full fees.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Calender.md, Academic aspects.md, Admission to the programme.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "will i be able to review my answer after the exams? will it be available in my dashboard?",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic policies.md, Academic aspects.md, Admission to the programme.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Can exam city be changed or edited for quiz or end term exam?",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Calender.md, Academic aspects.md, Academic policies.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "can i submit state issued document as income certificate or only central government issued is valid?",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Varshni",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admissions.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 8"
+  },
+  {
+    "Question asked": "Are there any specific tools used to communicate with faculty or instructors? or What are the available platforms for faculty-student communication?",
+    "Reply given ": "I don't know \n\nReferences:\nIITM BS Degree Programme - Student Handbook (Updated 21072025) - Student version\nCourse Page - IIT Madras Degree Program\nhttps://study.iitm.ac.in/ds/course_pages/BSCS3005.html",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Jayanthi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic policies.md, Placement.md, Software and Hardware Requirements.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "How many weeks of syllabus are in Maths 1?",
+    "Reply given ": "The syllabus for BSMA2001 (Maths 1) spans from Week 1 to Week 12. Therefore, the number of weeks in the Maths 1 syllabus is: 12",
+    "Feedback ": "Correct",
+    "Questionare name ": "Jayanthi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admissions.md, Academic policies-2.md, Academic policies.md",
+    "reasoning": "Found 21 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Are there any marks or points for attending in live sessions?",
+    "Reply given ": "There is no mention of marks or points for attending live sessions in the provided context. The pass criteria for each course only mention attendance in one of the 2 quizzes, but not attendance in live sessions.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Jayanthi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma Level Courses.md, Academic aspects.md, Academic policies-2.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "can i enter degree level without completing diploma level projects",
+    "Reply given ": "No. Without completing all the 8 Foundation courses and the 12 Diploma level courses + 4 project courses, one cannot proceed to register for Year 3 Degree level courses.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Timelines.md, Changes in project grading.md, Academics.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 9"
+  },
+  {
+    "Question asked": "How many credits are required to get Degree",
+    "Reply given ": "114 credits are required to get a BSc degree.\r\n\r\n142 credits are required to get a BS degree.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Timelines.md, About IIT Madras.md, Academic aspects.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "In degree level what are the minors available",
+    "Reply given ": "Minor in Economics and Finance\r\n\r",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Akshaya",
+    "comments": "Need to add the new minors",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Courses in the programme.md, Credit Transfer.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "what are the core pairs",
+    "Reply given ": "Software Engineering and Software Testing\r\nAI (Artificial Intelligence): Search Methods for Problem Solving and Deep Learning",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academics.md, Courses in the programme.md, Timelines.md",
+    "reasoning": "Found 25 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "is fee waiver applicable for army children",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Re Entry after Diploma.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 25 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "If I have got I grade in this term and if I register for the same course after two terms, will the I grade be carried forward and can i repeat only the end term instead of repeat full course",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Diploma Level Courses.md, Academics.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 17"
+  },
+  {
+    "Question asked": "what is the cgpa cutoff to register for degree level after completing diploma level\r\n\r",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Credit Transfer.md, Pathways to get admission to Masters.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 8"
+  },
+  {
+    "Question asked": "what is second attempt in qualifier how it is different from reattempt",
+    "Reply given ": "According to the provided text, \"Second attempt\" and \"re-attempt\" are used interchangeably in the context of the Qualifier Exam.\r\n\r\nBoth refer to the opportunity for a candidate who was absent or failed the first attempt to take the exam again within the same term.\r\n\r\nThe key difference is that \"second attempt\" implies it is the second time the candidate is taking the exam, while \"re-attempt\" emphasizes the act of trying again.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Admission to the programme.md, Academic Calender.md",
+    "reasoning": "Found 26 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "What is the project cgpa to be maintained to enter the degree level",
+    "Reply given ": "A CGPA of 7.0 or higher in all the projects completed at the diploma level.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Changes in project grading.md, Academics.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "How many terms from starting the diploma level should a student complete the level",
+    "Reply given ": "12 terms",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Admissions.md, Learner Life Cycle.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 8"
+  },
+  {
+    "Question asked": "How can I register for alumni",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academics.md, Alumni Details.md, Timeline for original certificate.md",
+    "reasoning": "Found 21 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "What are the prerequisite of appdev 1",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "UNCERTAIN",
+    "confidence": "low",
+    "relevant_docs": "Academic aspects.md, Academics.md, Changes in project grading.md",
+    "reasoning": "Found 7 relevant docs, max keyword matches: 1"
+  },
+  {
+    "Question asked": "what is the processing fee to avail the alum benefits",
+    "Reply given ": "what is the processing fee to avail the alum benefits",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Alumni Details.md, Academics.md, Timeline for original certificate.md",
+    "reasoning": "Found 25 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Does alumni students have access to discourse forum",
+    "Reply given ": "Yes",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Alumni Details.md, About IIT Madras.md, Academic policies.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Which subjects have 3 credits\r\n\r",
+    "Reply given ": "Based on the provided context, it is mentioned that 1 credit mentioned here would be equivalent to 3 credits in the current IITM campus Credit system. However, to find the subjects with 3 credits, we need to refer to the context where it is mentioned that 14 hours of learner engagement as 1 credit. Unfortunately, the context does not explicitly mention any subjects with 3 credits. It only provides information about the credit system and the structure of the program. Therefore, I do not have enough information to provide a specific answer to this question.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academic aspects.md, Academics.md, Direct Entry into Diploma programme.md",
+    "reasoning": "Found 24 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "can a student take a foundation level course as improvement after entering degree level",
+    "Reply given ": "Can a student take a foundation level course as improvement after entering degree level?\r\nAccording to the provided context, there is no specific information that explicitly states whether a student can take a foundation level course as improvement after entering degree level. However, it does mention that students who have entered the degree level are not eligible to take foundation level courses.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Changes in project grading.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 10"
+  },
+  {
+    "Question asked": "Is there a scholarship option available?",
+    "Reply given ": "References:\r\nFrequently Asked Questions - IIT Madras BS Degree Program\r\nhttps://study.iitm.ac.in/ds/faq.html\r\nIITM BS Degree Programme - Student Handbook (Updated 21072025) - Student version\r\nAdmissions",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 31 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What are the eligibility criteria for the Data Science course?",
+    "Reply given ": "The Data Science course at IIT Madras has no specific eligibility criteria for admission. However, to register for the BSc Degree Level, learners must have cleared all 8 courses in the Foundation Level and all 12 courses + 4 projects in the Diploma Level.\r\n\r\nFor the BS Degree Level, learners must have earned 114 credits and completed the BSc Degree Level to enter the BS Degree Level.\r\n\r\nThere are no specific age or background restrictions for learners. The course is designed to be flexible, allowing learners to choose their pace of study every term.\r\n\r\nAdditionally, learners can attempt the Direct Admission to Diploma (DAD) qualifier exam, which has specific qualifying criteria and cut-off marks for different categories.\r\n\r\nDirect Admission to Diploma (DAD) Qualifier Exam\r\nThe DAD qualifier exam has the following eligibility criteria:\r\n\r\nGEN / OBC-CLRs: 40% (6000/- fees)\r\nSC/ST (Software Testing)/PwD: 30% (3000/- fees)\r\nSC/ST (Software Testing) AND PwD: 30% (1500/- fees)\r\nOBC-NCL, EWS: 35% (6000/- fees)",
+    "Feedback ": "Correct",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Documents for students.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "quiz 2 date for may",
+    "Reply given ": "I don't know",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "priyanka",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic Calender.md, Academic aspects.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Is the foundation complition certificate will be given in hard copy?",
+    "Reply given ": "The context does not explicitly mention whether the Foundation Completion Certificate will be given in hard copy or not. However, it does mention that the original certificate for the BS degree will be processed only if certain criteria are satisfied, including the completion of the required credits with all mandatory courses in the Degree Level.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admissions.md, About IIT Madras.md, Academic aspects.md",
+    "reasoning": "Found 40 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "end term eligibility criteria",
+    "Reply given ": "To be eligible to write the End Term Exam for a course, it is mandatory for the learner to have (i) obtained in the course an Average Assignment Score >= 40/100 AND (ii) appeared for at least one out of the three proctored in-person Quizzes.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "priyanka",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Diploma level courses-2.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "how can i apply for transcripts",
+    "Reply given ": "Students who are interested in applying for a transcript/bonafide certificate have to follow these steps:\r\n\r\n1. Refer to the link https://docs.google.com/document/d/e/2PACX-1vQnn2cFan5BqTTAByCoqtue-0XSmFXQPT91bADDL_i33tHMh8C0ZJepvFBwze4E5zJbGiBMdQa59VeT/pub to know the criteria for official documents given to students.\r\n\r\n2. Note that these certificates will be issued every Thursday. Students have to plan suitably and contact us.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academics.md, Admission to the programme.md, Academic Documents for students.md",
+    "reasoning": "Found 19 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "September term start date?",
+    "Reply given ": "early September",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "priyanka",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Calender.md, Academic aspects.md, Admissions.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "what is the quiz 2 syllabus.",
+    "Reply given ": "Unfortunately, the provided context does not contain any information about the syllabus for Quiz 2. It only mentions the dates for Quiz 1 and Quiz 2, but not the topics or content that will be covered in Quiz 2.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academic policies-2.md, Academic policies.md, Diploma Level Courses.md",
+    "reasoning": "Found 18 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "Qualifier Eligiblity",
+    "Reply given ": "For eligibility and competition queries please contact your DC.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Ambica",
+    "data_present": "UNCERTAIN",
+    "confidence": "low",
+    "relevant_docs": "Academic Calender.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 14 relevant docs, max keyword matches: 1"
+  },
+  {
+    "Question asked": "What is the qualifier eligiblity",
+    "Reply given ": "To be eligible to appear for the qualifier exam, a learner must achieve the minimum required average assignment scores in all four courses. Here are the minimum average assignment scores required in each course: * **General Learner:** 40% * **SC / ST (Software Testing) / PwD with 40% disability:** 30% * **PwD with 40% disability & SC / ST (Software Testing):** 30% * **OBC-NCL / EWS:** 35%\r",
+    "Feedback ": "Correct",
+    "Questionare name ": "Ambica",
+    "data_present": "UNCERTAIN",
+    "confidence": "low",
+    "relevant_docs": "Academic Calender.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 14 relevant docs, max keyword matches: 1"
+  },
+  {
+    "Question asked": "What is the year-wise fee structure?",
+    "Reply given ": "Year-wise Fee Structure for IIT Madras BS Degree Program\r\nThe year-wise fee structure for the IIT Madras BS Degree program is as follows:\r\n\r\nFoundation Level\r\n8 credits: Rs. 8,000 (Rs. 1,000 per credit)\r\n36 credits: Rs. 72,000 (Rs. 2,000 per credit)\r\nTotal fees to earn the Foundation degree: Rs. 80,000 (8 credits) + Rs. 72,000 (36 credits) = Rs. 152,000\r\nDiploma Level\r\n42 credits: Rs. 1,68,000 (Rs. 4,000 per credit)\r\nTotal fees to earn the Diploma degree: Rs. 1,68,000 (42 credits)\r\nBS in Electronic Systems\r\n56 credits: Rs. 3,36,000 (Rs. 6,000 per credit)\r\nTotal fees to earn the BS degree: Rs. 3,36,000 (56 credits) + Rs. 1,48,000 (remaining credits) = Rs. 5,84,000\r\nFee waivers are applicable for different student categories based on their family income. The fee waiver structure is as follows:\r\n\r\nFee Waiver Structure Based on Category and Family Income\r\nCategory\tFamily Income > 5 LPA\tFamily Income > 1 LPA and <= 5 LPA\tFamily Income <= 1 LPA\r\nGeneral\tFull Fee\t50% waiver\t75% waiver\r\nOBC\tFull Fee\t50% waiver\t75% waiver\r\nSC / ST (Software Testing)\t50% waiver\t50% waiver\t75% waiver\r\nPwD\t50% waiver\t50% waiver\t75% waiver (with EWS / OBC-NCL + Family Income)\r\nSC / ST (Software Testing) + PwD\t75% waiver\t75% waiver\t75% waiver\r\nFor international students, fee waivers are not applicable.",
+    "Feedback ": "Correct",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academic aspects.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 22 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "What is end term eligibility in python?",
+    "Reply given ": "To be eligible to write the end term exam in the Python course, a student must meet the following conditions:\r\nAttend at least one of the two quizzes in person at designated centres.\r\nHave an average of the best 5 out of the first 7 weeks of weekly assignment scores of 40/100 or more.\r\nAdditionally, to get the final course grade, a student must:\r\nAttend the end term exam.\r\nScore a minimum of 35% in the OPE (overall) exam.\r\nGet the question based on Python-DB connectivity correct.\r\nIf a student fails to meet any of these conditions, they will not be eligible to get the final course grade.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "senthamil",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic policies.md, Academics.md, Diploma Level Courses.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "courses in may term?",
+    "Reply given ": "deadline is given as response",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Ambica",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "should I pay the full fee for all the four years at once or how will be the fee collected\r\n\r",
+    "Reply given ": "Fee Collection for IIT Madras BS Degree Program\r\nThe fee for the IIT Madras BS Degree program will not be paid at one stretch. The actual fees you will be paying in each semester will be in proportion to the number of courses you register for in the respective semester.\r\nPayment Structure\r\nYou will not be paying the entire Program fee or Foundational Level fee at one stretch. The actual fees you will be paying will be in proportion to the number of courses you register for in every semester.\r\nExample\r\nIf you register for 2 courses in a semester, you have to pay the course fees only for those 2 courses.\r\nBreakdown of Course Fee\r\nTo see a detailed breakdown of the course fee over each semester, please refer to the Fee Structure section in the Academics page and select your goal.\r\nPayment Mode\r\nFees can be paid only through online mode. Fees through DD will not be accepted. You can pay using any Credit Card, Netbanking (all Indian Banks), Wallet, UPI (Google Pay, BHIM, etc.).",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Admissions.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "what is the fees structure for internation student",
+    "Reply given ": "For international students, the fees structure is not explicitly mentioned in the provided context. However, it is mentioned that \"Fee waiver is not be applicable for the International students.\" and \"For candidates who are outside India and studying in the program: For candidates writing exams overseas, there will be facilitation fee for exams in addition to the above. The fee will be revisited periodically and revised if necessary.\"\r\n\r\nIt can be inferred that international students will have to pay the full fees, but there might be additional facilitation fees for exams. However, the exact fees structure for international students is not provided in the context.\r\n\r\nI don't know the exact fees structure for international students.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, About IIT Madras.md, Academic aspects.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "will the provisional certifciate be issued as a hardcopy",
+    "Reply given ": "An error occurred while processing your request. Please try again.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "comments": "🕒 Responded in 49.34 seconds",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Re Entry after Diploma.md, Academic Documents for students.md, Academics.md",
+    "reasoning": "Found 7 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "I have Taken Double Drop for JEE and have Enrolled in IIT Madras BS Data Science so what to fill in Highest Education Attained and in Current Details Section?",
+    "Reply given ": "For the Highest Education Attained section:\r\n\r\nSince you have taken a Double Drop for JEE, it implies that you have not appeared for the JEE exam. Therefore, you have not completed your Class 12 or equivalent education through a regular stream. However, you have enrolled in the IIT Madras BS Data Science program.\r\n\r\nConsidering this, you can fill in \"Class 12 or equivalent\" as your Highest Education Attained, as you have not completed it through a regular stream but have been admitted to the IIT Madras BS Data Science program.\r\n\r\nFor the Current Details section:\r\n\r\nSince you have already enrolled in the IIT Madras BS Data Science program, you can fill in the details of your current enrollment, such as the program name, enrollment date, and any other relevant information.\r\n\r\nHowever, it is essential to note that the exact details to be filled in the Current Details section may vary depending on the specific requirements of the application form. It is recommended to refer to the official application form or consult with the IIT Madras admissions team for accurate guidance.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Sasipriya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admissions.md, About IIT Madras.md, Academics.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 12"
+  },
+  {
+    "Question asked": "what is the difference between I grade and I_OP",
+    "Reply given ": "Unfortunately, the provided context does not contain any information about the difference between I grade and I_OP.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma Level Courses.md, Academic aspects.md, Academic policies.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "What are the required documents for fee waivers?",
+    "Reply given ": "The required documents for fee waivers at IIT Madras are as follows:\r\n\r\nCategory certificate (Note: If the previously submitted certificate is not valid until the end of the current financial year, the EWS (Economically Weaker Section) / OBC-NCL certificate needs to be submitted again)\r\nEWS (Economically Weaker Section) certificate (for general category learners with family income less than ₹5 lakhs per annum)\r\nFamily Income certificate (for general category learners with family income less than ₹5 lakhs per annum)\r\nAdditionally, the following documents are required for registration at the Foundational Level:\r\n\r\n12th or equivalent mark sheet (mandatory)\r\nAny one of the following documents:\r\nDegree Certificate\r\nCertificate of the highest level of education",
+    "Feedback ": "Correct",
+    "Questionare name ": "senthamil",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Fees for the entire programme.md, Admission to the programme.md, Admissions.md",
+    "reasoning": "Found 30 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "Can I take Python before completing Computational Thinking\r\n\r\n",
+    "Reply given ": "No, you cannot take Python before completing Computational Thinking. According to the course requirements, Intro to Python requires completion of the CT (Computational Thinking) course.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Admission to the programme.md, Admissions.md",
+    "reasoning": "Found 40 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "can a working professional apply for direct entry diploma\r\n\r",
+    "Reply given ": "According to the provided context, the Direct Entry into Diploma programme is primarily aimed at working professionals or learners who already possess the fundamentals taught in Year 1 of this programme to enter the Diploma level directly.\r\n\r\nStudents who have completed 2 years in any UG degree programme are permitted to apply to the diploma level through direct entry. Their second year marksheet or higher must be submitted as proof to qualify under this category.\r\n\r\nTherefore, yes, a working professional can apply for direct entry into the diploma programme, provided they meet the eligibility criteria.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Direct Entry into Diploma programme.md, Admissions.md, Courses in the programme.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "How can students raise a complaint through the Grievance Cell?\n\n",
+    "Reply given ": "Students can raise a complaint through the Grievance Cell by using the following methods:\r\nEmail: Students can send an email to students-grievance@study.iitm.ac.in with their complaint.\r\nComplaints Box: Students can also submit their complaints in the Complaints Box.\r\nNote: The Grievance Cell aims to provide the support needed to help individuals decide the best course of action, and to resolve the issues raised through formal complaint procedures.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Jayanthi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Student Life.md, About IIT Madras.md, Best Projects.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "what about placement support",
+    "Reply given ": "IIT Madras provides placement opportunities for both BS and BSc Degree graduates. For BS Degree graduates, the demand for skilled individuals in Electronic Systems is high. IIT Madras will actively reach out to recruiters in the context of placement opportunities for the graduates of the BS Degree Program. For BSc Degree graduates, the demand for data analysts/scientists and full stack developers is very high. IIT Madras will also actively reach out to recruiters in the context of placement opportunities for the graduates of the Online BSc Degree Program. Additionally, IIT Madras plans to give soft skills training as part of the program to enable learners with the right job opportunities.",
+    "Feedback ": "Correct",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Partner.md, Placement.md, About IIT Madras.md",
+    "reasoning": "Found 23 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "how much credits can be transfered from NPTEL COURSES\r\n\r",
+    "Reply given ": "According to the provided context, an NPTEL course of duration 4/8/12 weeks carries credit equivalence of 1/2/3 credits in the BS degree program.\r\nMaximum Credits Transferable\r\nA maximum of 24 credits can be earned from any campus courses, including NPTEL courses.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Akshaya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 38 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What eligibility is required to apply for a direct entry diploma\n\n",
+    "Reply given ": "Students who have completed 2 years in any UG degree programme are permitted to apply to the diploma level through direct entry.\r\n\r\nTheir second year marksheet or higher must be submitted as proof to qualify under this category.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sreelakshmi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admission to the programme.md, Admissions.md, Courses in the programme.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "How can I apply for IITM BS Degree Program?",
+    "Reply given ": "Applications for the IITM BS Degree Program are currently open for the September 2025 Batch. To apply, please follow these steps:\r\n\r\nVisit the IITM BS Degree Program website.\r\nClick on the \"APPLY NOW\" button.\r\nFill out the application form with the required details.\r\nSubmit the application form before the deadline of September 4, 2025.\r\nFor any queries or issues during the application process, please contact the IITM BS Degree Office at:\r\n\r\nAddress: 3rd Floor, ICSR Building, IIT Madras, Chennai - 600036\r\nPhone: +91-9711397993 (Mon-Fri, 9am-6pm)\r\nEmail: support-es@study.iitm.ac.in\r\n",
+    "Feedback ": "Correct",
+    "Questionare name ": "pavithra",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Admissions.md, Courses in the programme.md",
+    "reasoning": "Found 46 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Is quiz2 is available for python , in this term?",
+    "Reply given ": "Quiz 2 Availability for Python in this Term\r\nAccording to the provided context, the quiz schedule for the current term is as follows:\r\n\r\nQuiz 1: July 13, 2025\r\nQuiz 2: August 3, 2025\r\nEnd term: August 31, 2025\r\nSince the course in question is \"Intro to python programming\" and the quiz schedule is mentioned, it can be inferred that Quiz 2 is indeed available for the Python course in this term.\r\n\r\nTherefore, the answer to the question is:\r\n\r\nYes, Quiz 2 is available for Python in this term.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Shunmuga vidhya S",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic policies-2.md, Academic policies.md, Admission to the programme.md",
+    "reasoning": "Found 40 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "does DBMS course have a quiz 2?",
+    "Reply given ": "Does DBMS course have a Quiz 2?\r\nThe DBMS course has the following exam schedule:\r\n\r\nQuiz 1: July 13, 2025\r\nEnd Term: August 31, 2025\r\nOPPE: August 17, 2025\r\nThere is no mention of a Quiz 2 in the DBMS course exam schedule.\r\n\r\nTherefore, the answer is: No, the DBMS course does not have a Quiz 2.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Tamilnithi ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma level courses-2.md, Grading Document.md, About IIT Madras.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What is the syllabus for DBMS course?",
+    "Reply given ": "Syllabus for Database Management Systems Course (BSCS2001)\r\nThe Database Management Systems course (BSCS2001) is a Diploma Level Course offered at IIT Madras. The course is designed to provide a comprehensive introduction to databases, database management, and relevant topics like database security, integrity, concurrency, and data warehousing.\r\nCourse Structure and Assessments\r\nThe course consists of 12 weeks of coursework, with the following structure: * Weekly online assignments * 2 in-person invigilated quizzes * 1 in-person invigilated end-term exam\r\nWeekly Topics\r\nThe course is divided into 12 weeks, with the following topics covered:\r\nWEEK 1: Course Overview\r\nWEEK 2: Relational Model and Basic SQL\r\nWEEK 3: Intermediate and Advanced SQL\r\nWEEK 4: Relational Query Languages and Database Design\r\nWEEK 5: Functional Dependency and Normal Forms\r\nWEEK 6: Functional Dependency and Normal Forms (cont.)\r\nWEEK 7: Application Development\r\nWEEK 8: Storage Management\r\nWEEK 9: Indexing and Hashing\r\nWEEK 10: Transactions\r\nWEEK 11: Backup and Recovery\r\nWEEK 12: Query Optimization and Conclusion\r\nPrescribed Books\r\nThe suggested book for the course is: * \"Database Management Systems\" by Abraham Silberschatz, Henry F. Korth, and S. Sudarshan",
+    "Feedback ": "Correct",
+    "Questionare name ": "Tamilnithi ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma level courses-2.md, Academic policies-2.md, Academic policies.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "when will the next registration open for qualifier",
+    "Reply given ": "An error occurred while processing your request. Please try again",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Tamilnithi ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Admissions.md, Academic Calender.md, Academic aspects.md",
+    "reasoning": "Found 33 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "What is the syllabus for DBMS course?",
+    "Reply given ": "Syllabus for Database Management Systems Course (BSCS2001)\nThe Database Management Systems course (BSCS2001) is a Diploma Level Course offered at IIT Madras. The course is designed to provide a comprehensive introduction to databases, database management, and relevant topics like database security, integrity, concurrency, and data warehousing.\nCourse Structure and Assessments\nThe course consists of 12 weeks of coursework, with the following structure: * Weekly online assignments * 2 in-person invigilated quizzes * 1 in-person invigilated end-term exam\nWeekly Topics\nThe course is divided into 12 weeks, with the following topics covered:\nWEEK 1: Course Overview\nWEEK 2: Relational Model and Basic SQL\nWEEK 3: Intermediate and Advanced SQL\nWEEK 4: Relational Query Languages and Database Design\nWEEK 5: Functional Dependency and Normal Forms\nWEEK 6: Functional Dependency and Normal Forms (cont.)\nWEEK 7: Application Development\nWEEK 8: Storage Management\nWEEK 9: Indexing and Hashing\nWEEK 10: Transactions\nWEEK 11: Backup and Recovery\nWEEK 12: Query Optimization and Conclusion\nPrescribed Books\nThe suggested books for the course are: * Database Management Systems by Abraham Silberschatz, Henry F. Korth, and S. Sudarshan",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sukandhan C A",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma level courses-2.md, Academic policies-2.md, Academic policies.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "grading policy for python",
+    "Reply given ": "Grading Policy for Intro to Python Programming\r\nThe grading formula for the Intro to Python Programming course is as follows: T = 0.1GAA1 + 0.1GAA2 + 0.1Qz1 + 0.4F + 0.25max(PE1, PE2) + 0.15min(PE1, PE2) — capped to 100\r\nPass Criteria\r\nTo pass the course, a student must meet the following criteria: * Average of the best 5 out of the first 7 weekly assessments (objective and programming) scores >= 40/100\r\nCourse Completion Requirements\r\nTo complete the course, a student must: * Attend the end term exam * Obtain a minimum score of 40/100 in one of the programming exams (OPPE1 or OPPE2)\r\nExam Schedule\r\nThe exam schedule for the course is as follows: * Quiz 1: July 13, 2025 * OPPE1: July 20, 2025 * End Term: August 31, 2025 * OPPE2: August 24, 2025",
+    "Feedback ": "Correct",
+    "Questionare name ": "Navinesh",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Grading Document-2.md, Academic aspects.md",
+    "reasoning": "Found 27 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Is there a scholarship option available?",
+    "Reply given ": "An error occurred while processing your request. Please try again.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Sukandhan C A",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 31 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "About fees structure",
+    "Reply given ": "An error occurred while processing your request. Please try again",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Tamilnithi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Partner.md",
+    "reasoning": "Found 25 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Eligibility criteria to appear for the end-term exam.",
+    "Reply given ": "Eligibility Criteria to Appear for the End-term Exam\r\nTo appear for the end-term exam in any of the courses, the following eligibility criteria must be met:\r\nCommon Criteria\r\n- Average of the best 5 out of the first 7 weekly assignment scores must be greater than or equal to 40/100. - Attendance in one of the 2 quizzes is mandatory.\r\nCourse-specific Criteria\r\n- For Foundation Level Courses (Statistics for Data Science 1 and Statistics for Data Science 2): - The above common criteria must be met. - For Diploma Level Courses (Programming Concepts using Java): - The above common criteria must be met. - The student must attend at least one of the 2 quizzes in the center. - For Degree Level Courses (Deep Learning and AI: Search Methods for Problem Solving): - The above common criteria must be met.\r\nAdditional Requirements\r\n- For all courses, attending the end-term exam is a requirement for course completion. Note: The eligibility criteria may vary slightly for each course, but the common criteria mentioned above must be met for all courses.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Dhivya",
+    "comments": "The given response is not needed.\n\n",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 37 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "Quiz 2 is there for Stats 2",
+    "Reply given ": "Quiz 2 Details for Statistics for Data Science 2 (Stats 2)\r\nAccording to the provided context, the details for Quiz 2 in the course Statistics for Data Science 2 (Stats 2) are as follows:\r\n\r\nQuiz 2 Date: August 3, 2025\r\nPlease note that the details provided are based on the given context and may not reflect the actual quiz schedule or details.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sherly",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Mode of announcements.md, About IIT Madras.md, Academic aspects.md",
+    "reasoning": "Found 32 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What is the eligibility criteria to apply for BS Degree",
+    "Reply given ": "Eligibility Criteria to Apply for BS Degree\r\nThe eligibility criteria to apply for the BS Degree program is not explicitly mentioned in the provided context. However, it can be inferred that the program is designed for students who have completed the Foundation and Diploma levels.\r\n\r\nAccording to the context, students who have completed 114 credits as per the norms will be eligible for the BSc degree and can continue onto the BS level. This suggests that the BS Degree program is a continuation of the BSc degree program.\r\n\r\nAdditionally, the context mentions that students who have completed the Foundation and Diploma levels will be eligible for admission to the degree level, if they satisfy the prescribed/regulatory criteria. This implies that students who have completed the Foundation and Diploma levels may be eligible to apply for the BS Degree program.\r\n\r\nHowever, the exact eligibility criteria for the BS Degree program is not specified in the provided context. Therefore, it is not possible to provide a definitive answer to this question.\r\n\r\nIt is recommended to refer to the official website or contact the program administrators for the most up-to-date and accurate information on the eligibility criteria for the BS Degree program.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Sherly",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Admissions.md, Admission to the programme.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "syllabus for python",
+    "Reply given ": "Syllabus for Python Programming Course\r\nThe Python programming course, BSCS1002, is a 12-week foundational level course that covers the basics of Python programming. The course is divided into the following weeks:\r\nWeek 1: Introduction to Algorithms\r\n* Introduction to algorithms\r\nWeek 2: Conditionals\r\n* Conditionals\r\nWeek 3: Conditionals (Continued)\r\n* Continued discussion on conditionals\r\nWeek 4: Iterations and Ranges\r\n* Iterations and ranges\r\nWeek 5: Iterations and Ranges (Continued)\r\n* Continued discussion on iterations and ranges\r\nWeek 6: Basic Collections in Python\r\n* Basic collections in Python, including lists, tuples, and dictionaries\r\nWeek 7: Basic Collections in Python (Continued)\r\n* Continued discussion on basic collections in Python\r\nWeek 8: Basic Collections in Python (Continued)\r\n* Further discussion on basic collections in Python\r\nWeek 9: File Operations\r\n* File operations in Python\r\nWeek 10: File Operations (Continued)\r\n* Continued discussion on file operations in Python\r\nWeek 11: Module System in Python\r\n* Module system in Python\r\nWeek 12: Basic Pandas and Numpy Processing of Data\r\n* Basic Pandas and Numpy processing of data The course also covers the following topics: * Using basic programming concepts such as variables, expressions, loops, conditionals, and functions in Python * Creating, manipulating, and using more Python-specific features * Familiarizing with and using common Python libraries such as random, math, datetime, scipy, matplotlib, Pandas, etc. * Analyzing real-life activities and casting them as programming problems * Applying programming concepts to analyze and solve diverse problems * Writing readable code and debugging it * Building small applications using Python",
+    "Feedback ": "Correct",
+    "Questionare name ": "Navinesh",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "Academic policies.md, Diploma Level Courses.md, Diploma level courses-2.md",
+    "reasoning": "Found 17 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "What are the eligibility criteria for the Data Science course?",
+    "Reply given ": "Eligibility Criteria for the Data Science Course\nThe Data Science course at IIT Madras has no specific eligibility criteria for admission. However, learners of any background, including engineering, sciences, humanities, arts, medicine, law, etc., can attempt and join the program.\n\nThere is no limitation on the age of the learner or their geographical location. The program is designed to be flexible, with two entry and four exit points, allowing learners to choose their pace of study every term.\n\nLearners can attempt the respective stages of the program and those who clear each stage will receive the certificate corresponding to that stage alone. The diplomas or degrees are obtained by the candidate only when the requisite number of credits are accrued by completing the courses prescribed and satisfying any other mandatory criteria.\n\nFor the BSc Degree Level, learners should have cleared all 8 courses in the Foundation Level and all 12 courses + 4 projects in the Diploma Level. For the BS Degree Level, learners should have earned 114 credits and completed the BSc Degree Level to enter the BS Degree Level.\n\nThere are no specific qualifying criteria for admission to the program, and a significantly large number of learners can enter. The program is based on a qualifying process, and learners can attempt the respective stages of the program.",
+    "Feedback ": "Correct",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Documents for students.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "how will i get the important links for online exams",
+    "Reply given ": "Important Links for Online Exams\r\nYou can find the important links for online exams on the IIT Madras Online Degree Website under the following sections: * Important Dates for the timeline of the program * Exam Cities for the list of exam cities and centers * Support for any queries or requests related to exams, including requesting a city not listed in the current list of exam cities Additionally, you can also check the Academics Page for more information on exams, quizzes, and end-term exams.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Tamilnithi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Admissions.md, Academics.md",
+    "reasoning": "Found 33 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "can i take gen ai course and project in this may term?",
+    "Reply given ": "Gen Artificial Intelligence Course and Project in this May Term\r\nBased on the provided context, there is no information about the Gen Artificial Intelligence course being offered in the May term. However, there is a course called \"Mathematical Foundations of Generative AI (Artificial Intelligence)\" which is scheduled for the following dates: - Quiz 1: July 13 2025 - Quiz 2: August 03 2025 - End term: August 31 2025 It seems that this course is scheduled for the July-August term, not the May term. Therefore, it is unlikely that you can take the Gen Artificial Intelligence course and project in this May term.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Shunmuga vidhya S",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Credit Transfer.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "When will i get my student mail id",
+    "Reply given ": "An error occurred while processing your request. Please try again.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Tamilnithi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Tell me about BS online degree programme\r\n\r",
+    "Reply given ": "BS Online Degree Programme\r\nThe BS online degree programme offered by IIT Madras is a flexible and accessible way for learners to acquire a degree in a field of their choice. The programme is designed to accommodate a large number of learners, with no geographical restrictions, and allows learners to study at their own pace.\r\n\r\nKey Features\r\nFlexibility: The programme offers flexibility in terms of pace and goals, allowing learners to exit with certificates, diplomas, or degrees.\r\nNo prior knowledge of coding required: The programme is structured to provide learners with sufficient proficiency in programming and data science as they progress through the levels.\r\nOnline delivery: The programme is delivered entirely online, with pre-recorded lessons and assignments available on the portal.\r\nInteraction with instructors and support team: Learners will have the opportunity to interact with instructors and the support team through live sessions and discussion forums.\r\nTechnological requirements: Learners will need access to a good internet connection, a laptop or desktop device, and familiarity with Google tools.\r\nProgramme Structure\r\nThe programme is split into three levels, which must be completed in sequence:\r\n\r\nFoundational Level (8 courses): This level provides a foundation in programming and data science.\r\nDiploma Level (6 Programming courses + 6 Data Science courses): This level provides specialized knowledge in programming and data science.\r\nDegree Level (11 courses): This level provides advanced knowledge in the field of study.\r\nDuration and Credits\r\nThe full programme can take anywhere between 3 and 6 years to complete, with an average completion time of 4 to 5 years for part-time learners. The programme requires a total of 142 credits to complete.\r\n\r\nAccess to IIT Madras Campus Facilities\r\nLearners enrolled in the programme will not have access to IIT Madras campus facilities due to limitations of campus facilities and students being spread out geographically.\r\n\r\nLanguage of Instruction\r\nAll programme courses are taught in English, and learners are expected to have a minimum proficiency in English language to participate in the programme.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Dhivya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "Unfortunately, the provided context does not mention the procedure for allocation of the exam centre and city.",
+    "Reply given ": "Eligibility Criteria for OPPE1 for Python\r\nThe eligibility criteria for OPPE1 for Python is not explicitly mentioned in the context provided. However, the general eligibility criteria for OPPE1 is mentioned as follows: - Completing SCT (Student has to complete the OPPE System Compatibility Test) exam - A1 >= 40/100 - A2 >= 40/100 - A3 >= 40/100 - A4 >= 40/100 However, the context also mentions that Python, PDSA, and Java have additional criteria based on GrPA scores of weeks 1-8 to be eligible to appear for the OPPEs.\r\nAdditional Criteria for Python\r\nUnfortunately, the context does not provide the specific additional criteria for Python. Therefore, I am unable to provide the complete eligibility criteria for OPPE1 for Python.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Vigneshwaran D",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Admissions.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "What is the Eligibility criteria to opt DL+ GenAI in Diploma level?",
+    "Reply given ": "An error occurred while processing your request. Please try again.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Vigneshwaran D",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "How the project marks are factored into the overall CGPA. Are they added cumulatively at the end of the year, or are they reflected in each term individually?",
+    "Reply given ": "Unfortunately, the provided context does not contain any information about how project marks are factored into the overall CGPA. The context only mentions the grading formulas and pass criteria for each course, but it does not provide any details about how project marks are incorporated into the overall CGPA calculation.\r\nConclusion\r\nI don't know how project marks are factored into the overall CGPA.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Vigneshwaran D",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Changes in project grading.md, Diploma Level Courses.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 9"
+  },
+  {
+    "Question asked": "What is the procedure for allocation of the exam centre and city?",
+    "Reply given ": "Unfortunately, the provided context does not mention the procedure for allocation of the exam centre and city.\r\n",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Vigneshwaran D",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "Diploma level in BS data science",
+    "Feedback ": "Correct",
+    "Questionare name ": "Chandanashree P",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic Documents for students.md, Academics.md",
+    "reasoning": "Found 46 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "when will i get the refund of my exam fee",
+    "Reply given ": "Refund of Exam Fee\r\nUnfortunately, the provided context does not contain any information about the refund policy or the timeline for refunding the exam fee. Therefore, I do not have enough information to provide a specific answer to your question.\r\nConclusion\r\nI don't know when you will get the refund of your exam fee.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Tamilnithi",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Admission to the programme.md, Academics.md",
+    "reasoning": "Found 42 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "Can we edit the city preference for Quiz 2",
+    "Reply given ": "Editing City Preference for Quiz 2\r\nUnfortunately, there is no information provided in the context about editing city preference for Quiz 2. The context only mentions the exam schedule for Quiz 2, but does not provide any details about modifying or editing city preferences.\r\nExam Schedule for Quiz 2\r\nQuiz 2 is scheduled to take place on:\r\n\r\nAugust 3, 2025 (Statistics for Data Science 1 and Statistics for Data Science 2)\r\nAugust 3, 2025 (Deep Learning)\r\nAugust 3, 2025 (AI: Search Methods for Problem Solving)\r\nConclusion\r\nSince there is no information provided about editing city preference for Quiz 2, it is not possible to provide a specific answer to this question.",
+    "Feedback ": "Correct",
+    "Questionare name ": "hemapriya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academic Calender.md, Academic aspects.md",
+    "reasoning": "Found 35 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "what is the syllabus for DBMS course?",
+    "Reply given ": "Syllabus for Database Management Systems Course (BSCS2001)\nThe Database Management Systems course (BSCS2001) is a Diploma Level Course offered at IIT Madras. The course is designed to provide a comprehensive introduction to databases, database management, and relevant topics like database security, integrity, concurrency, and data warehousing.\nCourse Structure and Assessments\nThe course consists of 12 weeks of coursework, with the following structure: * Weekly online assignments * 2 in-person invigilated quizzes * 1 in-person invigilated end-term exam\nWeekly Topics\nThe course is divided into 12 weeks, with the following topics covered:\nWEEK 1: Course Overview\nWEEK 2: Relational Model and Basic SQL\nWEEK 3: Intermediate and Advanced SQL\nWEEK 4: Relational Query Languages and Database Design\nWEEK 5: Functional Dependency and Normal Forms\nWEEK 6: Functional Dependency and Normal Forms (cont.)\nWEEK 7: Application Development\nWEEK 8: Storage Management\nWEEK 9: Indexing and Hashing\nWEEK 10: Transactions\nWEEK 11: Backup and Recovery\nWEEK 12: Query Optimization and Conclusion\nPrescribed Books\nThe suggested books for the course are: * Database Management Systems by Abraham Silberschatz, Henry F. Korth, and S. Sudarshan",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Diploma level courses-2.md, Academic policies-2.md, Academic policies.md",
+    "reasoning": "Found 43 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "How can I apply for IITM BS Degree Program?",
+    "Reply given ": "Applications for the IITM BS Degree Program are currently open for the September 2025 Batch. To apply, you can click on the \"APPLY NOW\" button on the website.\n\nThe application deadline is September 4, 2025, and the exam is scheduled for October 26, 2025.\n\nFor more information, you can contact the IITM BS Degree Office at +91-9711397993 (Mon-Fri 9am-6pm) or email support-es@study.iitm.ac.in.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Sukandhan C A",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Admissions.md, Courses in the programme.md",
+    "reasoning": "Found 46 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "what are the subjects in foundation level.",
+    "Reply given ": "Foundation Level Courses\r\nThe Foundation Level comprises the following courses:\r\nMathematics for Data Science I (4 credits, BSMA1001)\r\nStatistics for Data Science I (4 credits, BSMA1002)\r\nComputational Thinking (4 credits, BSCS1001)\r\nEnglish I (4 credits, BSHS1001)\r\nMathematics for Data Science II (4 credits, BSMA1003)\r\nStatistics for Data Science II (4 credits, BSMA1004)\r\nProgramming in Python (4 credits, BSCS1002)\r\nEnglish II (4 credits, BSHS1002)\r\nThese courses are designed to provide a solid foundation in Mathematics, Statistics, Basics of Programming and Python, and English, and are a prerequisite for proceeding to the Diploma Level courses.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Hemapriya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 39 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "i have discrepancies in my graded assignments scores",
+    "Reply given ": "Discrepancies in Graded Assignments Scores\r\nIf you have discrepancies in your graded assignments scores, you should follow the academic policies and procedures of IIT Madras.\r\nAcademic Policies\r\nAccording to the academic policies, students can discuss and learn from each other, but assignments are expected to be done individually based on their understanding. Taking help from LLMs (e.g. ChatGPT, Gemini) partially or completely is considered plagiarism.\r\nProcedure for Resolving Discrepancies\r\nTo resolve discrepancies in graded assignments scores, you should: 1. Review your graded assignments scores carefully. 2. Check if there are any errors in the grading process. 3. If you find any errors, contact your instructor or the course coordinator to report the discrepancies. 4. Provide evidence to support your claim, such as screenshots of your graded assignments or communication with your instructor. 5. Follow the academic policies and procedures of IIT Madras to resolve the discrepancies.\r\nAdditional Resources\r\nFor more information on academic policies and procedures, you can refer to the IIT Madras website or consult with your instructor or the course coordinator.\r\nConclusion\r\nIf you have discrepancies in your graded assignments scores, you should follow the academic policies and procedures of IIT Madras to resolve the issue. Review your graded assignments scores carefully, check for errors in the grading process, and contact your instructor or the course coordinator to report the discrepancies.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Tamilnithi ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academic policies-2.md, Academic policies.md",
+    "reasoning": "Found 17 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What is the full form of MLT in BS Degree Course?",
+    "Reply given ": "The full form of MLT in BS Degree Course is Machine Learning Techniques.\n",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academics.md, Admissions.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "what are the exam city available ?",
+    "Reply given ": "Exam City Availability\r\nUnfortunately, the provided context does not mention any information about the exam city availability for the courses mentioned. The context only provides details about the grading formulas, pass criteria, course completion requirements, and exam schedules for each course. Therefore, I do not have any information to provide about the exam city availability.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Hemapriya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academic Calender.md, About IIT Madras.md",
+    "reasoning": "Found 36 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "If I missed the deadline to submit the assignments, is there any possibility to resubmit them?\r\n\r\n",
+    "Reply given ": "According to the provided context, there is no information about resubmitting assignments after missing the deadline. However, it is mentioned that \"NONE OF THE ASSIGNMENT DEADLINES WILL BE CHANGED THIS TIME FROM THE SCHEDULE GIVEN BELOW.\"\r\n\r\nThis implies that the deadlines are fixed and not subject to change. Therefore, it is likely that missing a deadline will result in not being able to submit the assignment, and there will be no opportunity to resubmit it.\r\n\r\nHowever, it is also mentioned that \"In case your uploaded document(s) gets 'returned / rejected' during verification, you will be given a chance to re-upload a valid document within a stipulated deadline.\" This suggests that there may be some flexibility in re-uploading documents, but it is not clear if this applies to assignments or only to uploaded documents.\r\n\r\nTherefore, based on the provided context, it is not possible to determine with certainty whether it is possible to resubmit assignments after missing the deadline.\r\n\r\nHowever, it is recommended to check with the course administrators or instructors for specific guidance on handling missed deadlines and resubmission of assignments.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Dhivya",
+    "comments": "It inclueds extra details ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Diploma Level Courses.md, Academic policies.md",
+    "reasoning": "Found 41 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "How can I apply for IITM BS Degree Program?\n\n",
+    "Reply given ": "Applications for the IITM BS Degree Program are currently open for the September 2025 Batch. To apply, you can click on the \"APPLY NOW\" button on the website.\n\nThe application deadline is September 4, 2025, and the exam is scheduled for October 26, 2025.\n\nFor more information, you can contact the IITM BS Degree Office at +91-9711397993 (Mon-Fri 9am-6pm) or email them at support-es@study.iitm.ac.in.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Admissions.md, Courses in the programme.md",
+    "reasoning": "Found 46 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Is there a scholarship option available?\n\n",
+    "Reply given ": "An error occurred while processing your request. Please try again.\n",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic aspects.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 31 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "What are the courses offered in Diploma in Data Science?\n\n",
+    "Reply given ": "Courses for Diploma in Data Science\nThe Diploma in Data Science program at IIT Madras consists of the following courses:\nCore Courses\n* Machine Learning Foundations (4 credits) * Business Data Management (4 credits) * Machine Learning Techniques (4 credits) * Machine Learning Practice (4 credits) * Business Analytics (4 credits) * Tools in Data Science (3 credits)\nProject Courses\n* Business Data Management - Project (2 credits) * Machine Learning Practice - Project (2 credits) Note: The courses are based on the information provided in the context.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academics.md, Courses in the programme.md",
+    "reasoning": "Found 45 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "what is the total fee of this bs degree in data science program\r\n\r",
+    "Reply given ": "Total Fee of BS Degree in Data Science Program\r\nThe total fee for the BS Degree in Data Science and Applications program is not explicitly mentioned in the provided context. However, we can calculate the total fee based on the given fee structure. The total fee for the BS Degree in Data Science and Applications program is the sum of the fees for the Foundation, Diploma, and BS levels.\r\nFoundation Level\r\nThe fee for the Foundation level is Rs. 80,000 (for general category students).\r\nDiploma Level\r\nThe fee for the Diploma level is Rs. 2,48,000 (for general category students).\r\nBS Degree Level\r\nThe fee for the BS Degree level is Rs. 1,24,000 (for general category students).\r\nTotal Fee\r\nThe total fee for the BS Degree in Data Science and Applications program is the sum of the fees for the Foundation, Diploma, and BS levels. Total Fee = Rs. 80,000 (Foundation) + Rs. 2,48,000 (Diploma) + Rs. 1,24,000 (BS) = Rs. 3,72,000 Therefore, the total fee for the BS Degree in Data Science and Applications program is Rs. 3,72,000.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Hemapriya ",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, Courses in the programme.md, Learning paths available.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "Fee structure for Data Science program with fee waiver.\r\n\r\n",
+    "Reply given ": "The fee structure for the Data Science program with fee waiver is as follows:\r\nGeneral Category\r\nFamily Income > 5 LPA: Full Fee\r\nFamily Income > 1 LPA and <= 5 LPA: 50% waiver\r\nFamily Income <= 1 LPA: 75% waiver\r\nOBC Category\r\nFamily Income > 5 LPA: Full Fee\r\nFamily Income > 1 LPA and <= 5 LPA: 50% waiver\r\nFamily Income <= 1 LPA: 75% waiver\r\nSC / ST (Software Testing) Category\r\nFamily Income > 5 LPA: 50% waiver\r\nFamily Income > 1 LPA and <= 5 LPA: 50% waiver\r\nFamily Income <= 1 LPA: 75% waiver\r\nPwD Category\r\nFamily Income > 5 LPA: 50% waiver\r\nFamily Income > 1 LPA and <= 5 LPA: 50% waiver\r\nFamily Income <= 1 LPA: 75% waiver (with EWS / OBC-NCL + Family Income)\r\nSC / ST (Software Testing) + PwD Category\r\nFamily Income > 5 LPA: 75% waiver\r\nFamily Income > 1 LPA and <= 5 LPA: 75% waiver\r\nFamily Income <= 1 LPA: 75% waiver\r\nNote: The fee waiver structure is based on the family income of the candidate, and the required documents for availing fee waiver include the Family Income Certificate and EWS / OBC-NCL certificate, if applicable.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Dhivya",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Re Entry after Diploma.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 44 relevant docs, max keyword matches: 7"
+  },
+  {
+    "Question asked": "What are the eligibility criteria for the Data Science course?\n\n",
+    "Reply given ": "Eligibility Criteria for the Data Science Course\nThe Data Science course at IIT Madras has no specific eligibility criteria for admission. However, learners of any background, including engineering, sciences, humanities, arts, medicine, law, etc., can attempt and join the program.\n\nThere are no limitations on the age of the learner or their geographical location. The program is designed to be flexible, with two entry and four exit points, allowing learners to choose their pace of study every term.\n\nLearners can attempt the respective stages of the program and those who clear each stage will receive the certificate corresponding to that stage alone. The diplomas or degrees are obtained by the candidate only when the requisite number of credits are accrued by completing the courses prescribed and satisfying any other mandatory criteria.\n\nFor the BSc Degree Level, learners should have cleared all 8 courses in the Foundation Level and all 12 courses + 4 projects in the Diploma Level. For the BS Degree Level, learners should have earned 114 credits and completed the BSc Degree Level to enter the BS Degree Level.",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academic Documents for students.md, Academics.md, Admission to the programme.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 5"
+  },
+  {
+    "Question asked": "Grading Policy for PDSA ?\n\n",
+    "Reply given ": "Grading Policy for PDSA\nThe course is Programming Data Structures and Algorithms using Python (Diploma Level Courses).\nGrading Formula:\nThe grading formula for PDSA is: T = 0.1GAA + 0.4F + 0.2OP + max(0.2max(Qz1, Qz2), (0.15Qz1+0.15Qz2))\nPass Criteria:\nTo pass the course, the student must meet the following criteria: * Average of the best 5 out of the first 7 weekly assessments (objective and programming) scores >= 40/100 * Attend at least one of the 2 quizzes in the centre",
+    "Feedback ": "Correct",
+    "Questionare name ": "Thirumurugan K",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Grading Document-2.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 19 relevant docs, max keyword matches: 3"
+  },
+  {
+    "Question asked": "Tell me about internship and full time support eligibility?\r\n\r",
+    "Reply given ": "Internship and Full-time Support Eligibility\r\nThe IITM BS program has an active group working with IITM's on-campus internships and placement wing, approaching partner companies for relevant opportunities for students who graduate.\r\nInternship Details\r\n* A pool of qualified double diploma holders in programming and data science from IIT Madras will be available for companies to hire as interns for longer durations of 6 months or 1 year. * After completing 8 months of internship, a letter from the Reporting Manager should be submitted to the IITM BS program on the company's letterhead stating the work done by the student and whether it was satisfactory.\r\nEligibility and Credits\r\n* Students can pursue a maximum of 2 courses each term during the duration of the apprenticeship. * Academic credits for apprenticeship: * Less than 4 months: 0 credits * Between 4-8 months: 4 credits * 8 months: 12 credits For more details, please refer to the Apprenticeship link and Internship & Placement brochure.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Janani V",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "About IIT Madras.md, Academics.md, Admissions.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "Internship Plan and Employment plan fees on the placement portal?\r\n\r",
+    "Reply given ": "## Internship Plan and Employment Plan Fees on the Placement Portal The context provided does not contain information about the Internship Plan and Employment plan fees on the placement portal. ### Answer I don't know.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Janani V",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Placement.md, About IIT Madras.md, Partner.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "What is the validity period of the placement plan?\r\n\r\n",
+    "Reply given ": "I don't know.\r\n\r\nThe context does not mention the \"placement plan\" or its validity period. The provided information is related to the IIT Madras BS Degree program, specifically the Qualifier Exam, its validity, and other program-related details. Since there's no mention of a \"placement plan,\" the answer remains \"I don't know.\"",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Janani V",
+    "data_present": "YES",
+    "confidence": "medium",
+    "relevant_docs": "About IIT Madras.md, Academics.md, Admissions.md",
+    "reasoning": "Found 20 relevant docs, max keyword matches: 2"
+  },
+  {
+    "Question asked": "Can you assist me with the eligibility and requirements for placements of BS degree",
+    "Reply given ": "## Placement Opportunities for BS Degree The demand for skilled individuals is high, and the IIT Madras BS Degree program aims to equip learners with the required subject expertise. ### Key Points for Placement Opportunities * IIT Madras will actively reach out to recruiters for placement opportunities for BS Degree graduates. * The program includes soft skills training to enable graduates with the right job opportunities. * The program is designed to equip learners with required subject expertise, enhancing their employability. By completing the BS Degree program, graduates can expect placement opportunities, as IIT Madras actively engages with recruiters to facilitate job placements.",
+    "Feedback ": "Nearly correct",
+    "Questionare name ": "Swathy G",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Academics.md, About IIT Madras.md, Admissions.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 6"
+  },
+  {
+    "Question asked": "What type of companies they hire from the degree can you name some",
+    "Reply given ": "Some of the major industries that hire from the IIT Madras BS Degree program include Automotive, Semiconductor, and Defence. The job positions include:\r\n\r\nElectronic System Designer\r\nEmbedded System Developer\r\nElectronic Hardware Specialist\r\nSystem Testing Engineer\r\nAdditionally, companies such as Google, Flipkart, Paypal, and Gramener are mentioned as contributing content to the courses in the Diploma level, indicating that top tech companies are potentially hiring from the program.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Swathy G",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Partner.md, Academic aspects.md, Academics.md",
+    "reasoning": "Found 40 relevant docs, max keyword matches: 4"
+  },
+  {
+    "Question asked": "What would be the average stipend and compensation for the fresher who graduate out from the IIT madras BS degree",
+    "Reply given ": "I don't know.\r\nThe context provided does not contain information about the average stipend and compensation for freshers graduating from the IIT Madras BS degree program. It only discusses the fee structure, application process, and academic details of the program.\r\nTo find the required information, you may need to explore other resources or the official IIT Madras website, specifically the sections on placements or career choices.",
+    "Feedback ": "Incorrect",
+    "Questionare name ": "Swathy G",
+    "data_present": "YES",
+    "confidence": "high",
+    "relevant_docs": "Placement.md, Academics.md, Admissions.md",
+    "reasoning": "Found 47 relevant docs, max keyword matches: 9"
+  },
+  {
+    "Reply given ": 38,
+    "data_present": "UNCERTAIN",
+    "confidence": "low",
+    "relevant_docs": "",
+    "reasoning": "Invalid question"
+  }
+]
