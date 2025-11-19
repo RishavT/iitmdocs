@@ -183,31 +183,25 @@ async function searchWeaviate(query, limit, env) {
 
 async function generateAnswer(question, documents, history, env) {
   // Filter documents by relevance threshold to reduce noise
-  const RELEVANCE_THRESHOLD = 0.15; // Only use documents with relevance > 15% (lowered for better recall)
+  const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
 
   const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
 
-  // Add a note about document quality to the prompt
+  // Don't add negative context notes that might make the LLM more hesitant to answer
   let contextNote = "";
-  if (relevantDocs.length === 0) {
-    contextNote = "\n\nNOTE: No relevant documents found. The question may be outside the scope of IIT Madras BS programme documentation.";
-  } else if (relevantDocs.length < documents.length) {
-    contextNote = `\n\nNOTE: ${relevantDocs.length} of ${documents.length} documents passed relevance threshold.`;
-  }
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
 
-Answer based on the documents provided below. If the information is not in the documents, say so clearly.
+Answer questions using the provided documents. Try to be helpful and answer questions when you have relevant information.
 
-IMPORTANT RULES:
-1. Use information from the provided documents as your primary source
-2. If information is not in the documents, state "This information is not available in the current documentation"
-3. Do not make up specific facts, numbers, dates, or statistics
-4. For questions clearly outside the scope of IITM BS programme, politely redirect
-5. Avoid providing salary figures or placement guarantees unless explicitly mentioned in documents
-6. Keep answers clear and concise in simple Markdown
-7. Reference documents when helpful
+Guidelines:
+1. Use information from the provided documents
+2. If you find relevant information, provide it even if not completely comprehensive
+3. Only say "information not available" if you truly cannot find anything relevant
+4. Avoid making up specific statistics, dates, or facts not in the documents
+5. For general IITM BS questions, answer based on available context
+6. Be concise and use simple Markdown
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
