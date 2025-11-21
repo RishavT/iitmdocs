@@ -1,0 +1,32 @@
+{
+  "total": 3,
+  "passed": 0,
+  "failed": 0,
+  "errors": 3,
+  "dataPresent_shouldAnswer": 3,
+  "dataPresent_refused": 0,
+  "dataPresent_answered": 0,
+  "details": [
+    {
+      "question": "What is the full form of MLT in BS Degree Course?",
+      "dataPresent": "YES",
+      "verdict": "ERROR",
+      "error": "The operation was aborted due to timeout",
+      "elapsed": "120.2"
+    },
+    {
+      "question": "Grading Policy for PDSA ?",
+      "dataPresent": "YES",
+      "verdict": "ERROR",
+      "error": "The operation was aborted due to timeout",
+      "elapsed": "120.0"
+    },
+    {
+      "question": "How to get advanced certification?",
+      "dataPresent": "YES",
+      "verdict": "ERROR",
+      "error": "The operation was aborted due to timeout",
+      "elapsed": "120.0"
+    }
+  ]
+}
