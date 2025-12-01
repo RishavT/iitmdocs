@@ -5,6 +5,7 @@
     "lint:html": "npx -y js-beautify@1 '**/*.html' --type html --replace --indent-size 2 --max-preserve-newlines 1 --end-with-newline",
     "lint": "npm run lint:oxlint && npm run lint:js-md && npm run lint:html",
     "dev": "wrangler dev",
+    "dev:node": "node server.js",
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest"
