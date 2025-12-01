@@ -11,6 +11,74 @@ const clearChatButton = document.getElementById("clear-chat-button");
 
 const chat = [];
 const marked = new Marked();
+const HISTORY_KEY = "iitm-chatbot-history";
+const MAX_HISTORY_PAIRS = 5;
+let requestCounter = 0; // Track requests to prevent race conditions
+
+/**
+ * Loads conversation history from sessionStorage
+ * @returns {Array} Array of message objects with role and content
+ */
+function loadHistoryFromStorage() {
+  try {
+    const stored = sessionStorage.getItem(HISTORY_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    console.error("Failed to load history from sessionStorage:", e);
+    return [];
+  }
+}
+
+/**
+ * Saves conversation history to sessionStorage
+ * @param {Array} history - Array of message objects to save
+ */
+function saveHistoryToStorage(history) {
+  try {
+    sessionStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.error("Failed to save history to sessionStorage:", e);
+  }
+}
+
+/**
+ * Builds conversation history from completed chat messages
+ * Only includes last MAX_HISTORY_PAIRS Q&A pairs
+ * @returns {Array} Array of message objects with role and content
+ */
+function buildConversationHistory() {
+  // Build history from last N Q&A pairs (excluding current incomplete exchange)
+  const history = [];
+  const completedChats = chat.filter((msg) => msg.content); // Only completed Q&A pairs
+  const recentChats = completedChats.slice(-MAX_HISTORY_PAIRS);
+
+  for (const msg of recentChats) {
+    history.push({ role: "user", content: msg.q });
+    history.push({ role: "assistant", content: msg.content });
+  }
+
+  return history;
+}
+
+// Initialize chat from sessionStorage on page load
+const storedHistory = loadHistoryFromStorage();
+if (storedHistory.length > 0) {
+  // Rebuild chat array from stored history
+  for (let i = 0; i < storedHistory.length; i += 2) {
+    if (storedHistory[i]?.role === "user" && storedHistory[i + 1]?.role === "assistant") {
+      chat.push({
+        q: storedHistory[i].content,
+        content: storedHistory[i + 1].content,
+      });
+    }
+  }
+  // Render restored conversation
+  if (chat.length > 0) {
+    redraw();
+    // After restoring, scroll to bottom and enable autoscroll
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+}
 
 let autoScroll = true;
 chatArea.addEventListener("scroll", () => {
@@ -44,6 +112,11 @@ function redraw() {
   if (autoScroll) chatArea.scrollTop = chatArea.scrollHeight;
 }
 
+/**
+ * Handles asking a question and streaming the response
+ * Prevents race conditions by tracking request order
+ * @param {Event} e - Submit event from the form
+ */
 async function askQuestion(e) {
   if (e) e.preventDefault();
 
@@ -56,17 +129,31 @@ async function askQuestion(e) {
   chat.push({ q });
   redraw();
 
-  for await (const event of asyncLLM("./answer", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ q, ndocs: 5 }),
-  })) {
-    Object.assign(chat.at(-1), event);
-    redraw();
-  }
+  // Track this request to prevent race conditions
+  const currentRequest = ++requestCounter;
 
-  askButton.disabled = false;
-  askButton.innerHTML = "Ask";
+  // Build conversation history from previous exchanges (before current question)
+  const history = buildConversationHistory();
+
+  try {
+    for await (const event of asyncLLM("./answer", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q, ndocs: 5, history }),
+    })) {
+      Object.assign(chat.at(-1), event);
+      redraw();
+    }
+
+    // Only save history if this is still the most recent request
+    // This prevents out-of-order saves if multiple requests were somehow triggered
+    if (currentRequest === requestCounter) {
+      saveHistoryToStorage(buildConversationHistory());
+    }
+  } finally {
+    askButton.disabled = false;
+    askButton.innerHTML = "Ask";
+  }
 }
 questionInput.focus();
 
@@ -74,5 +161,6 @@ chatForm.addEventListener("submit", askQuestion);
 
 clearChatButton.addEventListener("click", function () {
   chat.length = 0;
+  sessionStorage.removeItem(HISTORY_KEY);
   redraw();
 });
