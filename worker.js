@@ -38,7 +38,9 @@ export default {
 };
 
 async function answer(request, env) {
+  console.log('[DEBUG] answer() called');
   const { q: question, ndocs = 5, history = [] } = await request.json();
+  console.log('[DEBUG] Question:', question);
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Validate ndocs to prevent resource exhaustion
@@ -138,8 +140,10 @@ async function answer(request, env) {
 }
 
 async function searchWeaviate(query, limit, env) {
+  console.log('[DEBUG] searchWeaviate() called, query:', query);
   // Configure embedding provider headers (default to openai for backwards compatibility)
   const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
+  console.log('[DEBUG] Embedding provider:', embeddingProvider);
   const embeddingHeaders = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${env.WEAVIATE_API_KEY}`,
@@ -159,6 +163,7 @@ async function searchWeaviate(query, limit, env) {
     .replace(/\r/g, " ")      // Replace carriage returns with spaces
     .replace(/\t/g, " ");     // Replace tabs with spaces
 
+  console.log('[DEBUG] Fetching from Weaviate:', env.WEAVIATE_URL);
   const response = await fetch(`${env.WEAVIATE_URL}/v1/graphql`, {
     method: "POST",
     headers: embeddingHeaders,
@@ -174,10 +179,24 @@ async function searchWeaviate(query, limit, env) {
     }),
   });
 
-  const data = await response.json();
+  console.log('[DEBUG] Weaviate response received, status:', response.status);
+  const responseText = await response.text();
+  console.log('[DEBUG] Weaviate response text length:', responseText.length);
+  console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
+
+  let data;
+  try {
+    data = JSON.parse(responseText);
+    console.log('[DEBUG] Weaviate JSON parsed successfully');
+  } catch (e) {
+    console.error('[DEBUG] Weaviate JSON parse error:', e.message);
+    console.error('[DEBUG] Full response text:', responseText);
+    throw new Error(`Failed to parse Weaviate response: ${e.message}`);
+  }
   if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
 
   const documents = data.data?.Get?.Document || [];
+  console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.distance ? 1 - doc._additional.distance : 0 }));
 }
 
@@ -193,15 +212,16 @@ async function generateAnswer(question, documents, history, env) {
 
   const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
 
-Answer questions using the provided documents. Try to be helpful and answer questions when you have relevant information.
+You have access to official programme documentation. Always try to answer questions using the information provided in the documents.
 
 Guidelines:
-1. Use information from the provided documents
-2. If you find relevant information, provide it even if not completely comprehensive
-3. Only say "information not available" if you truly cannot find anything relevant
-4. Avoid making up specific statistics, dates, or facts not in the documents
-5. For general IITM BS questions, answer based on available context
-6. Be concise and use simple Markdown
+1. Answer questions based on the provided documents - be helpful and informative
+2. If documents mention related information, use it to provide a helpful answer
+3. For policies, procedures, course details - extract and present the relevant information clearly
+4. Course codes like PDSA, MLT, etc. refer to specific courses - look for grading policies, syllabus, and course details in the documents
+5. Only refuse to answer if the documents contain absolutely no relevant information
+6. If information is partial or you need to suggest contacting support, still provide what you know first
+7. Be concise and use simple Markdown
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
@@ -245,6 +265,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     { role: "user", content: question },
   ];
 
+  console.log('[DEBUG] Calling chat API:', chatEndpoint, 'model:', chatModel);
+  console.log('[DEBUG] Sending', messages.length, 'messages to chat API');
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -252,11 +274,15 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       model: chatModel,
       messages,
       temperature: 0.5, // Balanced temperature for natural responses while reducing hallucinations
-      store: true,
       stream: true,
     }),
   });
 
-  if (!response.ok) throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
+  console.log('[DEBUG] Chat API response status:', response.status);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[DEBUG] Chat API error response:', errorText);
+    throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
+  }
   return response;
 }
