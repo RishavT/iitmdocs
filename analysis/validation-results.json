@@ -1,0 +1,949 @@
+{
+  "total": 97,
+  "passed": 34,
+  "failed": 63,
+  "errors": 0,
+  "dataPresent_shouldAnswer": 94,
+  "dataPresent_refused": 63,
+  "dataPresent_answered": 31,
+  "dataAbsent_refused": 1,
+  "dataAbsent_answered": 2,
+  "details": [
+    {
+      "question": "What is the full form of MLT in BS Degree Course?",
+      "answer": "I don't information in the available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "Grading Policy for PDSA ?",
+      "answer": "don't have this information in available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 4
+    },
+    {
+      "question": "How to get advanced certification?",
+      "answer": "have this in available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "should i complete projects too? for getting advance certificate?",
+      "answer": "complete all projects be eligible for to courses. Specifically the level September 5, you and vivas August 2025. This is the timelines.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "Difference between Reattempt and Reapply Qualifier?",
+      "answer": "have this in available documentation",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "will i be able to review my answer after the exams? will it be available in my dashboard?",
+      "answer": "I don't this information in available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "Can exam city be changed or edited for quiz or end term exam?",
+      "answer": "can choose a set of cities for their quizzes and term. They have the freedom to different than opted for in previous terms and can different for each quiz final exam while for the. This in document on course registration.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "can i submit state issued document as income certificate or only central government issued is valid?",
+      "answer": "I don't have this information available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 3
+    },
+    {
+      "question": "Are there any specific tools used to communicate with faculty or instructors? or What are the available platforms for faculty-student communication?",
+      "answer": "I don't have information in the available",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 4
+    },
+    {
+      "question": "How many weeks of syllabus are in Maths 1?",
+      "answer": "courseMatics Data Science 1\" a of12, as each of4 credits is to this length. The syllabus includes assignments and content will be covered throughout these 12 weeks.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "Are there any marks or points for attending in live sessions?",
+      "answer": "I don't this information in available",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "can i enter degree level without completing diploma level projects",
+      "answer": "No, you cannot enter the) completing the diploma projects. According the eligibility, students must secure a CG of0 higher of the two diplomas which the projects.PA 70 higher all projects completed at the diploma is required to to degree (BSc) ( project grading document",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "How many credits are required to get Degree",
+      "answer": "To graduate with a BS Degree in Science and Applications from Madras, a learner complete a of142**.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "In degree level what are the minors available",
+      "answer": "In the level of the Madras BS, a minor in and Finance be earned by the following courses:\n\n1. Corporate Finance\n. Economics\n3. elective from the list provided (.g., Game and Strategy)\n\n minor earned with the degree the BSc. A separate will be issued IIT stating the Minor has been completed be the or the degree certificate for do the minor.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "what are the core pairs",
+      "answer": "don't have this in available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "is fee waiver applicable for army children",
+      "answer": "don't have this information in the available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 3
+    },
+    {
+      "question": "If I have got I grade in this term and if I register for the same course after two terms, will the I grade be carried forward and can i repeat only the end term instead of repeat full course",
+      "answer": "you an grade in a, the option take Makeup for. You choose re only the Final (end term exam instead of repeating entire.However if do not take the Makeup Exam in immediate next term you will have to repeat entire in subsequent. The Makeup not count towards the Credit Clearing Capability (), but you can appear for a maximum of final exams in a term.\n\n further details, please to .. on Exams the documentation",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "what is the cgpa cutoff to register for degree level after completing diploma level\r\n\r",
+      "answer": "don't have this information in available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 3
+    },
+    {
+      "question": "what is second attempt in qualifier how it is different from reattempt",
+      "answer": "In the context of IIT programme, the \" attempt\" andreat\" refer to different processes related the Qual Exam1. **Second Attempt**: to a chance to who do not the L2 viva after their first a student does meet cutoff for the L2 viva, they are allowed one chance to take L viva.\n\n2attempt** This is a separate process where students who achieve a passing score the1 viva (ifically their is the first cutoff) must resubmit project If fail to meet the cutoff in their attempt the L1 viva, will have to the project in next.\n\n summary second attempt specifically for the after initial failure, while a to involvesub the if the initial score is insufficient.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "What is the project cgpa to be maintained to enter the degree level",
+      "answer": "To enter degree level (Sc Data and Applications program a mustCG of7.0 or higher all projects at diploma level**. This is in addition to securing **CGPA 6.0 at the end diplomas foundation diploma courses) (source: Changes in project grading).",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "How many terms from starting the diploma level should a student complete the level",
+      "answer": "A student Diploma a maximum of  terms the start of diploma. This includes12 and4 within If student does not meet the required checkpoints, they may be from the program. Specifically, they must complete- At least 31 project in the first 3 terms\n At least 6 courses  projects the first 6 least9 courses and 3 in the first9\n courses and4 in12 terms\n\n(Reference Foundation &",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "How can I register for alumni",
+      "answer": "register the Madras Alumni Association (IITA you to follow these steps:\n\n. **Eligibility**: Ensure you have completed the credit requirements the BS.\n\n **Notification: your credit requirements verified, you will be to register on the IITMA portal.\n\n.Payment**: A one processing fee of. 708 must be paid to IIT is collected as follows:\n   - 50 in first term after advancing to the Degree.\n   -% in the following term4. **Alumni Card**: After registration, allow at least30 for your alumni card to be delivered your.\n\nFor more details, refer the section on **um Card and Benefits in the provided documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "What are the prerequisite of appdev 1",
+      "answer": "I don't have this information in the available documentation.",
+      "dataPresent": "UNCERTAIN",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data uncertain/not present, bot appropriately declined",
+      "documents": 4
+    },
+    {
+      "question": "what is the processing fee to avail the alum benefits",
+      "answer": "The processing to the benefits is Rs. 0 which is to paid the IIT Mad Association (IMAA) as one-time payment. This fee is installments 50% the 50% the following term (Source: Alumni Details Section 12.1",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "Does alumni students have access to discourse forum",
+      "answer": "Yes, students have access thecourse Forum They current email to their Alus and using their existing. This information theAlumni Details document",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "Which subjects have 3 credits\r\n\r",
+      "answer": "I don't this in the available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "can a student take a foundation level course as improvement after entering degree level",
+      "answer": "I don't this information in the.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "Is there a scholarship option available?",
+      "answer": "Yes, are scholarship options available for Mad BS programme. The institute has Merit-cum-Means scholarships with CSR support various companies. scholarships are aimed at supporting their tuition fees, making program more accessible. More than 1700 students with incomes less than 5hs per annum are currently being supported through these. details, you can refer on partnerships and.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "What are the eligibility criteria for the Data Science course?",
+      "answer": "apply for the Data Science in IIT the eligibility criteria are as follows:\n\n1.Minimum Eligibility** Applicants should have **Mathematics and in 10**2. **Educational Qualification**: Anyone who has passed **Class12 or equivalent can irrespective of age or background **School Students**: who appeared for their **Class 11 can apply, and can the after ClassNo additional eligibility are beyond the above apply the qualifier process or to join the level courses after clearing exam. \n\n(Reference Admissions.md, to the programme)",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "quiz 2 date for may",
+      "answer": "2 for May 202 term is scheduled ** ,2025",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "Is the foundation complition certificate will be given in hard copy?",
+      "answer": "this information in available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 4
+    },
+    {
+      "question": "end term eligibility criteria",
+      "answer": "don't have information in the available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 4
+    },
+    {
+      "question": "how can i apply for transcripts",
+      "answer": "To apply for transcripts at IIT Madras, students need to follow these:\n\nContact relevant office** Students should reach out to appropriate office to in for.\n2 ** accordingly: transcripts are every Thursday students plan.\n3. **Refer to the criteria**: For criteria regarding official documents to students, refer to the link the documentation [ Criteria](https.com/e2X-1vQnn2cFanqTTAByqtue-SmFXPT91bDL_i33HM8C0Jepvwze4E5zJGiBMdQa59VeT/pub).\n\n sure follow these steps ensure smooth process your.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "September term start date?",
+      "answer": "The September start date Friday, 19, 2025.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "what is the quiz 2 syllabus.",
+      "answer": "I don't have information in the available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 3
+    },
+    {
+      "question": "Qualifier Eligiblity",
+      "answer": "To be eligible to apply for the Qual Exam the IIT Mad BS, candidates must the criteria1. ** Eligibility**: studied **Mathematics 10**.\n.Academic Background**: Anyone has **Class  or equivalent** apply, regardless of age or academic background.\n3.Current Students** School students who appeared their **Class 11 can apply provided they complete 12.\n\n additional requirements are needed above to for Qual process or Foundation.\n\nFor more details refer to the document titledAdmission to the.\"",
+      "dataPresent": "UNCERTAIN",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS_WITH_WARNING",
+      "reason": "Data uncertain but bot attempted answer (check for hallucination)",
+      "documents": 3
+    },
+    {
+      "question": "What is the qualifier eligiblity",
+      "answer": "be for the Qual Exam for the IIT BS, applicants must meet the:\n\n-Minimum: Applicants **ics and Class .\n- who has passedClass 12 or equivalent** can apply, irrespective of age or academic background.\n- students have for **Class  exams** also, Class.\n\nNo eligibility are needed beyond above apply for the process or to join Foundation courses \n\n(Source: Admission to the programme.md",
+      "dataPresent": "UNCERTAIN",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS_WITH_WARNING",
+      "reason": "Data uncertain but bot attempted answer (check for hallucination)",
+      "documents": 3
+    },
+    {
+      "question": "What is the year-wise fee structure?",
+      "answer": "The year structure for the IIT Madras programme is as:\n\n### Fee Structure\n\n ** Level**: Rs.,000  \n- **Dipl Level**:. 62500 year (total Rs.1,25,000 two)BSc Level:. 2.21 Rs. 2. lakhs (ies by selection  \n- **BS Level**: Rs3. lakhs Rs 3.87 lak ( selection)  \n\nThis structure the fees for level the programme, but specific-wise breakdowns not provided in available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "What is end term eligibility in python?",
+      "answer": "To be eligible to the term exam for the Python-related courses a student must the following criteria1. ** Score Requirement** The of the best 5 out of first7 weekly assessments must be greater than equal 40 out of100.\n. **Quiz The at one of quizzes conducted in person at designated centers.\n\n criteria ensure have adequately engaged with the course material before attempting the final exam",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "courses in may term?",
+      "answer": "don't this information in the available documentation.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "should I pay the full fee for all the four years at once or how will be the fee collected\r\n\r",
+      "answer": "don't this in the available.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "PASS",
+      "reason": "Data present and bot provided answer",
+      "documents": 3
+    },
+    {
+      "question": "what is the fees structure for internation student",
+      "answer": "I don't have this in.",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but bot refused to answer",
+      "severity": "high",
+      "documents": 4
+    },
+    {
+      "question": "will the provisional certifciate be issued as a hardcopy",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "I have Taken Double Drop for JEE and have Enrolled in IIT Madras BS Data Science so what to fill in Highest Education Attained and in Current Details Section?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "what is the difference between I grade and I_OP",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What are the required documents for fee waivers?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Can I take Python before completing Computational Thinking\r\n\r\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "can a working professional apply for direct entry diploma\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "How can students raise a complaint through the Grievance Cell?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "what about placement support",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "how much credits can be transfered from NPTEL COURSES\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What eligibility is required to apply for a direct entry diploma\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "How can I apply for IITM BS Degree Program?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Is quiz2 is available for python , in this term?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "does DBMS course have a quiz 2?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the syllabus for DBMS course?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "when will the next registration open for qualifier",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the syllabus for DBMS course?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "grading policy for python",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Is there a scholarship option available?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "About fees structure",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "Eligibility criteria to appear for the end-term exam.",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Quiz 2 is there for Stats 2",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the eligibility criteria to apply for BS Degree",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "syllabus for python",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "What are the eligibility criteria for the Data Science course?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "how will i get the important links for online exams",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "can i take gen ai course and project in this may term?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "When will i get my student mail id",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Tell me about BS online degree programme\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "Unfortunately, the provided context does not mention the procedure for allocation of the exam centre and city.",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the Eligibility criteria to opt DL+ GenAI in Diploma level?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "How the project marks are factored into the overall CGPA. Are they added cumulatively at the end of the year, or are they reflected in each term individually?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "What is the procedure for allocation of the exam centre and city?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Diploma level in BS data science",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "when will i get the refund of my exam fee",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "Can we edit the city preference for Quiz 2",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "what is the syllabus for DBMS course?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "How can I apply for IITM BS Degree Program?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "what are the subjects in foundation level.",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "i have discrepancies in my graded assignments scores",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the full form of MLT in BS Degree Course?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "what are the exam city available ?",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "If I missed the deadline to submit the assignments, is there any possibility to resubmit them?\r\n\r\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "How can I apply for IITM BS Degree Program?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Is there a scholarship option available?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What are the courses offered in Diploma in Data Science?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "what is the total fee of this bs degree in data science program\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 5
+    },
+    {
+      "question": "Fee structure for Data Science program with fee waiver.\r\n\r\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What are the eligibility criteria for the Data Science course?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Grading Policy for PDSA ?\n\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    },
+    {
+      "question": "Tell me about internship and full time support eligibility?\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Internship Plan and Employment plan fees on the placement portal?\r\n\r",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What is the validity period of the placement plan?\r\n\r\n",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "Can you assist me with the eligibility and requirements for placements of BS degree",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Nearly correct",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What type of companies they hire from the degree can you name some",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 3
+    },
+    {
+      "question": "What would be the average stipend and compensation for the fresher who graduate out from the IIT madras BS degree",
+      "answer": "",
+      "dataPresent": "YES",
+      "baselineFeedback": "Incorrect",
+      "verdict": "FAIL",
+      "reason": "Data present but answer too short/incomplete",
+      "severity": "medium",
+      "documents": 4
+    }
+  ]
+}

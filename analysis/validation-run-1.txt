@@ -1,0 +1,161 @@
+🧪 Validating bot against ground truth (data_present)
+
+Chatbot URL: https://iitm-chatbot-worker-329264250413.asia-south1.run.app
+
+Testing 97 questions
+
+Questions with data present: 94
+
+🚀 Testing...
+
+[1/97] ✅ PASS
+[2/97] ❌ FAIL
+[3/97] ✅ PASS
+[4/97] ✅ PASS
+[5/97] ✅ PASS
+[6/97] ✅ PASS
+[7/97] ✅ PASS
+[8/97] ❌ FAIL
+[9/97] ❌ FAIL
+[10/97] ✅ PASS
+[11/97] ✅ PASS
+[12/97] ✅ PASS
+[13/97] ✅ PASS
+[14/97] ✅ PASS
+[15/97] ✅ PASS
+[16/97] ❌ FAIL
+[17/97] ✅ PASS
+[18/97] ❌ FAIL
+[19/97] ✅ PASS
+[20/97] ✅ PASS
+[21/97] ✅ PASS
+[22/97] ✅ PASS
+[23/97] ✅ PASS
+[24/97] ✅ PASS
+[25/97] ✅ PASS
+[26/97] ✅ PASS
+[27/97] ✅ PASS
+[28/97] ✅ PASS
+[29/97] ✅ PASS
+[30/97] ✅ PASS
+[31/97] ✅ PASS
+[32/97] ❌ FAIL
+[33/97] ✅ PASS
+[34/97] ✅ PASS
+[35/97] ❌ FAIL
+[36/97] ⚠️  PASS (warning)
+[37/97] ⚠️  PASS (warning)
+[38/97] ✅ PASS
+[39/97] ✅ PASS
+[40/97] ✅ PASS
+[41/97] ✅ PASS
+[42/97] ❌ FAIL
+[43/97] ❌ FAIL
+[44/97] ❌ FAIL
+[45/97] ❌ FAIL
+[46/97] ❌ FAIL
+[47/97] ❌ FAIL
+[48/97] ❌ FAIL
+[49/97] ❌ FAIL
+[50/97] ❌ FAIL
+[51/97] ❌ FAIL
+[52/97] ❌ FAIL
+[53/97] ❌ FAIL
+[54/97] ❌ FAIL
+[55/97] ❌ FAIL
+[56/97] ❌ FAIL
+[57/97] ❌ FAIL
+[58/97] ❌ FAIL
+[59/97] ❌ FAIL
+[60/97] ❌ FAIL
+[61/97] ❌ FAIL
+[62/97] ❌ FAIL
+[63/97] ❌ FAIL
+[64/97] ❌ FAIL
+[65/97] ❌ FAIL
+[66/97] ❌ FAIL
+[67/97] ❌ FAIL
+[68/97] ❌ FAIL
+[69/97] ❌ FAIL
+[70/97] ❌ FAIL
+[71/97] ❌ FAIL
+[72/97] ❌ FAIL
+[73/97] ❌ FAIL
+[74/97] ❌ FAIL
+[75/97] ❌ FAIL
+[76/97] ❌ FAIL
+[77/97] ❌ FAIL
+[78/97] ❌ FAIL
+[79/97] ❌ FAIL
+[80/97] ❌ FAIL
+[81/97] ❌ FAIL
+[82/97] ❌ FAIL
+[83/97] ❌ FAIL
+[84/97] ❌ FAIL
+[85/97] ❌ FAIL
+[86/97] ❌ FAIL
+[87/97] ❌ FAIL
+[88/97] ❌ FAIL
+[89/97] ❌ FAIL
+[90/97] ❌ FAIL
+[91/97] ❌ FAIL
+[92/97] ❌ FAIL
+[93/97] ❌ FAIL
+[94/97] ❌ FAIL
+[95/97] ❌ FAIL
+[96/97] ❌ FAIL
+[97/97] ❌ FAIL
+
+======================================================================
+📊 VALIDATION RESULTS
+======================================================================
+
+🎯 OVERALL:
+   Total tests:        97
+   Passed:             34 (35.1%)
+   Failed:             63 (64.9%)
+   Errors:             0
+
+📋 DATA PRESENT (should answer):
+   Total with data:    94
+   Answered correctly: 31 (33.0%)
+   Refused (FAILURES): 63 (67.0%)
+
+🎯 KEY METRICS:
+   Overall Accuracy:   35.05%
+   Answer Rate (data present): 32.98%
+   Refusal Rate (data present): 67.02%
+
+❌ CRITICAL FAILURES (data present but bot refused):
+
+1. Q: Grading Policy for PDSA ?
+   A: don't have this information in available....
+
+2. Q: can i submit state issued document as income certificate or only central government issued is valid?
+   A: I don't have this information available documentation....
+
+3. Q: Are there any specific tools used to communicate with faculty or instructors? or What are the available platforms for faculty-student communication?
+   A: I don't have information in the available...
+
+4. Q: is fee waiver applicable for army children
+   A: don't have this information in the available documentation....
+
+5. Q: what is the cgpa cutoff to register for degree level after completing diploma level
+
+   A: don't have this information in available....
+
+6. Q: end term eligibility criteria
+   A: don't have information in the available....
+
+7. Q: what is the quiz 2 syllabus.
+   A: I don't have information in the available....
+
+8. Q: what is the fees structure for internation student
+   A: I don't have this in....
+
+======================================================================
+❌ NEEDS SIGNIFICANT IMPROVEMENT
+======================================================================
+
+💾 Detailed results saved to validation-results.json
+
