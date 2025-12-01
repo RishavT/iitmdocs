@@ -15,8 +15,23 @@ RUN npm install
 COPY worker.js wrangler.toml ./
 COPY static ./static
 
+# Create startup script to generate .dev.vars from environment variables
+RUN echo '#!/bin/sh\n\
+cat > /app/.dev.vars <<EOF\n\
+WEAVIATE_URL=${WEAVIATE_URL}\n\
+WEAVIATE_API_KEY=${WEAVIATE_API_KEY}\n\
+OPENAI_API_KEY=${OPENAI_API_KEY}\n\
+COHERE_API_KEY=${COHERE_API_KEY}\n\
+CHAT_API_ENDPOINT=${CHAT_API_ENDPOINT}\n\
+CHAT_MODEL=${CHAT_MODEL}\n\
+EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER}\n\
+EMBEDDING_MODEL=${EMBEDDING_MODEL}\n\
+EOF\n\
+exec npx wrangler dev --port 8787 --ip 0.0.0.0\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
 # Expose port for wrangler dev
 EXPOSE 8787
 
-# Run wrangler dev with proper host binding
-CMD ["npx", "wrangler", "dev", "--port", "8787", "--ip", "0.0.0.0"]
+# Run startup script
+CMD ["/app/start.sh"]
