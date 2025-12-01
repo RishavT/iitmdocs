@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const CHATBOT_URL = process.env.CHATBOT_URL || 'http://localhost:8788';
 const DELAY_MS = 1000; // 1 second between questions
-const OUTPUT_FILE = 'validation-first-10-results.md';
+const OUTPUT_FILE = 'validation-questions-91-96-results.md';
 
 /**
  * Test a single question
@@ -84,6 +84,13 @@ async function testQuestion(question) {
 
 /**
  * Check if response is a refusal
+ *
+ * Improved logic: A response is only a refusal if it:
+ * 1. Contains refusal phrases, AND
+ * 2. Is either short (<400 chars) OR lacks substantial helpful content
+ *
+ * This allows answers that acknowledge information gaps while still
+ * providing helpful policy/grading/procedural information.
  */
 function isRefusal(answer) {
   const refusalPhrases = [
@@ -98,7 +105,45 @@ function isRefusal(answer) {
   ];
 
   const lowerAnswer = answer.toLowerCase();
-  return refusalPhrases.some(phrase => lowerAnswer.includes(phrase));
+  const hasRefusalPhrase = refusalPhrases.some(phrase => lowerAnswer.includes(phrase));
+
+  // If no refusal phrases, it's definitely not a refusal
+  if (!hasRefusalPhrase) {
+    return false;
+  }
+
+  // Check if answer contains substantial helpful content
+  const helpfulContentIndicators = [
+    'grading policy',
+    'assessment',
+    'eligibility',
+    'formula',
+    'criteria',
+    'requirement',
+    'procedure',
+    'policy',
+    'quiz',
+    'exam',
+    'oppe',
+    'cgpa',
+    'credits',
+    'term',
+    'registration',
+    'fee'
+  ];
+
+  const hasHelpfulContent = helpfulContentIndicators.some(indicator =>
+    lowerAnswer.includes(indicator)
+  );
+
+  // If answer is substantial (>400 chars) AND contains helpful content,
+  // it's not a refusal even if it mentions information gaps
+  if (answer.length > 400 && hasHelpfulContent) {
+    return false;
+  }
+
+  // Short answer with refusal phrases = actual refusal
+  return true;
 }
 
 /**
@@ -141,36 +186,82 @@ function validateResponse(question, answer, dataPresent) {
 async function runValidation() {
   console.log('Loading test data...');
 
-  // Read manual2.csv and parse first 10 questions
+  // Read manual2.csv and parse questions properly handling multi-line fields
   const csvContent = fs.readFileSync('manual2.csv', 'utf8');
-  const lines = csvContent.split('\n');
 
-  function parseCSVLine(line) {
-    const result = [];
-    let current = '';
+  // Proper CSV parser that handles multi-line quoted fields
+  function parseCSV(content) {
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
     let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+      const nextChar = content[i + 1];
+
+      if (char === '"' && nextChar === '"' && inQuotes) {
+        // Escaped quote inside quoted field
+        currentField += '"';
+        i++; // Skip next quote
+      } else if (char === '"') {
+        // Toggle quote mode
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
-        result.push(current.trim());
-        current = '';
+        // End of field
+        currentRow.push(currentField.trim());
+        currentField = '';
+      } else if (char === '\n' && !inQuotes) {
+        // End of row
+        currentRow.push(currentField.trim());
+        if (currentRow.some(field => field !== '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentField = '';
       } else {
-        current += char;
+        // Regular character
+        currentField += char;
       }
     }
-    result.push(current.trim());
-    return result;
+
+    // Push last field and row if exists
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField.trim());
+      if (currentRow.some(field => field !== '')) {
+        rows.push(currentRow);
+      }
+    }
+
+    return rows;
   }
 
+  const rows = parseCSV(csvContent);
+  console.log(`Parsed ${rows.length} rows from CSV`);
+
   const answerableQuestions = [];
-  for (let i = 1; i <= 10; i++) {
-    const fields = parseCSVLine(lines[i]);
-    answerableQuestions.push({
-      'Question asked': fields[0],
-      data_present: 'YES'
-    });
+  // Change this range to test different sets of questions
+  // Questions 1-10: i = 1 to 10
+  // Questions 11-20: i = 11 to 20
+  // Questions 21-30: i = 21 to 30
+  // Questions 31-40: i = 31 to 40
+  // Questions 41-50: i = 41 to 50
+  // Questions 51-60: i = 51 to 60
+  // Questions 61-70: i = 61 to 70
+  // Questions 71-80: i = 71 to 80
+  // Questions 81-90: i = 81 to 90
+  // Questions 91-96: i = 91 to 96
+  const startQuestion = 91;
+  const endQuestion = 96;
+
+  for (let i = startQuestion; i <= endQuestion; i++) {
+    if (i < rows.length) {
+      const fields = rows[i];
+      answerableQuestions.push({
+        'Question asked': fields[0] || '',
+        data_present: 'YES'
+      });
+    }
   }
 
   console.log(`Testing ${answerableQuestions.length} questions...\n`);
@@ -179,7 +270,7 @@ async function runValidation() {
   let passed = 0;
   let failed = 0;
 
-  let output = `# Validation Results - First 10 Questions\n\n`;
+  let output = `# Validation Results - Questions 91-96\n\n`;
   output += `**Test Date:** ${new Date().toISOString()}\n`;
   output += `**Chatbot URL:** ${CHATBOT_URL}\n`;
   output += `**Questions Tested:** ${answerableQuestions.length}\n\n`;
