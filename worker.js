@@ -110,9 +110,10 @@ async function answer(request, env) {
           controller.enqueue(encoder.encode(sseDocs));
         }
 
-        // Generate AI answer using documents as context and stream via piping
-        const answer = await generateAnswer(question, documents, history, env);
-        await answer.body.pipeTo(
+        // Generate AI answer using documents as context (with fact-checking)
+        const answerResponse = await generateAnswer(question, documents, history, env);
+        // Pipe the SSE response to the client
+        await answerResponse.body.pipeTo(
           new WritableStream({
             write: (chunk) => controller.enqueue(chunk),
             close: () => controller.close(),
@@ -210,7 +211,7 @@ async function generateAnswer(question, documents, history, env) {
   // Don't add negative context notes that might make the LLM more hesitant to answer
   let contextNote = "";
 
-  const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme.
+  const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme, being an expert at understanding user queries, reading documents, and giving factually correct answers.
 
 You have access to official programme documentation. Always try to answer questions using the information provided in the documents.
 
@@ -222,6 +223,8 @@ Guidelines:
 5. Only refuse to answer if the documents contain absolutely no relevant information
 6. If information is partial or you need to suggest contacting support, still provide what you know first
 7. Be concise and use simple Markdown
+8. DO NOT make up facts, dates, or anything that is not directly quoted in the documents
+9. Always give a title to your answer
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
@@ -267,6 +270,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   console.log('[DEBUG] Calling chat API:', chatEndpoint, 'model:', chatModel);
   console.log('[DEBUG] Sending', messages.length, 'messages to chat API');
+
+  // Step 1: Get non-streaming response from LLM
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -274,7 +279,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       model: chatModel,
       messages,
       temperature: 0.5, // Balanced temperature for natural responses while reducing hallucinations
-      stream: true,
+      stream: false, // Non-streaming to collect full response for fact-checking
     }),
   });
 
@@ -284,5 +289,124 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     console.error('[DEBUG] Chat API error response:', errorText);
     throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
   }
-  return response;
+
+  // Step 2: Parse the response
+  const result = await response.json();
+  const answerText = result.choices?.[0]?.message?.content || "";
+  console.log('[DEBUG] Generated answer length:', answerText.length);
+
+  // Step 3: Fact-check the response against context
+  console.log('[DEBUG] Starting fact-check...');
+  const isFactuallyCorrect = await checkResponse({ response: answerText, context, env });
+  console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
+
+  // Step 4: Create a response based on fact-check result
+  const finalAnswer = isFactuallyCorrect
+    ? answerText
+    : "I apologize, but I couldn't verify my response against the available documents. Please rephrase your question or ask something specific about the IIT Madras BS programme (admissions, courses, fees, academic policies, etc.).";
+
+  // Step 5: Return a simulated streaming response for compatibility with existing SSE format
+  return createSSEResponse(finalAnswer);
+}
+
+/**
+ * Creates a simulated SSE streaming response from a complete text.
+ * This maintains compatibility with the existing SSE client format.
+ * @param {string} text - The complete response text
+ * @returns {Response} - A Response object with SSE-formatted body
+ */
+function createSSEResponse(text) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      // Send the content as a single SSE chunk (simulating streaming)
+      const sseData = `data: ${JSON.stringify({
+        choices: [{ delta: { content: text } }]
+      })}\n\n`;
+      controller.enqueue(encoder.encode(sseData));
+
+      // Send the done signal
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+    }
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+    },
+  });
+}
+
+/**
+ * Fact-checks an LLM response against the provided context documents.
+ * Calls the LLM to verify if the response is grounded in the context.
+ * @param {Object} params - The parameters object
+ * @param {string} params.response - The LLM's response text to fact-check
+ * @param {string} params.context - The context documents used to generate the response
+ * @param {Object} params.env - Environment variables containing API keys
+ * @returns {Promise<boolean>} - true if response is factually grounded, false otherwise
+ */
+async function checkResponse({ response, context, env }) {
+  const systemPrompt = `You are a strict fact-checker. Your ONLY job is to verify if a response is factually grounded in the provided context.
+
+RULES:
+1. Respond with ONLY "YES" or "NO" - nothing else, no explanations, no punctuation
+2. Answer "YES" if ALL claims in the response can be verified from the context
+3. Answer "NO" if ANY claim in the response cannot be found in or inferred from the context
+4. Answer "YES" if the response correctly states it doesn't have information (when context lacks the info)
+5. Answer "NO" if the response contains specific facts, dates, numbers, or names not present in the context
+
+IMPORTANT: Be strict. If in doubt, answer "NO".`;
+
+  const userPrompt = `CONTEXT DOCUMENTS:
+${context}
+
+---
+
+RESPONSE TO VERIFY:
+${response}
+
+---
+
+Is this response factually grounded in the context? Answer only YES or NO.`;
+
+  const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+
+  try {
+    console.log('[DEBUG] checkResponse() - Calling LLM for fact-check');
+    const factCheckResponse = await fetch(chatEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
+      body: JSON.stringify({
+        model: chatModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0, // Use 0 temperature for deterministic fact-checking
+        max_tokens: 10, // We only need YES or NO
+        stream: false,
+      }),
+    });
+
+    if (!factCheckResponse.ok) {
+      console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
+      // On API error, return true to avoid blocking valid responses
+      return true;
+    }
+
+    const result = await factCheckResponse.json();
+    console.log('[DEBUG] checkResponse() - Full API response:', JSON.stringify(result));
+    const answer = result.choices?.[0]?.message?.content?.trim().toUpperCase();
+    console.log('[DEBUG] checkResponse() - Fact-check result:', answer);
+
+    return answer === "YES";
+  } catch (error) {
+    console.error('[DEBUG] checkResponse() - Error during fact-check:', error.message);
+    // On error, return true to avoid blocking valid responses
+    return true;
+  }
 }
