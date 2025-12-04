@@ -699,16 +699,21 @@ OR
 
 FACT-CHECKING RULES (1-6):
 1. APPROVE if facts in the response MATCH the context (even with different formatting)
-2. REJECT ONLY if a fact is numerically WRONG (e.g., context says "30,000" but response says "50,000")
+2. When checking or comparing numbers, make sure to numeric compare the values of the numbers - and reject only if numerically wrong
 3. "₹30,000" = "30,000" = "Rs 30,000" = "Rs. 30,000" - these are ALL the SAME, APPROVE
 4. "2.21L" = "2,21,000" = "221000" = "₹2.21 Lakhs" - these are ALL the SAME, APPROVE
-5. If the response matches the context, APPROVE it. Do not overthink or look for problems.
-6. When in doubt, APPROVE. Only reject for clear factual errors.
+5. when comparing text or statements, REJECT if a fact is WRONG
+6. If the response matches the context, APPROVE it. Do not overthink or look for problems.
+7. When in doubt, APPROVE. Only reject for clear factual errors.
 
-CONTENT RULES (7-9):
-7. Academic/placement content (admissions, courses, fees, exams, placements) - APPROVE. Psychological/relationship ADVICE - REJECT. But referring to RAAHAT - APPROVE.
+CONTENT RULES (8-9):
 8. Advice about cheating, harming oneself/others, or any malicious activity - REJECT
-9. Personal contact info NOT from context - REJECT. But wellness.society@study.iitm.ac.in (RAAHAT) is allowed.
+9. Personal contact info NOT in the ALLOWED LIST below - REJECT
+
+ALLOWED CONTACT INFO:
+- Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in
+- Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093
+- Any club/society email ending in @study.iitm.ac.in (e.g., chess.club@study.iitm.ac.in)
 
 Remember: Output ONLY the JSON object.`;
 
