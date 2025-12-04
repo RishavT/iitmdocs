@@ -81,20 +81,53 @@ steps:
         echo "Waiting for services to be ready (Cloud Build cannot verify directly)..."
         sleep 60
 
-  # Step 5: Build embed image
+  # Step 5: Check if src/ files changed (to decide if embedding is needed)
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'check-src-changes'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Fetch enough history to compare with previous commit
+        git fetch --depth=2 origin $BRANCH_NAME || true
+
+        echo "Checking for src/ changes..."
+
+        # Check if any src/ files changed in this commit
+        if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -q '^src/'; then
+          # Check if any src/ files were DELETED
+          if git diff --name-status HEAD~1 HEAD 2>/dev/null | grep -E '^D\s+src/'; then
+            echo "delete" > /workspace/embed_mode.txt
+            echo ">>> src/ files DELETED - will clear DB and re-embed all"
+          else
+            echo "update" > /workspace/embed_mode.txt
+            echo ">>> src/ files added/modified - incremental embed"
+          fi
+        else
+          echo "skip" > /workspace/embed_mode.txt
+          echo ">>> No src/ changes - skipping embedding"
+        fi
+
+        echo "Embed mode: $$(cat /workspace/embed_mode.txt)"
+
+  # Step 6: Build embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-embed'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/iitm-embed:latest'
-      - '-f'
-      - 'Dockerfile.embed'
-      - '.'
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image build (no src/ changes)"
+          exit 0
+        fi
+        docker build \
+          -t gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/iitm-embed:latest \
+          -f Dockerfile.embed .
 
-  # Step 6: Build worker image
+  # Step 7: Build worker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-worker'
     args:
@@ -107,16 +140,34 @@ steps:
       - 'Dockerfile.worker'
       - '.'
 
-  # Step 7: Push embed image
+  # Step 8: Push embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-embed'
-    args: ['push', 'gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image push (no src/ changes)"
+          exit 0
+        fi
+        docker push gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA
 
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-embed-latest'
-    args: ['push', 'gcr.io/$PROJECT_ID/iitm-embed:latest']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image push (no src/ changes)"
+          exit 0
+        fi
+        docker push gcr.io/$PROJECT_ID/iitm-embed:latest
 
-  # Step 8: Push worker image
+  # Step 9: Push worker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-worker'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA']
@@ -125,31 +176,52 @@ steps:
     id: 'push-worker-latest'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest']
 
-  # Step 9: Create/Update Cloud Run Job for embedding
+  # Step 10: Create/Update Cloud Run Job for embedding (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'create-embed-job'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed job creation (no src/ changes)"
+          exit 0
+        fi
+
         IP=$$(cat /workspace/gce_internal_ip.txt)
         echo "Creating/updating embed job with VPC connector..."
+
+        # Set CLEAR_DB=true if files were deleted
+        if [ "$$EMBED_MODE" = "delete" ]; then
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,CLEAR_DB=true"
+          echo ">>> CLEAR_DB=true (files were deleted)"
+        else
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434"
+        fi
+
         gcloud run jobs deploy iitm-embed-job \
           --image gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA \
           --region asia-south1 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress all-traffic \
-          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434" \
+          --set-env-vars "$$ENV_VARS" \
           --task-timeout=30m \
           --max-retries=1
 
-  # Step 10: Execute the embed job and stream logs
+  # Step 11: Execute the embed job and stream logs (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'run-embed-job'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed job execution (no src/ changes)"
+          exit 0
+        fi
+
         echo "Running embed job..."
 
         # Execute job and capture execution name
@@ -186,7 +258,7 @@ steps:
           sleep 5
         done
 
-  # Step 11: Deploy Cloud Run service
+  # Step 12: Deploy Cloud Run service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloudrun'
     entrypoint: 'bash'

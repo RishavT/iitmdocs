@@ -25,6 +25,16 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+def clear_collection(weaviate_client):
+    """Delete the Document collection if it exists"""
+    if weaviate_client.collections.exists("Document"):
+        logger.warning("CLEAR_DB=true: Deleting existing Document collection...")
+        weaviate_client.collections.delete("Document")
+        logger.info("Document collection deleted. Will recreate with fresh embeddings.")
+    else:
+        logger.info("No existing Document collection to clear.")
+
+
 def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None):
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
@@ -153,9 +163,14 @@ def main():
     """Main function to run the embedding process"""
     load_dotenv()
 
+    # Check if we should clear the database first (used when files are deleted)
+    clear_db = os.getenv("CLEAR_DB", "false").lower() == "true"
+
     # Determine embedding mode: 'local', 'gce', or 'cloud'
     embedding_mode = os.getenv("EMBEDDING_MODE", "cloud").lower()
     logger.info(f"Embedding mode: {embedding_mode}")
+    if clear_db:
+        logger.info("CLEAR_DB=true: Will clear existing embeddings before re-embedding")
 
     if embedding_mode == "local":
         # Local mode: connect to local Weaviate (no auth needed)
@@ -167,6 +182,8 @@ def main():
             host=weaviate_url.replace("http://", "").split(":")[0],
             port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080
         )
+        if clear_db:
+            clear_collection(client)
         embed_documents(client, "src", embedding_mode, None, embedding_model)
         client.close()
     elif embedding_mode == "gce":
@@ -198,6 +215,8 @@ def main():
             grpc_secure=False,
             skip_init_checks=True
         )
+        if clear_db:
+            clear_collection(client)
         embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
         client.close()
     else:
@@ -246,6 +265,8 @@ def main():
             auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
             headers=headers,
         )
+        if clear_db:
+            clear_collection(client)
         embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
         client.close()
 
