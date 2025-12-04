@@ -121,9 +121,33 @@ If embeddings were created with OpenAI but the worker uses Cohere (or vice versa
 
 The embed service now validates the vectorizer configuration and only deletes the collection when the provider changes, preventing accidental data loss.
 
+## Query Rewriting & Search Optimization
+
+The chatbot uses two techniques to improve search relevance:
+
+### Hybrid Search
+Combines BM25 keyword search with vector semantic search (configurable via `alpha` parameter in worker.js). This catches both exact keyword matches and conceptually similar content.
+
+### Query Rewriting
+Before searching, user queries are expanded using an LLM to add relevant keywords. This helps with:
+- **Disambiguation**: "how do i apply" → adds "admission qualifier eligibility" (not job placement)
+- **Hinglish support**: "fee kitna hai" → adds "cost structure payment"
+- **Short queries**: "OPPE" → adds "programming exam proctored online"
+
+The query rewriter uses a knowledge base summary (`src/_knowledge_base_summary.md`) as context. This file lists all topics, keywords, and 100 example queries.
+
+### Regenerating the Knowledge Base Summary
+
+When source documents change significantly, regenerate the summary:
+
+1. Use the prompt in `generate-summary-prompt.txt` with Claude or GPT
+2. Save output to `src/_knowledge_base_summary.md`
+3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `worker.js` (condensed version)
+4. The summary is **excluded from Weaviate embeddings** (see `EXCLUDED_FILES` in embed.py)
+
 ## Embedding
 
-The embedding system processes `src/*.md` and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
+The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
 
 `embed.py` creates a `Document` collection with the following properties:
 

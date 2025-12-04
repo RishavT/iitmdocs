@@ -13,6 +13,88 @@ function isLikelyOutOfScope(question) {
   );
 }
 
+// Knowledge base summary for query rewriting context
+const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
+1. ADMISSION: apply, application, qualifier, eligibility, JEE entry, DAD, documents, enroll, join
+2. PROGRAMME STRUCTURE: foundation, diploma, BSc, BS, levels, credits, certificates, exit points
+3. COURSES: PDSA, DBMS, MLF, MLT, MAD, BDM, Python, Java, electives, syllabus, curriculum
+4. FEES: cost, waiver, scholarship, loan, payment, per credit, fee structure, affordable
+5. ASSESSMENTS: exam, quiz, OPPE, grade, marks, score, pass, fail, assignment, eligibility
+6. CALENDAR: term, semester, schedule, deadline, registration, dates, January, May, September
+7. POLICIES: CCC, probation, struck off, repeat, drop, plagiarism, LLM usage, honor code
+8. PLACEMENTS: job, career, internship, salary, recruiter, company, employment, hiring
+9. HIGHER STUDIES: masters, MTech, MS, PhD, GATE, research, campus upgrade, CFTI
+10. CREDIT TRANSFER: NPTEL, apprenticeship, campus courses, transfer fee
+11. STUDENT LIFE: house, club, society, wellness, grievance, community
+12. TECHNICAL: laptop, software, hardware, system requirements, internet
+13. CERTIFICATES: degree, transcript, merit, distinction, topper
+14. CONTACT: email, phone, support, office address`;
+
+/**
+ * Rewrites a user query to improve search relevance.
+ * Uses knowledge base summary as context for better disambiguation.
+ * @param {string} query - The original user query
+ * @param {Object} env - Environment variables containing API keys
+ * @returns {Promise<string>} - The rewritten query for search
+ */
+async function rewriteQuery(query, env) {
+  const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
+
+${KNOWLEDGE_BASE_SUMMARY}
+
+Your job: Rewrite the user query to match document keywords for better search results.
+
+RULES:
+1. Output ONLY the rewritten query - no explanations, no quotes
+2. Add 3-5 relevant keywords from the topics above
+3. Keep it under 50 words
+4. Disambiguate intent: "apply" likely means admission (not job application)
+5. Handle Hinglish: "kitna" = how much, "kab" = when, "kya" = what, "hai" = is
+
+Examples:
+- "how do i apply" → "admission application process qualifier exam eligibility how to apply"
+- "fee kitna hai" → "fee cost structure payment foundation diploma degree fees"
+- "placement milega" → "job placement career salary recruiter internship employment"
+- "GATE dena padega" → "GATE masters MTech MS PhD higher studies research"
+- "course repeat kar sakte hai" → "course repeat policy fail retake fee academic"`;
+
+  const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+
+  try {
+    console.log('[DEBUG] Rewriting query:', query);
+    const response = await fetch(chatEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${chatApiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: query },
+        ],
+        temperature: 0,
+        max_tokens: 100,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[DEBUG] Query rewrite API failed, using original query');
+      return query;
+    }
+
+    const result = await response.json();
+    const rewrittenQuery = result.choices?.[0]?.message?.content?.trim() || query;
+    console.log('[DEBUG] Query rewritten:', query, '→', rewrittenQuery);
+    return rewrittenQuery;
+  } catch (error) {
+    console.error('[DEBUG] Query rewrite error:', error.message);
+    return query; // Fallback to original query on error
+  }
+}
+
 export default {
   async fetch(request, env) {
     // Handle CORS preflight
@@ -75,8 +157,11 @@ async function answer(request, env) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Search Weaviate for relevant documents
-        const documents = await searchWeaviate(question, numDocs, env);
+        // Rewrite query for better search relevance
+        const searchQuery = await rewriteQuery(question, env);
+
+        // Search Weaviate for relevant documents using rewritten query
+        const documents = await searchWeaviate(searchQuery, numDocs, env);
         // Stream documents first (single enqueue)
         if (documents?.length) {
           // Use configurable repository URL or default
@@ -215,26 +300,42 @@ async function searchWeaviate(query, limit, env) {
   let graphqlQuery;
 
   if (embeddingMode === "gce") {
-    // GCE mode: get embedding from Ollama first, then use nearVector
+    // GCE mode: get embedding from Ollama first, then use hybrid search with vector
     const ollamaUrl = env.GCE_OLLAMA_URL;
     const queryVector = await getOllamaEmbedding(query, ollamaUrl);
     const vectorStr = `[${queryVector.join(",")}]`;
 
+    // Use hybrid search combining BM25 keyword search with vector similarity
+    // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
     graphqlQuery = `{
       Get {
-        Document(nearVector: { vector: ${vectorStr} } limit: ${limit}) {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            vector: ${vectorStr}
+            alpha: 0.5
+          }
+          limit: ${limit}
+        ) {
           filename filepath content file_size
-          _additional { distance }
+          _additional { score }
         }
       }
     }`;
   } else {
-    // Local/Cloud mode: use nearText (Weaviate handles embedding)
+    // Local/Cloud mode: use hybrid search (Weaviate handles embedding for vector part)
+    // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
     graphqlQuery = `{
       Get {
-        Document(nearText: { concepts: ["${sanitizedQuery}"] } limit: ${limit}) {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            alpha: 0.5
+          }
+          limit: ${limit}
+        ) {
           filename filepath content file_size
-          _additional { distance }
+          _additional { score }
         }
       }
     }`;
@@ -264,7 +365,8 @@ async function searchWeaviate(query, limit, env) {
 
   const documents = data.data?.Get?.Document || [];
   console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
-  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.distance ? 1 - doc._additional.distance : 0 }));
+  // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
+  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
 async function generateAnswer(question, documents, history, env) {
