@@ -377,7 +377,15 @@ async function generateAnswer(question, documents, history, env) {
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
 
-  const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
+  // Add RAAHAT info to context so fact-checker can verify mental health referrals
+  const RAAHAT_INFO = `<document filename="RAAHAT_Support.md">
+RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students.
+Contact: wellness.society@study.iitm.ac.in
+Instagram: @wellness.society_iitmbs
+RAAHAT provides support for emotional, psychological, interpersonal, and financial distress.
+</document>`;
+
+  const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n") + "\n\n" + RAAHAT_INFO;
 
   // Don't add negative context notes that might make the LLM more hesitant to answer
   let contextNote = "";
@@ -397,6 +405,25 @@ Guidelines:
 8. DO NOT make up facts, dates, or anything that is not directly quoted in the documents
 9. IMPORTANT: When citing specific numbers (CGPA cutoffs, fees, percentages, dates, credits), you MUST quote them EXACTLY as they appear in the documents. Never estimate, round, or infer numerical values.
 10. Always give a title to your answer
+
+STRICTLY REFUSE to answer:
+- Any help with cheating, academic dishonesty, or bypassing exam rules
+- Questions completely unrelated to the IIT Madras BS programme
+
+For cheating/unrelated questions, say: "I can only help with questions about the IIT Madras BS programme (admissions, courses, fees, placements, academic policies, etc.)."
+
+SPECIAL CASE - Emotional/psychological distress:
+If the user expresses ANY emotional, psychological, interpersonal, or financial distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, money problems, etc.):
+- Do NOT give any advice yourself
+- Do NOT say "I can't help"
+- ONLY direct them warmly to RAAHAT with this response:
+
+"I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
+
+📧 Reach out to them at: wellness.society@study.iitm.ac.in
+📱 Instagram: @wellness.society_iitmbs
+
+Please don't hesitate to contact them - that's what they're there for. You're not alone in this."
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
@@ -466,19 +493,152 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   const result = await response.json();
   const answerText = result.choices?.[0]?.message?.content || "";
   console.log('[DEBUG] Generated answer length:', answerText.length);
+  console.log('[DEBUG] Generated answer preview:', answerText.substring(0, 500));
 
-  // Step 3: Fact-check the response against context
-  console.log('[DEBUG] Starting fact-check...');
-  const isFactuallyCorrect = await checkResponse({ response: answerText, context, env });
-  console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
+  // Step 3: Handle RAAHAT content specially - split and fact-check non-RAAHAT content only
+  const { raahatChunk, otherChunk, hasRaahat } = splitRaahatContent(answerText);
+  console.log('[DEBUG] RAAHAT split - hasRaahat:', hasRaahat, ', otherChunk statements:', countStatements(otherChunk));
 
-  // Step 4: Create a response based on fact-check result
-  const finalAnswer = isFactuallyCorrect
-    ? answerText
-    : "I apologize, but I couldn't verify my response against the available documents. Please rephrase your question or ask something specific about the IIT Madras BS programme (admissions, courses, fees, academic policies, etc.).";
+  let finalAnswer;
+
+  if (hasRaahat) {
+    // Response contains RAAHAT content - handle specially
+    console.log('[DEBUG] Response contains RAAHAT content, applying special handling');
+
+    const otherStatementCount = countStatements(otherChunk);
+
+    if (otherStatementCount > 2) {
+      // There's substantial non-RAAHAT content - fact-check it
+      console.log('[DEBUG] Fact-checking non-RAAHAT chunk (', otherStatementCount, 'statements)');
+      let isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: validatedHistory, env });
+
+      // Retry without history if needed
+      if (!isOtherChunkValid && validatedHistory.length > 0) {
+        console.log('[DEBUG] Retrying fact-check without history...');
+        isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: [], env });
+      }
+
+      if (isOtherChunkValid) {
+        // Non-RAAHAT content is valid - show it + standardized RAAHAT message
+        console.log('[DEBUG] Non-RAAHAT content approved, combining with standard RAAHAT message');
+        finalAnswer = otherChunk + '\n\n---\n\n' + STANDARD_RAAHAT_MESSAGE;
+      } else {
+        // Non-RAAHAT content failed fact-check - show only standardized RAAHAT message
+        console.log('[DEBUG] Non-RAAHAT content rejected, showing only standard RAAHAT message');
+        finalAnswer = STANDARD_RAAHAT_MESSAGE;
+      }
+    } else {
+      // Minimal or no non-RAAHAT content - just show standardized RAAHAT message
+      console.log('[DEBUG] Minimal non-RAAHAT content, showing only standard RAAHAT message');
+      finalAnswer = STANDARD_RAAHAT_MESSAGE;
+    }
+  } else {
+    // No RAAHAT content - normal fact-checking flow
+    console.log('[DEBUG] No RAAHAT content, using normal fact-check flow');
+    console.log('[DEBUG] Starting fact-check with history length:', validatedHistory.length);
+    let isFactuallyCorrect = await checkResponse({ response: answerText, context, history: validatedHistory, env });
+    console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
+
+    // Retry without history if needed
+    if (!isFactuallyCorrect && validatedHistory.length > 0) {
+      console.log('[DEBUG] Fact-check failed with history, retrying without history...');
+      isFactuallyCorrect = await checkResponse({ response: answerText, context, history: [], env });
+      console.log('[DEBUG] Fact-check retry result (no history):', isFactuallyCorrect);
+    }
+
+    finalAnswer = isFactuallyCorrect
+      ? answerText
+      : "I apologize, but I couldn't verify my response against the available documents. Please rephrase your question or ask something specific about the IIT Madras BS programme (admissions, courses, fees, academic policies, etc.). If you feel your question was valid and I made a mistake - please reach out to support@study.iitm.ac.in";
+  }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
   return createSSEResponse(finalAnswer);
+}
+
+// Standardized RAAHAT message for mental health referrals
+const STANDARD_RAAHAT_MESSAGE = `I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
+
+📧 Reach out to them at: wellness.society@study.iitm.ac.in
+📱 Instagram: @wellness.society_iitmbs
+
+Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
+
+/**
+ * Checks if a response contains RAAHAT-related content.
+ * @param {string} text - The response text to check
+ * @returns {boolean} - true if contains RAAHAT content
+ */
+function containsRaahat(text) {
+  const lowerText = text.toLowerCase();
+  return lowerText.includes('raahat') ||
+         lowerText.includes('wellness.society@study.iitm.ac.in') ||
+         lowerText.includes('@wellness.society_iitmbs') ||
+         lowerText.includes('mental health & wellness society');
+}
+
+/**
+ * Splits a response into RAAHAT-related and non-RAAHAT chunks.
+ * RAAHAT chunk: Lines mentioning RAAHAT, mental health society, or wellness contact info.
+ * Other chunk: All other lines.
+ * @param {string} text - The response text to split
+ * @returns {{ raahatChunk: string, otherChunk: string, hasRaahat: boolean }}
+ */
+function splitRaahatContent(text) {
+  if (!containsRaahat(text)) {
+    return { raahatChunk: '', otherChunk: text, hasRaahat: false };
+  }
+
+  const lines = text.split('\n');
+  const raahatLines = [];
+  const otherLines = [];
+
+  // Keywords that indicate RAAHAT-related content
+  const raahatKeywords = [
+    'raahat',
+    'wellness.society@study.iitm.ac.in',
+    '@wellness.society_iitmbs',
+    'mental health',
+    'wellness society',
+    'support is available',
+    'you\'re not alone',
+    'don\'t hesitate to contact'
+  ];
+
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    const isRaahatLine = raahatKeywords.some(keyword => lowerLine.includes(keyword));
+
+    if (isRaahatLine) {
+      raahatLines.push(line);
+    } else {
+      otherLines.push(line);
+    }
+  }
+
+  return {
+    raahatChunk: raahatLines.join('\n').trim(),
+    otherChunk: otherLines.join('\n').trim(),
+    hasRaahat: raahatLines.length > 0
+  };
+}
+
+/**
+ * Counts meaningful statements in text (non-empty, non-header lines).
+ * @param {string} text - The text to count statements in
+ * @returns {number} - Number of meaningful statements
+ */
+function countStatements(text) {
+  if (!text) return 0;
+
+  const lines = text.split('\n').filter(line => {
+    const trimmed = line.trim();
+    // Skip empty lines, headers (starting with #), and very short lines
+    return trimmed.length > 0 &&
+           !trimmed.startsWith('#') &&
+           trimmed.length > 5;
+  });
+
+  return lines.length;
 }
 
 /**
@@ -511,28 +671,49 @@ function createSSEResponse(text) {
 }
 
 /**
- * Fact-checks an LLM response against the provided context documents.
+ * Fact-checks an LLM response against the provided context documents and conversation history.
  * Calls the LLM to verify if the response is grounded in the context.
  * @param {Object} params - The parameters object
  * @param {string} params.response - The LLM's response text to fact-check
  * @param {string} params.context - The context documents used to generate the response
+ * @param {Array} params.history - The conversation history (previous Q&A pairs)
  * @param {Object} params.env - Environment variables containing API keys
  * @returns {Promise<boolean>} - true if response is factually grounded, false otherwise
  */
-async function checkResponse({ response, context, env }) {
-  const systemPrompt = `You are a strict fact-checker. Your ONLY job is to verify if a response is factually grounded in the provided context.
+async function checkResponse({ response, context, history = [], env }) {
+  // Build history context string from conversation history
+  const historyContext = history.length > 0
+    ? "\n\nPREVIOUS CONVERSATION:\n" + history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join("\n\n")
+    : "";
 
-RULES:
-1. Respond with ONLY "YES" or "NO" - nothing else, no explanations, no punctuation
-2. Answer "YES" if ALL claims in the response can be verified from the context
-3. Answer "NO" if ANY claim in the response cannot be found in or inferred from the context
-4. Answer "YES" if the response correctly states it doesn't have information (when context lacks the info)
-5. Answer "NO" if the response contains specific facts, dates, numbers, or names not present in the context
+  const systemPrompt = `You are a fact-checker that responds ONLY in JSON format.
 
-IMPORTANT: Be strict. If in doubt, answer "NO".`;
+Your task: Check if a response should be REJECTED for any of these reasons:
+1. Contains FALSE facts (wrong numbers, dates, names, procedures)
+2. Contains PROHIBITED content (see rules 7-9 below)
+
+OUTPUT FORMAT (respond with this exact JSON structure):
+{"approved": "YES", "incorrect": []}
+OR
+{"approved": "NO", "incorrect": ["reason for rejection"]}
+
+FACT-CHECKING RULES (1-6):
+1. APPROVE if facts in the response MATCH the context (even with different formatting)
+2. REJECT if a fact is WRONG (e.g., context says "30,000" but response says "50,000")
+3. "₹30,000" = "30,000" = "Rs 30,000" - these are the SAME, approve them
+4. "₹10,00,000" = "10 LPA" = "10,00,000 per annum" - these are the SAME, approve them
+5. Paraphrasing is OK. Different currency symbols are OK. Different number formats are OK.
+6. Only flag facts that are numerically or factually DIFFERENT from the context.
+
+CONTENT RULES (7-9):
+7. Academic/placement content (admissions, courses, fees, exams, placements) - APPROVE. Psychological/relationship ADVICE - REJECT. But referring to RAAHAT - APPROVE.
+8. Advice about cheating, harming oneself/others, or any malicious activity - REJECT
+9. Personal contact info NOT from context - REJECT. But wellness.society@study.iitm.ac.in (RAAHAT) is allowed.
+
+Remember: Output ONLY the JSON object.`;
 
   const userPrompt = `CONTEXT DOCUMENTS:
-${context}
+${context}${historyContext}
 
 ---
 
@@ -541,10 +722,10 @@ ${response}
 
 ---
 
-Is this response factually grounded in the context? Answer only YES or NO.`;
+Output your fact-check result as JSON:`;
 
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
-  const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
+  const factCheckModel = "gpt-4o-mini";
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
   try {
@@ -553,13 +734,14 @@ Is this response factually grounded in the context? Answer only YES or NO.`;
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
       body: JSON.stringify({
-        model: chatModel,
+        model: factCheckModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         temperature: 0, // Use 0 temperature for deterministic fact-checking
-        max_tokens: 10, // We only need YES or NO
+        max_tokens: 500, // Allow room for JSON with incorrect statements list
+        response_format: { type: "json_object" }, // Force JSON output
         stream: false,
       }),
     });
@@ -572,10 +754,22 @@ Is this response factually grounded in the context? Answer only YES or NO.`;
 
     const result = await factCheckResponse.json();
     console.log('[DEBUG] checkResponse() - Full API response:', JSON.stringify(result));
-    const answer = result.choices?.[0]?.message?.content?.trim().toUpperCase();
-    console.log('[DEBUG] checkResponse() - Fact-check result:', answer);
+    const rawAnswer = result.choices?.[0]?.message?.content?.trim();
+    console.log('[DEBUG] checkResponse() - Raw fact-check response:', rawAnswer);
 
-    return answer === "YES";
+    // Parse JSON response
+    try {
+      const factCheckResult = JSON.parse(rawAnswer);
+      console.log('[DEBUG] checkResponse() - Parsed JSON:', JSON.stringify(factCheckResult));
+      if (factCheckResult.incorrect && factCheckResult.incorrect.length > 0) {
+        console.log('[DEBUG] checkResponse() - Incorrect statements:', factCheckResult.incorrect);
+      }
+      return factCheckResult.approved?.toUpperCase() === "YES";
+    } catch (parseError) {
+      // Fallback: strict check for exactly "YES"
+      console.log('[DEBUG] checkResponse() - JSON parse failed, falling back to strict text check');
+      return rawAnswer?.toUpperCase() === "YES";
+    }
   } catch (error) {
     console.error('[DEBUG] checkResponse() - Error during fact-check:', error.message);
     // On error, return true to avoid blocking valid responses
