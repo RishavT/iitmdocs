@@ -1,0 +1,78 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: iitm-chatbot-worker
+  namespace: '329264250413'
+  selfLink: >-
+    /apis/serving.knative.dev/v1/namespaces/329264250413/services/iitm-chatbot-worker
+  uid: 29753032-25be-46e4-a3bb-b62ac37b843e
+  resourceVersion: AAZD8LqMUlM
+  generation: 3
+  creationTimestamp: '2025-11-11T19:25:32.251516Z'
+  labels:
+    run.googleapis.com/satisfiesPzs: 'true'
+    cloud.googleapis.com/location: asia-south1
+  annotations:
+    serving.knative.dev/creator: 329264250413-compute@developer.gserviceaccount.com
+    serving.knative.dev/lastModifier: 329264250413-compute@developer.gserviceaccount.com
+    run.googleapis.com/client-name: gcloud
+    run.googleapis.com/client-version: 548.0.0
+    run.googleapis.com/operation-id: bca9038e-57e8-425c-bf33-1fa31b583c3d
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/urls: >-
+      ["https://iitm-chatbot-worker-329264250413.asia-south1.run.app","https://iitm-chatbot-worker-d2k7gd2v6q-el.a.run.app"]
+spec:
+  template:
+    metadata:
+      labels:
+        client.knative.dev/nonce: qdgwbwwhcp
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        autoscaling.knative.dev/maxScale: '100'
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 548.0.0
+        run.googleapis.com/startup-cpu-boost: 'true'
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      serviceAccountName: 329264250413-compute@developer.gserviceaccount.com
+      containers:
+      - image: >-
+          gcr.io/showcase-study-app/iitm-chatbot-worker:ee0f536d716ef0d2f076142fdc11fea42e52c37e
+        ports:
+        - name: http1
+          containerPort: 8787
+        env:
+        - name: WEAVIATE_URL
+          value: 'https://tsdtwa0brjowronhmnni9w.c0.asia-southeast1.gcp.weaviate.cloud'
+        - name: WEAVIATE_API_KEY
+          value: >-
+            WVhaVDMxaXJ1a3ZoQUphY19jSFFpeHRNdjRWazRlREVHdXYxcUVoSUhIMDkya1pranJrN3NiZ0x2eitNPV92MjAw
+        - name: OPENAI_API_KEY
+          value: >-
+            eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InJpc2hhdkBucHRlbC5paXRtLmFjLmluIn0._1KHp21OHdjZesbyElTcpSvrFwY0sUgb8ifogXerAYw
+        - name: COHERE_API_KEY
+          value: jfGDo5wP8Dh1bs8xdY0eULLonmOLP8xRimrVzIw7
+        - name: CHAT_API_ENDPOINT
+          value: 'https://aipipe.org/openrouter/v1/chat/completions'
+        - name: CHAT_MODEL
+          value: gpt-4o-mini
+        - name: EMBEDDING_PROVIDER
+          value: cohere
+        - name: EMBEDDING_MODEL
+          value: embed-multilingual-v3.0
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        startupProbe:
+          timeoutSeconds: 240
+          periodSeconds: 240
+          failureThreshold: 1
+          tcpSocket:
+            port: 8787
+  traffic:
+  - percent: 100
+    latestRevision: true
+

@@ -49,9 +49,9 @@ Table 2b: Internships through IIC
 | September 2024 | 60/196                                                | 88                                                   | 49                                 |
 | January 2025   | 35/151                                                | 63                                                   | 29                                 |
 
-Stipend for internships (per month) : Minimum - Rs 10,000; Median - Rs 27,705;
+Stipend for internships (per month): Minimum - Rs 10 thousand; Median - Rs 27,705;
 
-Highest so far - Rs 60,000/-
+Highest so far - Rs 60 thousand (60,000)
 
 Table 2c: Jobs through IIC
 
@@ -62,9 +62,9 @@ Table 2c: Jobs through IIC
 | September 2024 | 14/44                                          | 12                                            | 3                           |
 | January 2025   | 15/47                                          | 11                                            | 8                           |
 
-Salary for jobs (Per year): Minimum - Rs 3,60,000; Median - Rs 8,09,230;
+Salary for jobs (Per year): Minimum - Rs 3.6 Lakhs; Median - Rs 8.09 Lakhs;
 
-Highest so far - Rs 15,00,000
+Highest so far - Rs 15 Lakhs (15 LPA)
 
 Hear from our students:
 

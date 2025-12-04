@@ -1,6 +1,128 @@
 steps:
-  # Build the Docker image
+  # Step 1: Create VPC Connector (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'create-vpc-connector'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if ! gcloud compute networks vpc-access connectors describe iitm-vpc-connector --region=asia-south1 2>/dev/null; then
+          echo "Creating VPC connector..."
+          gcloud compute networks vpc-access connectors create iitm-vpc-connector \
+            --region=asia-south1 \
+            --network=default \
+            --range=10.8.0.0/28 \
+            --min-instances=2 \
+            --max-instances=3
+          echo "Waiting for VPC connector to be ready..."
+          sleep 30
+        else
+          echo "VPC connector already exists"
+        fi
+
+  # Step 2: Create GCE VM (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'create-vm'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if ! gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a 2>/dev/null; then
+          echo "Creating GCE VM..."
+          gcloud compute instances create iitm-ollama-vm \
+            --zone=asia-south1-a \
+            --machine-type=e2-medium \
+            --image-family=ubuntu-2204-lts \
+            --image-project=ubuntu-os-cloud \
+            --boot-disk-size=20GB \
+            --tags=iitm-ollama \
+            --no-address \
+            --metadata-from-file=startup-script=scripts/gce-startup.sh
+          echo "Waiting for VM to be ready (2 minutes)..."
+          sleep 120
+        else
+          echo "GCE VM already exists"
+        fi
+        # Get internal IP
+        INTERNAL_IP=$$(gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a --format='value(networkInterfaces[0].networkIP)')
+        echo "Internal IP: $$INTERNAL_IP"
+        echo "$$INTERNAL_IP" > /workspace/gce_internal_ip.txt
+
+  # Step 3: Update firewall (VPC internal only)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'update-firewall'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if gcloud compute firewall-rules describe allow-iitm-ollama 2>/dev/null; then
+          echo "Updating firewall rule to restrict to VPC internal IPs..."
+          gcloud compute firewall-rules delete allow-iitm-ollama --quiet
+        fi
+        echo "Creating firewall rule for VPC internal access only..."
+        gcloud compute firewall-rules create allow-iitm-ollama \
+          --direction=INGRESS \
+          --priority=1000 \
+          --network=default \
+          --action=ALLOW \
+          --rules=tcp:8080,tcp:11434 \
+          --target-tags=iitm-ollama \
+          --source-ranges=10.0.0.0/8
+
+  # Step 4: Wait for services (Cloud Build can't access internal IP directly)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'wait-services'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$$(cat /workspace/gce_internal_ip.txt)
+        echo "GCE internal IP: $$IP"
+        echo "Waiting for services to be ready (Cloud Build cannot verify directly)..."
+        sleep 60
+
+  # Step 5: Check if embedding is needed (based on tag name)
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'check-embed-trigger'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Checking if embedding should run..."
+        echo "TAG_NAME: $TAG_NAME"
+        echo "BRANCH_NAME: $BRANCH_NAME"
+
+        # If tag contains "embed", run embedding
+        if echo "$TAG_NAME" | grep -qi "embed"; then
+          echo "update" > /workspace/embed_mode.txt
+          echo ">>> Tag contains 'embed' - will run embedding"
+        else
+          echo "skip" > /workspace/embed_mode.txt
+          echo ">>> Tag does not contain 'embed' - skipping embedding"
+        fi
+
+        echo "Embed mode: $$(cat /workspace/embed_mode.txt)"
+
+  # Step 6: Build embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-embed'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image build (no src/ changes)"
+          exit 0
+        fi
+        docker build \
+          -t gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/iitm-embed:latest \
+          -f Dockerfile.embed .
+
+  # Step 7: Build worker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-worker'
     args:
       - 'build'
       - '-t'
@@ -11,52 +133,157 @@ steps:
       - 'Dockerfile.worker'
       - '.'
 
-  # Push the Docker image to Google Container Registry
+  # Step 8: Push embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-embed'
+    entrypoint: 'bash'
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image push (no src/ changes)"
+          exit 0
+        fi
+        docker push gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA
 
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-embed-latest'
+    entrypoint: 'bash'
     args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed image push (no src/ changes)"
+          exit 0
+        fi
+        docker push gcr.io/$PROJECT_ID/iitm-embed:latest
 
-  # Deploy to Cloud Run
+  # Step 9: Push worker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-worker'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-worker-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest']
+
+  # Step 10: Create/Update Cloud Run Job for embedding (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    id: 'create-embed-job'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - 'iitm-chatbot-worker'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
-      - '--region'
-      - 'asia-south1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '8787'
-      - '--set-env-vars'
-      - 'WEAVIATE_URL=${_WEAVIATE_URL},WEAVIATE_API_KEY=${_WEAVIATE_API_KEY},OPENAI_API_KEY=${_OPENAI_API_KEY},COHERE_API_KEY=${_COHERE_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},EMBEDDING_PROVIDER=${_EMBEDDING_PROVIDER},EMBEDDING_MODEL=${_EMBEDDING_MODEL}'
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed job creation (no src/ changes)"
+          exit 0
+        fi
+
+        IP=$$(cat /workspace/gce_internal_ip.txt)
+        echo "Creating/updating embed job with VPC connector..."
+
+        # Set CLEAR_DB=true if files were deleted
+        if [ "$$EMBED_MODE" = "delete" ]; then
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,CLEAR_DB=true"
+          echo ">>> CLEAR_DB=true (files were deleted)"
+        else
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434"
+        fi
+
+        gcloud run jobs deploy iitm-embed-job \
+          --image gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA \
+          --region asia-south1 \
+          --vpc-connector iitm-vpc-connector \
+          --vpc-egress private-ranges-only \
+          --set-env-vars "$$ENV_VARS" \
+          --task-timeout=30m \
+          --max-retries=1
+
+  # Step 11: Execute the embed job and stream logs (only if src/ changed)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'run-embed-job'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        EMBED_MODE=$$(cat /workspace/embed_mode.txt)
+        if [ "$$EMBED_MODE" = "skip" ]; then
+          echo "Skipping embed job execution (no src/ changes)"
+          exit 0
+        fi
+
+        echo "Running embed job..."
+
+        # Execute job and capture execution name
+        EXECUTION=$$(gcloud run jobs execute iitm-embed-job \
+          --region asia-south1 \
+          --format='value(metadata.name)')
+
+        echo "Execution started: $$EXECUTION"
+        echo "Streaming logs..."
+
+        # Stream logs while job is running
+        gcloud beta run jobs executions logs tail $$EXECUTION \
+          --region asia-south1 &
+        LOG_PID=$$!
+
+        # Wait for job to complete
+        while true; do
+          STATUS=$$(gcloud run jobs executions describe $$EXECUTION \
+            --region asia-south1 \
+            --format='value(status.conditions[0].type)')
+
+          if [ "$$STATUS" = "Completed" ]; then
+            echo ""
+            echo "Job completed successfully!"
+            kill $$LOG_PID 2>/dev/null || true
+            break
+          elif [ "$$STATUS" = "Failed" ]; then
+            echo ""
+            echo "Job failed!"
+            kill $$LOG_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          sleep 5
+        done
+
+  # Step 12: Deploy Cloud Run service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-cloudrun'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$$(cat /workspace/gce_internal_ip.txt)
+        echo "Deploying Cloud Run service with VPC connector..."
+        gcloud run deploy iitm-chatbot-worker \
+          --image gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA \
+          --region asia-south1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --port 8787 \
+          --vpc-connector iitm-vpc-connector \
+          --vpc-egress private-ranges-only \
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
 
 # Store images in Google Container Registry
+# Note: Only worker images are listed here since embed images are conditionally built
 images:
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
 
 # Substitutions for environment variables
-# These should be configured in the Cloud Build trigger settings
 substitutions:
-  _WEAVIATE_URL: ''
-  _WEAVIATE_API_KEY: ''
   _OPENAI_API_KEY: ''
-  _COHERE_API_KEY: ''
-  _CHAT_API_ENDPOINT: 'https://aipipe.org/openrouter/v1/chat/completions'
+  _CHAT_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions'
   _CHAT_MODEL: 'gpt-4o-mini'
-  _EMBEDDING_PROVIDER: 'cohere'
-  _EMBEDDING_MODEL: 'embed-multilingual-v3.0'
+
+# 40 minutes timeout for first-time setup
+timeout: '2400s'
 
 options:
   logging: CLOUD_LOGGING_ONLY

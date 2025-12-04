@@ -20,8 +20,9 @@
   <div id="chat-area" class="flex-grow-1 overflow-auto my-2"></div>
   <form id="chat-form" class="input-group flex-shrink-0">
     <input id="question-input" type="text" class="form-control" placeholder="Ask a question">
-    <button id="ask-button" class="btn btn-primary">Ask</button>
+    <button id="ask-button" class="btn btn-primary" disabled>Ask</button>
   </form>
+  <small id="min-words-hint" class="text-muted mt-1">Please type at least 5 words</small>
   <script src="qa.js" type="module"></script>
 </body>
 

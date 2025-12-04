@@ -5,14 +5,18 @@
     "lint:html": "npx -y js-beautify@1 '**/*.html' --type html --replace --indent-size 2 --max-preserve-newlines 1 --end-with-newline",
     "lint": "npm run lint:oxlint && npm run lint:js-md && npm run lint:html",
     "dev": "wrangler dev",
+    "dev:node": "node server.js",
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "wrangler": "^4.28.1",
-    "vitest": "^2.1.0",
     "@cloudflare/workers-types": "^4.20241218.0",
-    "jsdom": "^25.0.0"
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^4.28.1"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }

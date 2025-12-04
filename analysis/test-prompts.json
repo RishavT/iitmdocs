@@ -1,0 +1,3575 @@
+{
+  "prompts": [
+    {
+      "question": "What are the details about eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about software requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain apprenticeship program to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When is exam schedules?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is fashion?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Explain diploma level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain placement opportunities to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain student life",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain academic policies to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's the average salary?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "yes",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "What is quantum physics?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Explain the grading system",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about eligibility criteria",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain the IIT Madras programme to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the timeline for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about climate change",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about the grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is sports?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about the IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through access academic documents",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to change my learning path when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the dates for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about learning paths",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain apprenticeship program",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I register for courses if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "a",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Please explain credit clearing to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to re-enter after diploma when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Will I definitely get a job after this?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Can you describe re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Will companies hire me?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What is foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is cryptocurrency?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about academic calendar",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain fees structure",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I clear credits if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When does course registration happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is there an age limit?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Guide me through progress to diploma level",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain the programme timeline",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about direct entry to diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about software requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain re-entry after diploma to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about the programme timeline?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is course registration?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "idk",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "How do I get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about the IIT Madras programme",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about the admission process?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about the grading system",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about learning paths?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about course registration",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through change my learning path",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to clear credits when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain academic documents",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain partner institutions to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I make money online?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about career choices?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain hardware requirements to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about apprenticeship program?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about placement opportunities",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about direct entry to diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to access academic documents when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through apply for admission",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about the programme timeline",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through register for courses",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain direct entry to diploma to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I lose weight?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe software requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When is course registration?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I get direct entry if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain foundation level courses to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about the grading system",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about foundation level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain career choices",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe credit clearing?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to transfer credits when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the timeline for placement activities?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "???",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Explain placement opportunities",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain credit transfer",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about academic policies",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain credit transfer to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe alumni details?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "thanks",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Tell me about fees structure",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "what",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Tell me about direct entry to diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the timeline for course registration?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is student life?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about career choices",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about cryptocurrency",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about career choices?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain best projects",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When does exam schedules happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Who is the best professor?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What are the details about student life?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about apprenticeship program?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain academic policies",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is politics?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about software requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe diploma level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about credit transfer",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to get direct entry when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I skip foundation level?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What do I need to do to register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe academic documents?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I change my learning path if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is movies?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Can I apply for admission if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about the admission process",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about the IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I progress to diploma level if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain fees structure to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about course registration?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is learning paths?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about re-entry after diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about academic documents",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about placement opportunities",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the programme timeline?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about the programme timeline",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "hello",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "What is climate change?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to apply for placement when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain the programme timeline to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain the grading system to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "tell me everything about everything",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "What is the pass rate?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Tell me about sports",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Explain course registration",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I complete this in 6 months?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Can you describe the programme timeline?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the timeline for exam schedules?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe course registration?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is alumni details?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I transfer to on-campus?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What do I need to do to transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about direct entry to diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain diploma level courses to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about eligibility criteria",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about course registration?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about alumni details?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about re-entry after diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When does admissions happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the admission process?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about partner institutions",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I complete the foundation level if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the dates for exam schedules?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When does the academic calendar happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the dates for admissions?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about academic policies",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through re-enter after diploma",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain foundation level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about partner institutions?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about alumni details?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain the IIT Madras programme",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When is admissions?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What if I don't have a computer?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "I want to know about diploma level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about best projects",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can international students apply?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "no",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "What are the steps to apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe apprenticeship program?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about artificial intelligence",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about academic calendar",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain learning paths",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about student life",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is machine learning?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to progress to diploma level when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about credit clearing?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about learning paths?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about apprenticeship program",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about hardware requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is credit transfer?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about quantum physics",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about credit transfer",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about credit clearing",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain hardware requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain direct entry to diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When is the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": ".......................................................................................................",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "How do I fix my car?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe direct entry to diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "?",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Is this better than IIT Delhi?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Can you describe credit transfer?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain alumni details to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How many students fail?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What do I need to do to complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I pause my studies?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What do I need to do to apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about the programme timeline?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about academic policies?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is credit clearing?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Are there scholarships?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Tell me about politics",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What is artificial intelligence?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Can I do this while working full time?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Explain alumni details",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through apply for placement",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about apprenticeship program",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about credit clearing?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain academic calendar to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about credit transfer?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What if I fail?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What are the steps to get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about credit transfer?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Will this make me rich?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Explain partner institutions",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain software requirements to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through transfer credits",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe the admission process?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain eligibility criteria to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is direct entry to diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is this programme free?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What information do you have about academic policies?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Tell me about fashion",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Please explain best projects to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I progress to diploma level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to apply for admission when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain credit clearing",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe the IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about academic documents",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about best projects",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I cook pasta?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to transfer credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain the admission process",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I hack a website?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What is software requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I apply for placement if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the steps to register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Do I need to know programming?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Explain re-entry after diploma",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I get a refund?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What are the details about academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is career choices?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the dates for course registration?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about software requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about diploma level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the dates for placement activities?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe learning paths?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain career choices to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about foundation level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about machine learning",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about the admission process?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about career choices",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Do I need to attend classes?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Can I re-enter after diploma if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about academic documents?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about diploma level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "When is placement activities?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain academic calendar",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is apprenticeship program?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about credit clearing",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is academic documents?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about student life?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I build a rocket?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through complete the foundation level",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about alumni details",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about learning paths",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I transfer credits if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about the grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about fees structure",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "help",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "Tell me about hardware requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe academic policies?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I learn guitar?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "What is cooking?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "Explain eligibility criteria",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain learning paths to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about the admission process",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe career choices?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the timeline for admissions?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to register for courses when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about student life",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through clear credits",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I access academic documents if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I register for courses?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is diploma level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about alumni details",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for complete the foundation level?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Explain software requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can I cheat in exams?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "What is re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is partner institutions?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about the IIT Madras programme",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "hi",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "edge_case"
+    },
+    {
+      "question": "What information do you have about partner institutions?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe student life?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain course registration to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Guide me through get direct entry",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is the degree valuable?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Is this programme easy?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "curated"
+    },
+    {
+      "question": "Can you describe partner institutions?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain academic documents to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What do I need to do to access academic documents?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain student life to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I clear credits?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What are the details about diploma level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What information do you have about academic documents?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about course registration",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Can you describe the grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for get direct entry?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Is it possible to complete the foundation level when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What's involved in re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How do I apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Please explain the admission process to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is the process for re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "How can I re-enter after diploma?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "What is academic policies?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "I want to know about partner institutions",
+      "type": "factual",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about cooking",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "When does placement activities happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "template"
+    },
+    {
+      "question": "Tell me about movies",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "template"
+    },
+    {
+      "question": "what are the details about eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT ARE THE DETAILS ABOUT ELIGIBILITY CRITERIA?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What are the details about eligibility criteria????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What are teh details about eligibility criteria?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "tell me about software requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "TELL ME ABOUT SOFTWARE REQUIREMENTS",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Tell me about software requirements???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Tell me about software requirements",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "please explain apprenticeship program to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "PLEASE EXPLAIN APPRENTICESHIP PROGRAM TO ME",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Please explain apprenticeship program to me???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Please explain apprenticeship program to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "when is exam schedules?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHEN IS EXAM SCHEDULES?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "When is exam schedules????",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "When si exam schedules?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS ACADEMIC CALENDAR?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is academic calendar????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si academic calendar?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is fashion?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS FASHION?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is fashion????",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si fashion?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_typo"
+    },
+    {
+      "question": "explain diploma level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "EXPLAIN DIPLOMA LEVEL COURSES",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Explain diploma level courses???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Explain diploma level courses",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "please explain placement opportunities to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "PLEASE EXPLAIN PLACEMENT OPPORTUNITIES TO ME",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Please explain placement opportunities to me???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Please explain placement opportunities to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "explain student life",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "EXPLAIN STUDENT LIFE",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Explain student life???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Explain student life",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what are the details about fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT ARE THE DETAILS ABOUT FEES STRUCTURE?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What are the details about fees structure????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What are teh details about fees structure?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what information do you have about best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT INFORMATION DO YOU HAVE ABOUT BEST PROJECTS?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What information do you have about best projects????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What information do you have about best projects?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "please explain academic policies to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "PLEASE EXPLAIN ACADEMIC POLICIES TO ME",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Please explain academic policies to me???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Please explain academic policies to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what's the average salary?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT'S THE AVERAGE SALARY?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What's the average salary????",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What's teh average salary?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_typo"
+    },
+    {
+      "question": "yes",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "YES",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_caps"
+    },
+    {
+      "question": "yes???",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_punct"
+    },
+    {
+      "question": "yes",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is quantum physics?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS QUANTUM PHYSICS?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is quantum physics????",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si quantum physics?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_typo"
+    },
+    {
+      "question": "explain the grading system",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "EXPLAIN THE GRADING SYSTEM",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Explain the grading system???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Explain teh grading system",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "how do i change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "HOW DO I CHANGE MY LEARNING PATH?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "How do I change my learning path????",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "How do I change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what information do you have about hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT INFORMATION DO YOU HAVE ABOUT HARDWARE REQUIREMENTS?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What information do you have about hardware requirements????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What information do you have about hardware requirements?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is the iit madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS THE IIT MADRAS PROGRAMME?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is the IIT Madras programme????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si teh IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "tell me about eligibility criteria",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "TELL ME ABOUT ELIGIBILITY CRITERIA",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Tell me about eligibility criteria???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Tell me about eligibility criteria",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "please explain the iit madras programme to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "PLEASE EXPLAIN THE IIT MADRAS PROGRAMME TO ME",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Please explain the IIT Madras programme to me???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Please explain teh IIT Madras programme to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what information do you have about foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT INFORMATION DO YOU HAVE ABOUT FOUNDATION LEVEL COURSES?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What information do you have about foundation level courses????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What information do you have about foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is the timeline for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS THE TIMELINE FOR THE ACADEMIC CALENDAR?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is the timeline for the academic calendar????",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si teh timeline for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what do i need to do to change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT DO I NEED TO DO TO CHANGE MY LEARNING PATH?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What do I need to do to change my learning path????",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What do I need to do to change my learning path?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "tell me about climate change",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "TELL ME ABOUT CLIMATE CHANGE",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Tell me about climate change???",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Tell me about climate change",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what information do you have about the grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT INFORMATION DO YOU HAVE ABOUT THE GRADING SYSTEM?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What information do you have about the grading system????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What information do you have about teh grading system?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is sports?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS SPORTS?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is sports????",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si sports?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what information do you have about the iit madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT INFORMATION DO YOU HAVE ABOUT THE IIT MADRAS PROGRAMME?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What information do you have about the IIT Madras programme????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What information do you have about teh IIT Madras programme?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what are the steps to apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT ARE THE STEPS TO APPLY FOR PLACEMENT?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What are the steps to apply for placement????",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What are teh steps to apply for placement?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "guide me through access academic documents",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "GUIDE ME THROUGH ACCESS ACADEMIC DOCUMENTS",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Guide me through access academic documents???",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Guide me through access academic documents",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "is it possible to change my learning path when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "IS IT POSSIBLE TO CHANGE MY LEARNING PATH WHEN {CONDITION}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Is it possible to change my learning path when {condition}????",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "si it possible to change my learning path when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what are the dates for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT ARE THE DATES FOR THE ACADEMIC CALENDAR?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What are the dates for the academic calendar????",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What are teh dates for the academic calendar?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "i want to know about learning paths",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "I WANT TO KNOW ABOUT LEARNING PATHS",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "I want to know about learning paths???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "I want to know about learning paths",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "explain apprenticeship program",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "EXPLAIN APPRENTICESHIP PROGRAM",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Explain apprenticeship program???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Explain apprenticeship program",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "can i register for courses if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "CAN I REGISTER FOR COURSES IF {CONDITION}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Can I register for courses if {condition}????",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Can I regsiter for courses if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "a",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "A",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_caps"
+    },
+    {
+      "question": "a???",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_punct"
+    },
+    {
+      "question": "a",
+      "type": "edge",
+      "expected": "handle_gracefully",
+      "source": "variation_typo"
+    },
+    {
+      "question": "please explain credit clearing to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "PLEASE EXPLAIN CREDIT CLEARING TO ME",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Please explain credit clearing to me???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Please explain credit clearing to me",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what are the details about placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT ARE THE DETAILS ABOUT PLACEMENT OPPORTUNITIES?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What are the details about placement opportunities????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What are teh details about placement opportunities?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "is it possible to re-enter after diploma when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "IS IT POSSIBLE TO RE-ENTER AFTER DIPLOMA WHEN {CONDITION}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Is it possible to re-enter after diploma when {condition}????",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "si it possible to re-enter after diploma when {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "will i definitely get a job after this?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WILL I DEFINITELY GET A JOB AFTER THIS?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Will I definitely get a job after this????",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Will I definitely get a job after thsi?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_typo"
+    },
+    {
+      "question": "can you describe re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "CAN YOU DESCRIBE RE-ENTRY AFTER DIPLOMA?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Can you describe re-entry after diploma????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Can you describe re-entry after diploma?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "will companies hire me?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WILL COMPANIES HIRE ME?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Will companies hire me????",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Will companies hire me?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS FOUNDATION LEVEL COURSES?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is foundation level courses????",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si foundation level courses?",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what is cryptocurrency?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT IS CRYPTOCURRENCY?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What is cryptocurrency????",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What si cryptocurrency?",
+      "type": "out_of_scope",
+      "expected": "decline",
+      "source": "variation_typo"
+    },
+    {
+      "question": "i want to know about academic calendar",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "I WANT TO KNOW ABOUT ACADEMIC CALENDAR",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "I want to know about academic calendar???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "I want to know about academic calendar",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "explain fees structure",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "EXPLAIN FEES STRUCTURE",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Explain fees structure???",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Explain fees structure",
+      "type": "factual",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "can i clear credits if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "CAN I CLEAR CREDITS IF {CONDITION}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Can I clear credits if {condition}????",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "Can I clear credits if {condition}?",
+      "type": "conditional",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "what's involved in apply for admission?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHAT'S INVOLVED IN APPLY FOR ADMISSION?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "What's involved in apply for admission????",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "What's involved in apply for admsision?",
+      "type": "procedural",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "when does course registration happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "WHEN DOES COURSE REGISTRATION HAPPEN?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_caps"
+    },
+    {
+      "question": "When does course registration happen????",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_punct"
+    },
+    {
+      "question": "When does course regsitration happen?",
+      "type": "temporal",
+      "expected": "answer",
+      "source": "variation_typo"
+    },
+    {
+      "question": "is there an age limit?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_lowercase"
+    },
+    {
+      "question": "IS THERE AN AGE LIMIT?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_caps"
+    },
+    {
+      "question": "Is there an age limit????",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_punct"
+    },
+    {
+      "question": "si tehre an age limit?",
+      "type": "tricky",
+      "expected": "careful",
+      "source": "variation_typo"
+    }
+  ],
+  "stats": {
+    "total": 594,
+    "answerable": 327,
+    "unanswerable": 27,
+    "tricky": 25,
+    "edge": 15
+  }
+}

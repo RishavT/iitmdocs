@@ -55,28 +55,28 @@ This section provides concise statistics on internship and employment placements
 
 [**Dedicated Partners**](#partners)
 
-30,000
+Rs 30,000 (30 thousand)
 
-Average Stipend  
-(Per Month)  
+Average Stipend
+(Per Month)
 Internship Category
 
-60,000
+Rs 60,000 (60 thousand)
 
-Highest Stipend  
-(Per Month)  
+Highest Stipend
+(Per Month)
 Internship Category
 
-10,00,000
+Rs 10 Lakhs (10 LPA)
 
-Average Salary  
-(Per Annum)  
+Average Salary
+(Per Annum)
 Employment Category
 
-25,00,000
+Rs 25 Lakhs (25 LPA)
 
-Highest Salary  
-(Per Annum)  
+Highest Salary
+(Per Annum)
 Employment Category
 
 ## Partners
