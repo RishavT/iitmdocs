@@ -236,8 +236,8 @@ Each term, pay only for the courses you register for in that specific term.
 | Foundation Only | 32 | ₹32,000 |
 | Foundation + One Diploma | 59 | ₹94,500 |
 | Foundation + Two Diplomas | 86 | ₹1,57,000 |
-| BSc Degree | 114 | ₹2,21,000 - ₹2,27,000 |
-| BS Degree | 142 | ₹3,15,000 - ₹3,51,000 |
+| BSc Degree | 114 | ₹2.21L - ₹2.47L |
+| BS Degree | 142 | ₹3.25L - ₹3.87L |
 
 The IITM BS program strives to secure scholarships from CSR and Alumni donations for its students from socially and economically disadvantaged backgrounds to cover the full program fees.
 

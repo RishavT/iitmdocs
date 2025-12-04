@@ -403,7 +403,7 @@ Guidelines:
 6. If information is partial or you need to suggest contacting support, still provide what you know first
 7. Be concise and use simple Markdown
 8. DO NOT make up facts, dates, or anything that is not directly quoted in the documents
-9. IMPORTANT: When citing specific numbers (CGPA cutoffs, fees, percentages, dates, credits), you MUST quote them EXACTLY as they appear in the documents. Never estimate, round, or infer numerical values.
+9. IMPORTANT: When citing specific numbers (CGPA cutoffs, fees, percentages, dates, credits), you MUST quote them EXACTLY as they appear in the documents. Never estimate, round, or infer numerical values. If the document says "2.21L", write "2.21L" - do NOT expand to "2,21,000" or "221000".
 10. Always give a title to your answer
 
 STRICTLY REFUSE to answer:
@@ -699,11 +699,11 @@ OR
 
 FACT-CHECKING RULES (1-6):
 1. APPROVE if facts in the response MATCH the context (even with different formatting)
-2. REJECT if a fact is WRONG (e.g., context says "30,000" but response says "50,000")
-3. "₹30,000" = "30,000" = "Rs 30,000" - these are the SAME, approve them
-4. "₹10,00,000" = "10 LPA" = "10,00,000 per annum" - these are the SAME, approve them
-5. Paraphrasing is OK. Different currency symbols are OK. Different number formats are OK.
-6. Only flag facts that are numerically or factually DIFFERENT from the context.
+2. REJECT ONLY if a fact is numerically WRONG (e.g., context says "30,000" but response says "50,000")
+3. "₹30,000" = "30,000" = "Rs 30,000" = "Rs. 30,000" - these are ALL the SAME, APPROVE
+4. "2.21L" = "2,21,000" = "221000" = "₹2.21 Lakhs" - these are ALL the SAME, APPROVE
+5. If the response matches the context, APPROVE it. Do not overthink or look for problems.
+6. When in doubt, APPROVE. Only reject for clear factual errors.
 
 CONTENT RULES (7-9):
 7. Academic/placement content (admissions, courses, fees, exams, placements) - APPROVE. Psychological/relationship ADVICE - REJECT. But referring to RAAHAT - APPROVE.
