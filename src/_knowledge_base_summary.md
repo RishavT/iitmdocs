@@ -78,8 +78,8 @@ This document summarizes the topics and keywords available in the chatbot's know
 - Foundation: Rs 32,000
 - One Diploma: Rs 62,500
 - Both Diplomas: Rs 1,25,000
-- BSc Total: Rs 2,21,000 - 2,27,000
-- BS Total: Rs 3,15,000 - 3,51,000
+- BSc Total: Rs 2.21L - 2.47L
+- BS Total: Rs 3.25L - 3.87L
 
 ### Fee Waivers (based on category & income):
 - SC/ST: 50-75% waiver
@@ -300,7 +300,7 @@ These examples show how users might phrase questions. Map these to the relevant 
 
 ### FEES & COSTS (21-35)
 21. "how much does the program cost" → Fee structure
-22. "total fees for BS degree" → Rs 3,15,000 - 3,51,000
+22. "total fees for BS degree" → Rs 3.25L - 3.87L
 23. "is there any scholarship" → Fee waivers by category/income
 24. "fee waiver for OBC students" → 50% if income < 5 LPA
 25. "can i get education loan" → SBI loan available
