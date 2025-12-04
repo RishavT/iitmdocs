@@ -81,54 +81,24 @@ steps:
         echo "Waiting for services to be ready (Cloud Build cannot verify directly)..."
         sleep 60
 
-  # Step 5: Check if src/ files changed (to decide if embedding is needed)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'check-src-changes'
+  # Step 5: Check if embedding is needed (based on tag name)
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'check-embed-trigger'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        echo "Checking for src/ changes..."
+        echo "Checking if embedding should run..."
+        echo "TAG_NAME: $TAG_NAME"
+        echo "BRANCH_NAME: $BRANCH_NAME"
 
-        # Get the currently deployed image tag (commit SHA) from Cloud Run
-        DEPLOYED_IMAGE=$$(gcloud run services describe iitm-chatbot-worker \
-          --region=asia-south1 \
-          --format='value(spec.template.spec.containers[0].image)' 2>/dev/null || echo "")
-
-        if [ -n "$$DEPLOYED_IMAGE" ]; then
-          # Extract commit SHA from image tag (gcr.io/project/image:COMMIT_SHA)
-          LAST_DEPLOYED_SHA=$$(echo "$$DEPLOYED_IMAGE" | sed 's/.*://')
-          echo "Last deployed commit: $$LAST_DEPLOYED_SHA"
-
-          # Fetch enough history to include the deployed commit
-          git fetch --depth=100 origin || true
-
-          # Check if we can find the deployed commit
-          if git cat-file -t $$LAST_DEPLOYED_SHA >/dev/null 2>&1; then
-            COMPARE_BASE="$$LAST_DEPLOYED_SHA"
-            echo "Comparing against deployed commit: $$COMPARE_BASE"
-          else
-            echo "Deployed commit not in history, comparing against HEAD~1"
-            COMPARE_BASE="HEAD~1"
-          fi
-        else
-          echo "No existing deployment found, comparing against HEAD~1"
-          COMPARE_BASE="HEAD~1"
-        fi
-
-        # Check if any src/ files changed since last deployment
-        if git diff --name-only $$COMPARE_BASE HEAD 2>/dev/null | grep -q '^src/'; then
-          # Check if any src/ files were DELETED
-          if git diff --name-status $$COMPARE_BASE HEAD 2>/dev/null | grep -E '^D\s+src/'; then
-            echo "delete" > /workspace/embed_mode.txt
-            echo ">>> src/ files DELETED - will clear DB and re-embed all"
-          else
-            echo "update" > /workspace/embed_mode.txt
-            echo ">>> src/ files added/modified - incremental embed"
-          fi
+        # If tag contains "embed", run embedding
+        if echo "$TAG_NAME" | grep -qi "embed"; then
+          echo "update" > /workspace/embed_mode.txt
+          echo ">>> Tag contains 'embed' - will run embedding"
         else
           echo "skip" > /workspace/embed_mode.txt
-          echo ">>> No src/ changes since $$COMPARE_BASE - skipping embedding"
+          echo ">>> Tag does not contain 'embed' - skipping embedding"
         fi
 
         echo "Embed mode: $$(cat /workspace/embed_mode.txt)"
