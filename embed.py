@@ -97,16 +97,20 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud",
     src_path = Path(src_directory)
 
     files = [f for f in src_path.glob("**/*") if f.is_file()]
-    logger.info(f"Processing {len(files)} files from {src_path.absolute()}")
+    total_files = len(files)
+    logger.info(f"Processing {total_files} files from {src_path.absolute()}")
 
     successful_embeds = 0
+    skipped = 0
+    failed = 0
 
-    for file_path in files:
+    for idx, file_path in enumerate(files, 1):
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
         except (UnicodeDecodeError, IOError) as e:
-            logger.warning(f"Skipping {file_path}: {e}")
+            logger.warning(f"[{idx}/{total_files}] Skipping {file_path.name}: {e}")
+            skipped += 1
             continue
 
         try:
@@ -126,17 +130,22 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud",
             if existing.objects:
                 existing_doc = existing.objects[0]
                 if existing_doc.properties["content_hash"] == doc_data["content_hash"]:
+                    logger.info(f"[{idx}/{total_files}] Unchanged: {file_path.name}")
+                    skipped += 1
                     continue
                 collection.data.update(uuid=existing_doc.uuid, properties=doc_data)
+                logger.info(f"[{idx}/{total_files}] Updated: {file_path.name}")
             else:
                 collection.data.insert(doc_data)
+                logger.info(f"[{idx}/{total_files}] Embedded: {file_path.name}")
 
             successful_embeds += 1
         except Exception as e:
-            logger.error(f"Failed to embed {file_path}: {e}")
+            logger.error(f"[{idx}/{total_files}] Failed {file_path.name}: {e}")
+            failed += 1
             continue
 
-    logger.info(f"Embedded {successful_embeds} documents")
+    logger.info(f"Completed: {successful_embeds} embedded, {skipped} skipped, {failed} failed (total: {total_files})")
     return True
 
 
