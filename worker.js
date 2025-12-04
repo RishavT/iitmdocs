@@ -13,6 +13,114 @@ function isLikelyOutOfScope(question) {
   );
 }
 
+// Query synonym mapping: Maps various question phrasings to canonical search queries
+// Format: array of [patterns, canonical_query] where patterns trigger the canonical query
+const QUERY_SYNONYMS = [
+  // GRADING & ASSESSMENT
+  [["grading policy", "grading formula", "grade calculation", "how is grade calculated", "marks distribution", "score calculation"],
+   "grading formula score calculation GAA quiz end term OPPE weightage"],
+  [["pdsa grading", "pdsa marks", "pdsa score"],
+   "PDSA Programming Data Structures Algorithms grading formula T = 0.1GAA + 0.4F + 0.2OP quiz"],
+  [["python grading", "python marks"],
+   "Python programming grading formula OPPE PE1 PE2 quiz end term"],
+  [["i grade", "incomplete grade", "i_op", "i_both"],
+   "I grade incomplete I_OP I_BOTH absent end term OPPE fail next term"],
+
+  // QUIZ & EXAM
+  [["quiz 1 syllabus", "quiz1 syllabus", "q1 syllabus"],
+   "Quiz 1 syllabus weeks 1-4 content coverage"],
+  [["quiz 2 syllabus", "quiz2 syllabus", "q2 syllabus"],
+   "Quiz 2 Qz2 syllabus Week 5-8 Week 3-8 content coverage grading"],
+  [["end term syllabus", "final exam syllabus", "et syllabus"],
+   "End term exam syllabus weeks 1-12 full course content"],
+  [["exam city change", "change exam center", "change quiz city", "edit exam city"],
+   "exam city change registration different cities quiz end term each term"],
+  [["answer review", "review answers", "see my answers", "check answers after exam"],
+   "answer review exam results dashboard score release"],
+  [["no quiz 1", "without quiz 1", "courses no quiz"],
+   "courses without Quiz 1 Software Engineering MLP BDM TDS Big Data"],
+  [["no quiz 2", "without quiz 2"],
+   "courses without Quiz 2 Python Programming C MLP TDS Big Data"],
+
+  // CREDITS
+  [["3 credits", "three credits", "3 credit subjects", "which subjects 3 credits"],
+   "credits per course foundation 4 credits diploma degree 4 credits NPTEL 1-3 credits"],
+  [["4 credits", "four credits"],
+   "4 credits foundation courses diploma courses apprenticeship"],
+  [["nptel credits", "nptel transfer", "how many nptel", "nptel credit transfer"],
+   "NPTEL credit transfer maximum 8 credits 4-week=1 8-week=2 12-week=3 Rs 1000 per credit"],
+  [["campus credits", "iitm campus courses"],
+   "campus courses credit transfer maximum 24 credits CGPA 8.0 Rs 2500 per credit"],
+
+  // COURSES & CURRICULUM
+  [["diploma data science courses", "ds diploma courses", "data science diploma subjects"],
+   "Diploma Data Science courses MLF MLT MLP BDM BA TDS Machine Learning Business"],
+  [["diploma programming courses", "dp diploma courses", "programming diploma subjects"],
+   "Diploma Programming courses DBMS PDSA Java System Commands AppDev1 AppDev2"],
+  [["foundation courses", "foundation subjects", "year 1 courses"],
+   "Foundation courses Maths 1 2 Statistics 1 2 English 1 2 Python Computational Thinking"],
+  [["degree courses", "bsc courses", "bs courses"],
+   "Degree level courses Software Engineering Testing AI Deep Learning electives"],
+  [["core pairs", "mandatory pairs"],
+   "core pairs Software Engineering Testing AI Search Deep Learning degree level"],
+  [["prerequisites", "prereq", "pre-requisite"],
+   "prerequisites course requirements Maths Statistics English Python foundation diploma"],
+
+  // ADMISSION & ELIGIBILITY
+  [["direct entry", "dad", "direct admission diploma", "skip foundation"],
+   "Direct Admission Diploma DAD 2 years UG qualifier exam Rs 6000"],
+  [["jee entry", "jee admission", "jee advanced"],
+   "JEE Advanced direct entry foundation level skip qualifier"],
+  [["eligibility", "who can apply", "qualification required"],
+   "eligibility Class 12 passed Mathematics English Class 10 any age any stream"],
+  [["qualifier exam", "qualifier process", "how to qualify"],
+   "qualifier exam 4 weeks preparation Rs 3000 fee application process"],
+
+  // FEES
+  [["fee waiver", "scholarship", "fee reduction", "concession"],
+   "fee waiver SC ST PwD OBC-NCL EWS income 50% 75% waiver"],
+  [["fee waiver documents", "documents for waiver", "waiver proof"],
+   "fee waiver documents category certificate income certificate PwD certificate"],
+  [["army fee waiver", "defense fee waiver", "military fee waiver"],
+   "fee waiver army defense General category income based EWS 50% 75% waiver"],
+  [["total fee", "programme fee", "course fee", "how much fee"],
+   "fee structure Foundation Rs 32000 Diploma Rs 62500 BSc Rs 2.21L BS Rs 3.25L"],
+  [["international fee", "foreign student fee", "outside india fee"],
+   "international students facilitation fee Quiz Rs 2000 End Term Rs 2000-4000"],
+
+  // CERTIFICATES
+  [["hard copy certificate", "original certificate", "physical certificate"],
+   "original certificate hard copy alumni registration Rs 6000 exit form processing"],
+  [["transcript", "mark sheet", "grade card"],
+   "transcript academic record grades courses completed CGPA"],
+
+  // OPPE & SCT
+  [["oppe", "online proctored", "programming exam"],
+   "OPPE Online Proctored Programming Exam remote proctored coding"],
+  [["sct", "system compatibility", "compatibility test"],
+   "SCT System Compatibility Test mandatory before OPPE camera microphone check"],
+
+  // PLACEMENTS
+  [["placement eligibility", "when placement", "eligible for placement"],
+   "placement eligibility internship after 1 diploma job after BSc degree"],
+  [["average salary", "placement salary", "package"],
+   "placement salary average Rs 10 LPA highest Rs 25 LPA internship Rs 30000"],
+  [["companies", "recruiters", "which companies"],
+   "recruiters Amazon Microsoft Deloitte Wipro TCS companies placement"],
+
+  // ACADEMIC POLICIES
+  [["repeat course", "fail course", "retake"],
+   "repeat course fail full fee again all assessments next term"],
+  [["probation", "struck off", "removed"],
+   "academic probation 2 terms struck off 3 terms without registration readmission"],
+  [["chatgpt", "llm", "ai help", "plagiarism"],
+   "LLM ChatGPT plagiarism honor code violation not allowed assignments"],
+
+  // HIGHER STUDIES
+  [["masters", "mtech", "ms", "phd", "higher studies"],
+   "Masters MTech MS PhD GATE CFTI route CGPA 8.0 research campus upgrade"],
+];
+
 // Condensed knowledge base summary for query rewriting context.
 // This is a compact version of src/_knowledge_base_summary.md (the detailed reference).
 // When the source documents change significantly, update both this constant and the full summary file.
@@ -34,13 +142,38 @@ const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
 14. CONTACT: email, phone, support, office address`;
 
 /**
+ * Checks if a query matches any synonym pattern and returns the canonical query.
+ * @param {string} query - The user query to check
+ * @returns {string|null} - The canonical query if matched, null otherwise
+ */
+function findSynonymMatch(query) {
+  const queryLower = query.toLowerCase();
+  for (const [patterns, canonicalQuery] of QUERY_SYNONYMS) {
+    for (const pattern of patterns) {
+      if (queryLower.includes(pattern.toLowerCase())) {
+        return canonicalQuery;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Rewrites a user query to improve search relevance.
- * Uses knowledge base summary as context for better disambiguation.
+ * First checks synonym mapping, then falls back to LLM rewriting.
  * @param {string} query - The original user query
  * @param {Object} env - Environment variables containing API keys
  * @returns {Promise<string>} - The rewritten query for search
  */
 async function rewriteQuery(query, env) {
+  // First, check if query matches any synonym pattern (fast path)
+  const synonymMatch = findSynonymMatch(query);
+  if (synonymMatch) {
+    console.log('[DEBUG] Synonym match found:', query, '→', synonymMatch);
+    return synonymMatch;
+  }
+
+  // Fall back to LLM rewriting for unmatched queries
   const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
 
 ${KNOWLEDGE_BASE_SUMMARY}
@@ -65,7 +198,7 @@ Examples:
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
   try {
-    console.log('[DEBUG] Rewriting query:', query);
+    console.log('[DEBUG] No synonym match, using LLM rewrite for:', query);
     const response = await fetch(chatEndpoint, {
       method: "POST",
       headers: {
@@ -713,6 +846,8 @@ What is not allowed:
 - Any sexual advice
 
 Once you perform the fact check, decide whether the response is approved or not. Don't be overly strict, don't be too lenient. Be the right amount of strict.
+
+IMPORTANT: Do NOT second-guess specific technical details like week ranges (e.g., "Weeks 5-8"), grading formulas, or course codes. If the response mentions specific weeks or formulas, trust them - they come directly from grading documents. Only reject if something is clearly fabricated or contradicts the context.
 
 ---
 
