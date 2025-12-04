@@ -362,10 +362,9 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   const answerText = result.choices?.[0]?.message?.content || "";
   console.log('[DEBUG] Generated answer length:', answerText.length);
 
-  // Step 3: Fact-check the response against context (TEMPORARILY DISABLED)
+  // Step 3: Fact-check the response against context
   console.log('[DEBUG] Starting fact-check...');
-  // const isFactuallyCorrect = await checkResponse({ response: answerText, context, env });
-  const isFactuallyCorrect = true; // TEMP: skip fact-check
+  const isFactuallyCorrect = await checkResponse({ response: answerText, context, env });
   console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
 
   // Step 4: Create a response based on fact-check result
