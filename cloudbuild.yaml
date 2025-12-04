@@ -163,7 +163,8 @@ substitutions:
   _CHAT_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions'
   _CHAT_MODEL: 'gpt-4o-mini'
 
+# Increase timeout for first-time GCE setup
+timeout: '1800s'
+
 options:
   logging: CLOUD_LOGGING_ONLY
-  # Increase timeout for first-time GCE setup
-  timeout: '1800s'
