@@ -13,7 +13,10 @@ function isLikelyOutOfScope(question) {
   );
 }
 
-// Knowledge base summary for query rewriting context
+// Condensed knowledge base summary for query rewriting context.
+// This is a compact version of src/_knowledge_base_summary.md (the detailed reference).
+// When the source documents change significantly, update both this constant and the full summary file.
+// See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
 1. ADMISSION: apply, application, qualifier, eligibility, JEE entry, DAD, documents, enroll, join
 2. PROGRAMME STRUCTURE: foundation, diploma, BSc, BS, levels, credits, certificates, exit points
