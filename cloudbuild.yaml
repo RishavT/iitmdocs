@@ -1,6 +1,105 @@
 steps:
-  # Build the Docker image
+  # Step 1: Reserve static IP (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'reserve-ip'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Check if static IP exists
+        if ! gcloud compute addresses describe iitm-ollama-ip --region=asia-south1 2>/dev/null; then
+          echo "Creating static IP..."
+          gcloud compute addresses create iitm-ollama-ip --region=asia-south1
+        fi
+        # Get the IP address
+        IP=$(gcloud compute addresses describe iitm-ollama-ip --region=asia-south1 --format='value(address)')
+        echo "Static IP: $IP"
+        echo "$IP" > /workspace/gce_ip.txt
+
+  # Step 2: Create GCE VM (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'create-vm'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$(cat /workspace/gce_ip.txt)
+        if ! gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a 2>/dev/null; then
+          echo "Creating GCE VM..."
+          gcloud compute instances create iitm-ollama-vm \
+            --zone=asia-south1-a \
+            --machine-type=e2-medium \
+            --image-family=ubuntu-2204-lts \
+            --image-project=ubuntu-os-cloud \
+            --boot-disk-size=20GB \
+            --tags=iitm-ollama \
+            --address=$IP \
+            --metadata-from-file=startup-script=scripts/gce-startup.sh
+
+          echo "Waiting for VM to be ready (2 minutes)..."
+          sleep 120
+        else
+          echo "GCE VM already exists"
+        fi
+
+  # Step 3: Create firewall rule (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'create-firewall'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if ! gcloud compute firewall-rules describe allow-iitm-ollama 2>/dev/null; then
+          echo "Creating firewall rule..."
+          gcloud compute firewall-rules create allow-iitm-ollama \
+            --direction=INGRESS \
+            --priority=1000 \
+            --network=default \
+            --action=ALLOW \
+            --rules=tcp:8080,tcp:11434 \
+            --target-tags=iitm-ollama \
+            --source-ranges=0.0.0.0/0
+        else
+          echo "Firewall rule already exists"
+        fi
+
+  # Step 4: Ensure services are running on VM
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'ensure-services'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$(cat /workspace/gce_ip.txt)
+        echo "Checking if services are running on GCE VM ($IP)..."
+
+        # Wait for Weaviate to be ready (retry for up to 3 minutes)
+        for i in {1..18}; do
+          if curl -s --connect-timeout 5 "http://$IP:8080/v1/.well-known/ready" | grep -q "true"; then
+            echo "Weaviate is ready!"
+            break
+          fi
+          echo "Waiting for Weaviate... (attempt $i/18)"
+          sleep 10
+        done
+
+        # Wait for Ollama to be ready
+        for i in {1..18}; do
+          if curl -s --connect-timeout 5 "http://$IP:11434/" | grep -q "Ollama"; then
+            echo "Ollama is ready!"
+            break
+          fi
+          echo "Waiting for Ollama... (attempt $i/18)"
+          sleep 10
+        done
+
+        # Verify the model is available
+        echo "Checking if mxbai-embed-large model is available..."
+        curl -s "http://$IP:11434/api/tags" | grep -q "mxbai-embed-large" || echo "Warning: Model may not be loaded yet"
+
+  # Step 5: Build worker Docker image
   - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-worker'
     args:
       - 'build'
       - '-t'
@@ -11,35 +110,46 @@ steps:
       - 'Dockerfile.worker'
       - '.'
 
-  # Push the Docker image to Google Container Registry
+  # Step 6: Push to GCR
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
+    id: 'push-image'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA']
 
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
+    id: 'push-image-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest']
 
-  # Deploy to Cloud Run
+  # Step 7: Re-embed documents
+  - name: 'python:3.11-slim'
+    id: 'embed-docs'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$(cat /workspace/gce_ip.txt)
+        echo "Embedding documents to Weaviate at http://$IP:8080..."
+        pip install --quiet weaviate-client python-dotenv
+        EMBEDDING_MODE=gce \
+        GCE_WEAVIATE_URL=http://$IP:8080 \
+        GCE_OLLAMA_URL=http://$IP:11434 \
+        python embed.py
+
+  # Step 8: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    id: 'deploy-cloudrun'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - 'iitm-chatbot-worker'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
-      - '--region'
-      - 'asia-south1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--port'
-      - '8787'
-      - '--set-env-vars'
-      - 'WEAVIATE_URL=${_WEAVIATE_URL},WEAVIATE_API_KEY=${_WEAVIATE_API_KEY},OPENAI_API_KEY=${_OPENAI_API_KEY},COHERE_API_KEY=${_COHERE_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},EMBEDDING_PROVIDER=${_EMBEDDING_PROVIDER},EMBEDDING_MODEL=${_EMBEDDING_MODEL}'
+      - '-c'
+      - |
+        IP=$(cat /workspace/gce_ip.txt)
+        echo "Deploying to Cloud Run with GCE endpoints..."
+        gcloud run deploy iitm-chatbot-worker \
+          --image gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA \
+          --region asia-south1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --port 8787 \
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$IP:8080,GCE_OLLAMA_URL=http://$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
 
 # Store images in Google Container Registry
 images:
@@ -49,14 +159,11 @@ images:
 # Substitutions for environment variables
 # These should be configured in the Cloud Build trigger settings
 substitutions:
-  _WEAVIATE_URL: ''
-  _WEAVIATE_API_KEY: ''
   _OPENAI_API_KEY: ''
-  _COHERE_API_KEY: ''
-  _CHAT_API_ENDPOINT: 'https://aipipe.org/openrouter/v1/chat/completions'
+  _CHAT_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions'
   _CHAT_MODEL: 'gpt-4o-mini'
-  _EMBEDDING_PROVIDER: 'cohere'
-  _EMBEDDING_MODEL: 'embed-multilingual-v3.0'
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  # Increase timeout for first-time GCE setup
+  timeout: '1800s'
