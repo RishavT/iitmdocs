@@ -60,6 +60,13 @@ function buildConversationHistory() {
   return history;
 }
 
+// Auto-scroll state - must be declared before redraw() is called
+let autoScroll = true;
+chatArea.addEventListener("scroll", () => {
+  const atBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 10;
+  autoScroll = atBottom;
+});
+
 // Initialize chat from sessionStorage on page load
 const storedHistory = loadHistoryFromStorage();
 if (storedHistory.length > 0) {
@@ -79,12 +86,6 @@ if (storedHistory.length > 0) {
     chatArea.scrollTop = chatArea.scrollHeight;
   }
 }
-
-let autoScroll = true;
-chatArea.addEventListener("scroll", () => {
-  const atBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight < 10;
-  autoScroll = atBottom;
-});
 
 function redraw() {
   render(
