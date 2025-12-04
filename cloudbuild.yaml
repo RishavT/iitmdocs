@@ -143,7 +143,7 @@ steps:
           --task-timeout=30m \
           --max-retries=1
 
-  # Step 10: Execute the embed job
+  # Step 10: Execute the embed job and stream logs
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'run-embed-job'
     entrypoint: 'bash'
@@ -151,9 +151,40 @@ steps:
       - '-c'
       - |
         echo "Running embed job..."
-        gcloud run jobs execute iitm-embed-job \
+
+        # Execute job and capture execution name
+        EXECUTION=$$(gcloud run jobs execute iitm-embed-job \
           --region asia-south1 \
-          --wait
+          --format='value(metadata.name)')
+
+        echo "Execution started: $$EXECUTION"
+        echo "Streaming logs..."
+
+        # Stream logs while job is running
+        gcloud beta run jobs executions logs tail $$EXECUTION \
+          --region asia-south1 &
+        LOG_PID=$$!
+
+        # Wait for job to complete
+        while true; do
+          STATUS=$$(gcloud run jobs executions describe $$EXECUTION \
+            --region asia-south1 \
+            --format='value(status.conditions[0].type)')
+
+          if [ "$$STATUS" = "Completed" ]; then
+            echo ""
+            echo "Job completed successfully!"
+            kill $$LOG_PID 2>/dev/null || true
+            break
+          elif [ "$$STATUS" = "Failed" ]; then
+            echo ""
+            echo "Job failed!"
+            kill $$LOG_PID 2>/dev/null || true
+            exit 1
+          fi
+
+          sleep 5
+        done
 
   # Step 11: Deploy Cloud Run service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
