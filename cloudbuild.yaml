@@ -204,7 +204,7 @@ steps:
           --image gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA \
           --region asia-south1 \
           --vpc-connector iitm-vpc-connector \
-          --vpc-egress all-traffic \
+          --vpc-egress private-ranges-only \
           --set-env-vars "$$ENV_VARS" \
           --task-timeout=30m \
           --max-retries=1
@@ -274,13 +274,12 @@ steps:
           --allow-unauthenticated \
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
-          --vpc-egress all-traffic \
+          --vpc-egress private-ranges-only \
           --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
 
 # Store images in Google Container Registry
+# Note: Only worker images are listed here since embed images are conditionally built
 images:
-  - 'gcr.io/$PROJECT_ID/iitm-embed:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/iitm-embed:latest'
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
 
