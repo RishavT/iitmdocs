@@ -1,0 +1,76 @@
+PROMPT FOR GENERATING KNOWLEDGE BASE SUMMARY
+
+Use this prompt with Claude or GPT to regenerate the knowledge base summary document
+(src/_knowledge_base_summary.md) when the source documents change significantly.
+
+================================================================================
+PROMPT:
+================================================================================
+
+I need you to create a knowledge base summary document for a chatbot that answers
+questions about the IIT Madras BS (Data Science) programme.
+
+Read all the markdown files in the src/ folder and create a summary document that:
+
+1. Lists 12-15 TOPIC CATEGORIES with associated keywords. Format:
+   ## 1. TOPIC NAME
+   **Keywords**: keyword1, keyword2, keyword3, ...
+   ### Topics Covered:
+   - Brief bullet points of what's covered
+
+2. Categories should include (adjust based on actual content):
+   - Admission & Application
+   - Programme Structure & Levels
+   - Courses & Curriculum
+   - Fees & Payments
+   - Assessments & Grading
+   - Academic Calendar & Terms
+   - Academic Policies & Rules
+   - Placements & Career
+   - Higher Studies & Masters
+   - Credit Transfer
+   - Student Life & Support
+   - Technical Requirements
+   - Certificates & Recognition
+   - Contact Information
+
+3. Include a section with 100 EXAMPLE USER QUERIES showing how users might phrase
+   questions. Include variety in:
+   - Formal English ("What is the application process?")
+   - Informal English ("how do i apply")
+   - Hinglish ("fee kitna hai", "placement milega kya")
+   - Short queries ("fees", "OPPE")
+   - Questions with typos or abbreviations
+
+4. Map each example query to the relevant topic category.
+
+5. The document should be saved as: src/_knowledge_base_summary.md
+
+6. Start the filename with underscore (_) so it sorts to the top of the directory.
+
+PURPOSE:
+This summary is used by the query rewriting function in worker.js to:
+- Expand ambiguous user queries with relevant keywords
+- Disambiguate intent (e.g., "apply" means admission, not job application)
+- Handle Hinglish and informal queries
+- Improve vector search relevance
+
+The summary is NOT embedded into Weaviate - it's only used as context for the
+query rewriting LLM.
+
+================================================================================
+AFTER GENERATING:
+================================================================================
+
+1. Save the output to: src/_knowledge_base_summary.md
+
+2. Update the KNOWLEDGE_BASE_SUMMARY constant in worker.js (lines 16-31) with
+   a condensed version of the topic categories and keywords.
+
+3. Run the embed service to verify the summary is excluded:
+   docker compose --profile embed up embed
+   (Should show "Processing 48 files" not 49, excluding the summary)
+
+4. Test with problematic queries:
+   curl -X POST http://localhost:8787/answer -H "Content-Type: application/json" \
+     -d '{"q":"how do i apply","history":[]}'

@@ -101,12 +101,19 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
     )
 
 
+# Files to exclude from embedding (used for internal purposes, not for search)
+EXCLUDED_FILES = [
+    "_knowledge_base_summary.md",  # Query rewriting context - not for vector search
+]
+
+
 def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None) -> bool:
     """Embed all documents from the src directory into Weaviate"""
     collection = create_schema(weaviate_client, embedding_mode, embedding_provider, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
 
-    files = [f for f in src_path.glob("**/*") if f.is_file()]
+    # Exclude internal files that shouldn't be in vector search
+    files = [f for f in src_path.glob("**/*") if f.is_file() and f.name not in EXCLUDED_FILES]
     total_files = len(files)
     logger.info(f"Processing {total_files} files from {src_path.absolute()}")
 
