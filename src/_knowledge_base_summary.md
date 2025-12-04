@@ -1,5 +1,15 @@
 # IIT Madras BS Programme - Knowledge Base Summary
 
+> **NOTE**: This file is NOT directly used by the chatbot, nor is it embedded into Weaviate.
+>
+> A **condensed version** of this summary is hardcoded in `worker.js` (the `KNOWLEDGE_BASE_SUMMARY` constant)
+> and used for query rewriting. This file serves as the detailed reference/source of truth.
+>
+> When updating this file, also update the condensed version in `worker.js`.
+> See `generate-summary-prompt.txt` for regeneration instructions.
+
+---
+
 This document summarizes the topics and keywords available in the chatbot's knowledge base. Use this to understand what information exists and how users might ask about it.
 
 ---
