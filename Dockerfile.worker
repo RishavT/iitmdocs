@@ -18,6 +18,10 @@ COPY static ./static
 # Create startup script to generate .dev.vars from environment variables
 RUN echo '#!/bin/sh\n\
 cat > /app/.dev.vars <<EOF\n\
+EMBEDDING_MODE=${EMBEDDING_MODE}\n\
+GCE_WEAVIATE_URL=${GCE_WEAVIATE_URL}\n\
+GCE_OLLAMA_URL=${GCE_OLLAMA_URL}\n\
+LOCAL_WEAVIATE_URL=${LOCAL_WEAVIATE_URL}\n\
 WEAVIATE_URL=${WEAVIATE_URL}\n\
 WEAVIATE_API_KEY=${WEAVIATE_API_KEY}\n\
 OPENAI_API_KEY=${OPENAI_API_KEY}\n\
