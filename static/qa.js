@@ -8,8 +8,35 @@ const chatForm = document.getElementById("chat-form");
 const askButton = document.getElementById("ask-button");
 const questionInput = document.getElementById("question-input");
 const clearChatButton = document.getElementById("clear-chat-button");
+const minWordsHint = document.getElementById("min-words-hint");
 
 const chat = [];
+const MIN_WORD_COUNT = 5;
+
+/**
+ * Counts words in a string (splits by whitespace)
+ * @param {string} text - Text to count words in
+ * @returns {number} - Number of words
+ */
+function countWords(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
+/**
+ * Updates the ask button state and hint visibility based on word count
+ */
+function updateInputValidation() {
+  const wordCount = countWords(questionInput.value);
+  const isValid = wordCount >= MIN_WORD_COUNT;
+
+  askButton.disabled = !isValid;
+  minWordsHint.style.display = isValid ? "none" : "block";
+}
+
+// Add input listener for real-time validation
+questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 const HISTORY_KEY = "iitm-chatbot-history";
 const MAX_HISTORY_PAIRS = 5;
@@ -122,10 +149,11 @@ async function askQuestion(e) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
-  if (!q) return;
+  if (!q || countWords(q) < MIN_WORD_COUNT) return;
 
   questionInput.value = "";
   askButton.disabled = true;
+  minWordsHint.style.display = "block"; // Show hint again after clearing input
   askButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
   chat.push({ q });
   redraw();
@@ -152,8 +180,8 @@ async function askQuestion(e) {
       saveHistoryToStorage(buildConversationHistory());
     }
   } finally {
-    askButton.disabled = false;
     askButton.innerHTML = "Ask";
+    updateInputValidation(); // Re-check validation state after response
   }
 }
 questionInput.focus();
