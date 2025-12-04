@@ -53,4 +53,4 @@ envs.zip
 
 .dev.vars*
 
-node_modules/
+node_modules/scripts/set-secrets.sh
