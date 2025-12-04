@@ -159,8 +159,8 @@ This document summarizes the topics and keywords available in the chatbot's know
 - Fee for placement assistance
 
 ### Statistics:
-- Average Internship Stipend: Rs 30,000/month
-- Highest Internship Stipend: Rs 60,000/month
+- Average Internship Stipend: Rs 30 thousand per month
+- Highest Internship Stipend: Rs 60 thousand per month
 - Average Salary: Rs 10 LPA
 - Highest Salary: Rs 25 LPA
 
