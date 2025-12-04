@@ -179,7 +179,16 @@ def main():
         host = url_parts.split(":")[0]
         port = int(url_parts.split(":")[1]) if ":" in url_parts else 8080
 
-        client = weaviate.connect_to_local(host=host, port=port)
+        # Use connect_to_custom with skip_init_checks to use REST instead of gRPC
+        client = weaviate.connect_to_custom(
+            http_host=host,
+            http_port=port,
+            http_secure=False,
+            grpc_host=host,
+            grpc_port=50051,
+            grpc_secure=False,
+            skip_init_checks=True
+        )
         embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
         client.close()
     else:
