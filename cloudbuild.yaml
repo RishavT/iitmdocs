@@ -12,9 +12,9 @@ steps:
           gcloud compute addresses create iitm-ollama-ip --region=asia-south1
         fi
         # Get the IP address
-        IP=$(gcloud compute addresses describe iitm-ollama-ip --region=asia-south1 --format='value(address)')
-        echo "Static IP: $IP"
-        echo "$IP" > /workspace/gce_ip.txt
+        IP=$$(gcloud compute addresses describe iitm-ollama-ip --region=asia-south1 --format='value(address)')
+        echo "Static IP: $$IP"
+        echo "$$IP" > /workspace/gce_ip.txt
 
   # Step 2: Create GCE VM (if not exists)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -23,7 +23,7 @@ steps:
     args:
       - '-c'
       - |
-        IP=$(cat /workspace/gce_ip.txt)
+        IP=$$(cat /workspace/gce_ip.txt)
         if ! gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a 2>/dev/null; then
           echo "Creating GCE VM..."
           gcloud compute instances create iitm-ollama-vm \
@@ -33,7 +33,7 @@ steps:
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=20GB \
             --tags=iitm-ollama \
-            --address=$IP \
+            --address=$$IP \
             --metadata-from-file=startup-script=scripts/gce-startup.sh
 
           echo "Waiting for VM to be ready (2 minutes)..."
@@ -70,32 +70,32 @@ steps:
     args:
       - '-c'
       - |
-        IP=$(cat /workspace/gce_ip.txt)
-        echo "Checking if services are running on GCE VM ($IP)..."
+        IP=$$(cat /workspace/gce_ip.txt)
+        echo "Checking if services are running on GCE VM ($$IP)..."
 
         # Wait for Weaviate to be ready (retry for up to 3 minutes)
         for i in {1..18}; do
-          if curl -s --connect-timeout 5 "http://$IP:8080/v1/.well-known/ready" | grep -q "true"; then
+          if curl -s --connect-timeout 5 "http://$$IP:8080/v1/.well-known/ready" | grep -q "true"; then
             echo "Weaviate is ready!"
             break
           fi
-          echo "Waiting for Weaviate... (attempt $i/18)"
+          echo "Waiting for Weaviate... (attempt $$i/18)"
           sleep 10
         done
 
         # Wait for Ollama to be ready
         for i in {1..18}; do
-          if curl -s --connect-timeout 5 "http://$IP:11434/" | grep -q "Ollama"; then
+          if curl -s --connect-timeout 5 "http://$$IP:11434/" | grep -q "Ollama"; then
             echo "Ollama is ready!"
             break
           fi
-          echo "Waiting for Ollama... (attempt $i/18)"
+          echo "Waiting for Ollama... (attempt $$i/18)"
           sleep 10
         done
 
         # Verify the model is available
         echo "Checking if mxbai-embed-large model is available..."
-        curl -s "http://$IP:11434/api/tags" | grep -q "mxbai-embed-large" || echo "Warning: Model may not be loaded yet"
+        curl -s "http://$$IP:11434/api/tags" | grep -q "mxbai-embed-large" || echo "Warning: Model may not be loaded yet"
 
   # Step 5: Build worker Docker image
   - name: 'gcr.io/cloud-builders/docker'
@@ -126,12 +126,12 @@ steps:
     args:
       - '-c'
       - |
-        IP=$(cat /workspace/gce_ip.txt)
-        echo "Embedding documents to Weaviate at http://$IP:8080..."
+        IP=$$(cat /workspace/gce_ip.txt)
+        echo "Embedding documents to Weaviate at http://$$IP:8080..."
         pip install --quiet weaviate-client python-dotenv
         EMBEDDING_MODE=gce \
-        GCE_WEAVIATE_URL=http://$IP:8080 \
-        GCE_OLLAMA_URL=http://$IP:11434 \
+        GCE_WEAVIATE_URL=http://$$IP:8080 \
+        GCE_OLLAMA_URL=http://$$IP:11434 \
         python embed.py
 
   # Step 8: Deploy to Cloud Run
@@ -141,7 +141,7 @@ steps:
     args:
       - '-c'
       - |
-        IP=$(cat /workspace/gce_ip.txt)
+        IP=$$(cat /workspace/gce_ip.txt)
         echo "Deploying to Cloud Run with GCE endpoints..."
         gcloud run deploy iitm-chatbot-worker \
           --image gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA \
@@ -149,7 +149,7 @@ steps:
           --platform managed \
           --allow-unauthenticated \
           --port 8787 \
-          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$IP:8080,GCE_OLLAMA_URL=http://$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
 
 # Store images in Google Container Registry
 images:
