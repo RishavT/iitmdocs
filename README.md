@@ -2,47 +2,116 @@
 
 ## Usage
 
-### Docker Setup (Recommended for Local Development)
+### Local Development (Docker)
 
-1. Set up a [Weaviate cluster](https://console.weaviate.cloud/cluster-details) and get an API key
-2. Get API keys for your chosen providers (see Configuration section below)
-3. Fill in keys in `.env` and `.dev.vars` (both are `.git-ignore`d)
-4. Run the embed service once to upload documents:
+1. Get API keys for your chosen providers (see Configuration section below)
+2. Fill in keys in `.env` and `.dev.vars` (both are `.gitignore`d)
+3. Start local Weaviate + Ollama stack:
    ```bash
-   docker-compose run --rm embed
+   docker compose --profile local up -d
    ```
-
-   **⚠️ WARNING**: Running the embed service will **delete and recreate** the Document collection in Weaviate. This is necessary when switching embedding providers (OpenAI ↔ Cohere), but means:
-   - All existing embeddings will be lost
-   - The collection will be rebuilt from scratch
-   - Only run this when you need to update documents or switch providers
-
+4. Wait for Ollama to pull the embedding model (~2 minutes first time), then run the embed service:
+   ```bash
+   docker compose --profile local --profile embed run --rm embed
+   ```
 5. Start the worker service:
    ```bash
-   docker-compose up worker
+   docker compose up worker
    ```
 6. Test at `http://localhost:8787` or use the web UI at `http://localhost:8787/qa.html`
 
-### Manual Setup
+### Google Cloud Deployment
 
-1. Set up a [Weaviate cluster](https://console.weaviate.cloud/cluster-details) and get an API key
-2. Get API keys for your chosen providers (see Configuration section below)
-3. Fill in keys in `.env` and `.dev.vars`
-4. Run `uv run embed.py` to upload embeddings into Weaviate
-5. Run `npm install` to install dependencies
-6. Set up CloudFlare secrets using the same keys from `.dev.vars`:
+The project uses Google Cloud Build for CI/CD with automatic deployment to Cloud Run.
+
+#### Architecture
+
+- **Cloud Run Service**: Hosts the chatbot worker (auto-scales, serverless)
+- **GCE VM** (`iitm-ollama-vm`): Runs Weaviate + Ollama for embeddings (persistent, cost-effective)
+- **VPC Connector**: Allows Cloud Run to communicate with the GCE VM's internal IP
+- **Cloud Run Job**: Runs embedding updates when `src/` files change
+
+#### First-Time Setup
+
+1. **Create a GCP Project** and enable the required APIs:
    ```bash
-   npx wrangler secret put WEAVIATE_URL
-   npx wrangler secret put WEAVIATE_API_KEY
-   npx wrangler secret put OPENAI_API_KEY
-   npx wrangler secret put COHERE_API_KEY  # If using Cohere
-   npx wrangler secret put CHAT_API_ENDPOINT  # If using custom endpoint
-   npx wrangler secret put CHAT_MODEL  # If using custom model
-   npx wrangler secret put EMBEDDING_PROVIDER  # If using Cohere
-   npx wrangler secret put EMBEDDING_MODEL  # If using custom model
+   gcloud services enable \
+     cloudbuild.googleapis.com \
+     run.googleapis.com \
+     compute.googleapis.com \
+     vpcaccess.googleapis.com \
+     containerregistry.googleapis.com
    ```
-7. Run `npx wrangler dev` to test at `http://localhost:8787`
-8. Run `npx wrangler deploy` to deploy to production
+
+2. **Grant Cloud Build permissions**:
+   ```bash
+   PROJECT_ID=$(gcloud config get-value project)
+   PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+
+   # Grant Cloud Build service account necessary roles
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+     --role="roles/compute.admin"
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+     --role="roles/run.admin"
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+     --role="roles/vpcaccess.admin"
+   gcloud projects add-iam-policy-binding $PROJECT_ID \
+     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
+     --role="roles/iam.serviceAccountUser"
+   ```
+
+3. **Configure Cloud Build trigger**:
+   ```bash
+   gcloud builds triggers create github \
+     --name="iitm-chatbot-deploy" \
+     --repo-name="iitmdocs" \
+     --repo-owner="YOUR_GITHUB_USER" \
+     --branch-pattern="^main$" \
+     --build-config="cloudbuild.yaml" \
+     --substitutions="_OPENAI_API_KEY=your-key,_CHAT_API_ENDPOINT=https://api.openai.com/v1/chat/completions,_CHAT_MODEL=gpt-4o-mini"
+   ```
+
+4. **Push to main branch** to trigger the first deployment. Cloud Build will:
+   - Create a VPC connector (if not exists)
+   - Create a GCE VM with Weaviate + Ollama (if not exists)
+   - Build and push Docker images
+   - Run the embedding job (if `src/` files changed)
+   - Deploy the Cloud Run service
+
+#### Subsequent Deployments
+
+Push to the main branch. Cloud Build automatically:
+- Detects if `src/` files changed and runs embedding only when needed
+- Handles file deletions by clearing and re-embedding the entire database
+- Updates the Cloud Run service with the new code
+
+#### Manual Commands
+
+```bash
+# Check GCE VM status
+gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a
+
+# SSH into GCE VM (for debugging)
+gcloud compute ssh iitm-ollama-vm --zone=asia-south1-a --tunnel-through-iap
+
+# View Cloud Run service logs
+gcloud run services logs read iitm-chatbot-worker --region=asia-south1
+
+# View embed job execution logs
+gcloud run jobs executions list --job=iitm-embed-job --region=asia-south1
+
+# Manually trigger a build
+gcloud builds submit --config=cloudbuild.yaml
+```
+
+#### Cost Optimization
+
+- The GCE VM uses `e2-medium` (~$25/month) with no external IP
+- Cloud Run scales to zero when not in use
+- Embedding job only runs when `src/` files change
 
 ## Configuration
 
@@ -116,14 +185,38 @@ If embeddings were created with OpenAI but the worker uses Cohere (or vice versa
 
 **To switch embedding providers:**
 1. Update `EMBEDDING_PROVIDER` in `.env` and `.dev.vars`
-2. Run `docker-compose run --rm embed` to recreate embeddings with the new provider
+2. Run `docker compose --profile local --profile embed run --rm embed` to recreate embeddings with the new provider
 3. Restart the worker to use the matching provider
 
 The embed service now validates the vectorizer configuration and only deletes the collection when the provider changes, preventing accidental data loss.
 
+## Query Rewriting & Search Optimization
+
+The chatbot uses two techniques to improve search relevance:
+
+### Hybrid Search
+Combines BM25 keyword search with vector semantic search (configurable via `alpha` parameter in worker.js). This catches both exact keyword matches and conceptually similar content.
+
+### Query Rewriting
+Before searching, user queries are expanded using an LLM to add relevant keywords. This helps with:
+- **Disambiguation**: "how do i apply" → adds "admission qualifier eligibility" (not job placement)
+- **Hinglish support**: "fee kitna hai" → adds "cost structure payment"
+- **Short queries**: "OPPE" → adds "programming exam proctored online"
+
+The query rewriter uses a knowledge base summary (`src/_knowledge_base_summary.md`) as context. This file lists all topics, keywords, and 100 example queries.
+
+### Regenerating the Knowledge Base Summary
+
+When source documents change significantly, regenerate the summary:
+
+1. Use the prompt in `generate-summary-prompt.txt` with Claude or GPT
+2. Save output to `src/_knowledge_base_summary.md`
+3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `worker.js` (condensed version)
+4. The summary is **excluded from Weaviate embeddings** (see `EXCLUDED_FILES` in embed.py)
+
 ## Embedding
 
-The embedding system processes `src/*.md` and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
+The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
 
 `embed.py` creates a `Document` collection with the following properties:
 
@@ -166,7 +259,7 @@ client.close()
 
 ## Querying
 
-A CloudFlare Worker provides semantic document search and AI-powered question answering using Weaviate and your chosen chat provider (OpenAI, AI Pipe, or any OpenAI-compatible API). Run:
+The chatbot service provides semantic document search and AI-powered question answering using Weaviate and your chosen chat provider (OpenAI, AI Pipe, or any OpenAI-compatible API). Run:
 
 ```bash
 curl http://localhost:8787/answer \
@@ -192,17 +285,17 @@ data: [DONE]
 - It begins with `choices[0].delta.tool_calls` having one JSON-encoded `arguments` for each document, mentioning `{name, link}`.
 - It continues with `choices[0].delta.content` that has the streaming answer text
 
-## Chatbot
+## Chatbot Widget
 
-Add this code to the IITM BS website:
+Add this code to embed the chatbot on any website:
 
 ```html
-<script src="https://iitm-bs-chatbot.sanand.workers.dev/chatbot.js" type="module"></script>
+<script src="YOUR_CLOUD_RUN_URL/chatbot.js" type="module"></script>
 ```
 
-See a live demo at <https://iitm-bs-chatbot.sanand.workers.dev/>.
+Replace `YOUR_CLOUD_RUN_URL` with your deployed Cloud Run service URL (e.g., `https://iitm-chatbot-worker-xxxxx.asia-south1.run.app`).
 
-`chatbot.js` script will automatically create the chatbot button, the [chat app](https://iitm-bs-chatbot.sanand.workers.dev/qa) in an iframe, and inject all the necessary CSS for styling.
+The `chatbot.js` script will automatically create the chatbot button, the chat app in an iframe, and inject all the necessary CSS for styling.
 
 ## License
 

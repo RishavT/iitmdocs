@@ -47,6 +47,10 @@ Thumbs.db
 # Temporary files
 task.md
 
+# Sensitive files
+envs.zip
+*.zip
+
 .dev.vars*
 
-node_modules/
+node_modules/scripts/set-secrets.sh
