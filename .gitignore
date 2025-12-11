@@ -58,3 +58,6 @@ scripts/set-secrets.sh
 
 # Analysis folder (contains sensitive config dumps)
 analysis/
+
+# Temp folder
+temp/

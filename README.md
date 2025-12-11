@@ -2,23 +2,7 @@
 
 ## Usage
 
-### Local Development (Docker)
-
-1. Get API keys for your chosen providers (see Configuration section below)
-2. Fill in keys in `.env` and `.dev.vars` (both are `.gitignore`d)
-3. Start local Weaviate + Ollama stack:
-   ```bash
-   docker compose --profile local up -d
-   ```
-4. Wait for Ollama to pull the embedding model (~2 minutes first time), then run the embed service:
-   ```bash
-   docker compose --profile local --profile embed run --rm embed
-   ```
-5. Start the worker service:
-   ```bash
-   docker compose up worker
-   ```
-6. Test at `http://localhost:8787` or use the web UI at `http://localhost:8787/qa.html`
+**Quick Start (Local Development):** See [Configuration → Option 1: Local Development](#option-1-local-development-recommended-for-development)
 
 ### Google Cloud Deployment
 
@@ -115,80 +99,97 @@ gcloud builds submit --config=cloudbuild.yaml
 
 ## Configuration
 
-The chatbot supports multiple API providers through environment variables:
+Choose one of three deployment modes:
 
-### Required Variables
+### Option 1: Local Development (Recommended for development)
 
+Uses Docker Compose with local Weaviate + Ollama containers.
+
+**Environment Variables (`.env` and `.dev.vars`):**
 ```bash
+EMBEDDING_MODE=local
+LOCAL_WEAVIATE_URL=http://weaviate:8080
+OLLAMA_MODEL=mxbai-embed-large
+
+# Chat API (required)
+OPENAI_API_KEY=sk-...
+# Optional: use custom endpoint
+# CHAT_API_ENDPOINT=https://aipipe.org/openrouter/v1/chat/completions
+# CHAT_MODEL=gpt-4o-mini
+```
+
+**Setup:**
+1. Start Weaviate + Ollama: `docker compose --profile local up -d`
+2. Wait for Ollama to pull the model (~2 min first time)
+3. Run embeddings: `docker compose --profile local --profile embed run --rm embed`
+4. Start worker: `docker compose up worker`
+5. Test at `http://localhost:8787`
+
+### Option 2: GCE (Production - currently used)
+
+Uses a GCE VM running Weaviate + Ollama, accessed via VPC connector from Cloud Run.
+
+**Environment Variables** (set automatically by Cloud Build):
+```bash
+EMBEDDING_MODE=gce
+GCE_WEAVIATE_URL=http://<GCE_VM_IP>:8080
+GCE_OLLAMA_URL=http://<GCE_VM_IP>:11434
+
+# Chat API (required)
+OPENAI_API_KEY=sk-...
+```
+
+**Setup:**
+- Push to main branch - Cloud Build handles everything automatically
+- See [Google Cloud Deployment](#google-cloud-deployment) section for first-time setup
+
+**Cost:** ~$25/month for GCE VM (`e2-medium`), Cloud Run scales to zero.
+
+### Option 3: Cloud (Alternative - not used in production)
+
+Uses Weaviate Cloud for vector storage + OpenAI/Cohere APIs for embeddings.
+
+**Environment Variables:**
+```bash
+EMBEDDING_MODE=cloud
 WEAVIATE_URL=https://your-cluster.weaviate.cloud
 WEAVIATE_API_KEY=your_weaviate_key
-```
 
-### Chat API Configuration
+# Embedding API (choose one)
+EMBEDDING_PROVIDER=openai  # or cohere
+OPENAI_API_KEY=sk-...      # if using OpenAI for embeddings
+COHERE_API_KEY=...         # if using Cohere for embeddings
 
-**Option 1: OpenAI (Default)**
-```bash
+# Chat API (required)
 OPENAI_API_KEY=sk-...
-# CHAT_API_ENDPOINT and CHAT_MODEL are optional, defaults to OpenAI
 ```
 
-**Option 2: AI Pipe (OpenRouter)**
-```bash
-OPENAI_API_KEY=your_aipipe_token
-CHAT_API_ENDPOINT=https://aipipe.org/openrouter/v1/chat/completions
-CHAT_MODEL=gpt-4o-mini  # or any OpenRouter model
-```
+**⚠️ CRITICAL: Embedding Provider Compatibility**
 
-### Embedding Configuration
+The embedding provider used during ingestion MUST match the worker configuration. OpenAI and Cohere embeddings are NOT compatible - queries will fail silently if mismatched.
 
-**Option 1: OpenAI (Default)**
-```bash
-OPENAI_API_KEY=sk-...
-# EMBEDDING_PROVIDER defaults to "openai"
-# EMBEDDING_MODEL defaults to "text-embedding-3-small"
-```
-
-**Option 2: Cohere**
-```bash
-COHERE_API_KEY=your_cohere_key
-EMBEDDING_PROVIDER=cohere
-EMBEDDING_MODEL=embed-multilingual-v3.0  # or any Cohere embedding model
-```
-
-### All Configuration Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `WEAVIATE_URL` | Yes | - | Weaviate cluster URL |
-| `WEAVIATE_API_KEY` | Yes | - | Weaviate API key |
-| `OPENAI_API_KEY` | Yes* | - | OpenAI API key (required for OpenAI embeddings or as fallback for chat) |
-| `COHERE_API_KEY` | If using Cohere | - | Cohere API key for embeddings |
-| `CHAT_API_KEY` | No | Falls back to `OPENAI_API_KEY` | API key for chat endpoint (use for AI Pipe, OpenRouter, etc.) |
-| `CHAT_API_ENDPOINT` | No | `https://api.openai.com/v1/chat/completions` | Chat completion endpoint |
-| `CHAT_MODEL` | No | `gpt-4o-mini` | Chat model to use |
-| `EMBEDDING_PROVIDER` | No | `openai` | Embedding provider (`openai` or `cohere`) |
-| `EMBEDDING_MODEL` | No | Provider default | Embedding model to use |
-| `GITHUB_REPO_URL` | No | `https://github.com/study-iitm/iitmdocs` | GitHub repository URL for document links |
-
-\* At least one of `OPENAI_API_KEY` or `COHERE_API_KEY` is required depending on your embedding provider
-
-### ⚠️ CRITICAL: Embedding Provider Compatibility
-
-**The embedding provider used during document ingestion (embed.py) MUST match the provider configured in the worker (worker.js).**
-
-If embeddings were created with OpenAI but the worker uses Cohere (or vice versa), semantic search will **fail silently** because the vector spaces are incompatible:
-
-- **OpenAI embeddings**: 1536-dimensional vectors using `text-embedding-3-small` model
-- **Cohere embeddings**: Different dimensional vectors using `embed-multilingual-v3.0` model
-
-**These vector spaces are NOT compatible.** Queries using one provider cannot find documents embedded with another provider.
-
-**To switch embedding providers:**
+**To switch providers:**
 1. Update `EMBEDDING_PROVIDER` in `.env` and `.dev.vars`
-2. Run `docker compose --profile local --profile embed run --rm embed` to recreate embeddings with the new provider
-3. Restart the worker to use the matching provider
+2. Re-run embeddings to recreate with new provider
+3. Restart the worker
 
-The embed service now validates the vectorizer configuration and only deletes the collection when the provider changes, preventing accidental data loss.
+### Environment Variable Reference
+
+| Variable | Modes | Default | Description |
+|----------|-------|---------|-------------|
+| `EMBEDDING_MODE` | All | `local` | `local`, `gce`, or `cloud` |
+| `OPENAI_API_KEY` | All | - | OpenAI API key for chat |
+| `CHAT_API_ENDPOINT` | All | OpenAI URL | Custom chat endpoint |
+| `CHAT_MODEL` | All | `gpt-4o-mini` | Chat model |
+| `OLLAMA_MODEL` | Local/GCE | `mxbai-embed-large` | Ollama embedding model |
+| `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
+| `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
+| `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
+| `WEAVIATE_URL` | Cloud | - | Weaviate Cloud URL |
+| `WEAVIATE_API_KEY` | Cloud | - | Weaviate Cloud API key |
+| `EMBEDDING_PROVIDER` | Cloud | `openai` | `openai` or `cohere` |
+| `COHERE_API_KEY` | Cloud | - | Cohere API key |
+| `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
 ## Query Rewriting & Search Optimization
 
@@ -214,9 +215,37 @@ When source documents change significantly, regenerate the summary:
 3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `worker.js` (condensed version)
 4. The summary is **excluded from Weaviate embeddings** (see `EXCLUDED_FILES` in embed.py)
 
+## Guardrails & Safety
+
+The chatbot includes multiple layers of protection against hallucination and harmful content.
+
+### Fact-Checking
+
+Every response is verified by a secondary LLM call that checks:
+- **Factual accuracy**: Response must be grounded in the retrieved documents
+- **Numerical precision**: Numbers must match exactly (treats "3L", "3 lakhs", "300000" as equivalent)
+- **Contact info whitelist**: Only allows official `@study.iitm.ac.in` emails and approved phone numbers
+- **Prohibited content**: Rejects cheating advice, personal/dating/sexual advice, false facts
+
+If fact-checking fails, the bot returns a safe fallback message instead of potentially incorrect information.
+
+### RAAHAT Mental Health Support
+
+The bot detects emotional distress signals and redirects to RAAHAT (Mental Health & Wellness Society):
+- Does NOT attempt to give psychological advice
+- Provides standardized support message with contact info:
+  - Email: `wellness.society@study.iitm.ac.in`
+  - Instagram: `@wellness.society_iitmbs`
+
+### Query Synonym Mapping
+
+40+ pre-defined patterns map common questions to optimal search queries, providing fast and accurate results without LLM calls for frequent topics (grading, fees, placements, etc.).
+
 ## Embedding
 
-The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
+The embedding system (`embed.py`) processes `src/*.md` files and stores them in Weaviate with vector embeddings.
+
+**Production uses GCE mode** with Ollama (`mxbai-embed-large`) running on a GCE VM - no external embedding APIs needed. See [Configuration](#configuration) for all modes.
 
 `embed.py` creates a `Document` collection with the following properties:
 
@@ -227,31 +256,28 @@ The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) 
 - `content_hash`: SHA256 hash for duplicate detection
 - `file_extension`: File extension (.md)
 
-**Default (OpenAI):** Uses `text-embedding-3-small` model (1536 dimensions)
-**Cohere:** Uses `embed-multilingual-v3.0` model (configurable via `EMBEDDING_MODEL`)
+**Change detection:** Uses SHA256 content hashes. Modified files are updated, new files are inserted. Set `CLEAR_DB=true` to force full re-embedding (used by Cloud Build when files are deleted).
 
-Modified files are replaced. New documents are inserted. Deleted documents are _not_ deleted. #TODO
+You can query the documents using Weaviate's GraphQL API or Python client.
 
-You can query the documents using Weaviate's GraphQL API or Python client. Example:
+**Local/GCE mode:**
+```python
+import weaviate
+client = weaviate.connect_to_local(host="localhost", port=8080)  # or GCE VM IP
+collection = client.collections.get("Document")
+print(collection.query.hybrid(query="admission process", limit=3))
+client.close()
+```
 
+**Cloud mode:**
 ```python
 import os
 import weaviate
-
-# Configure headers based on your embedding provider
-embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai")
-headers = {}
-if embedding_provider == "cohere":
-    headers["X-Cohere-Api-Key"] = os.getenv("COHERE_API_KEY")
-else:
-    headers["X-OpenAI-Api-Key"] = os.getenv("OPENAI_API_KEY")
-
 client = weaviate.connect_to_weaviate_cloud(
     cluster_url=os.getenv("WEAVIATE_URL"),
     auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-    headers=headers,
+    headers={"X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")},  # or Cohere
 )
-
 collection = client.collections.get("Document")
 print(collection.query.hybrid(query="admission process", limit=3))
 client.close()
@@ -290,12 +316,12 @@ data: [DONE]
 Add this code to embed the chatbot on any website:
 
 ```html
-<script src="YOUR_CLOUD_RUN_URL/chatbot.js" type="module"></script>
+<script src="{{chatbot url}}"></script>
 ```
 
-Replace `YOUR_CLOUD_RUN_URL` with your deployed Cloud Run service URL (e.g., `https://iitm-chatbot-worker-xxxxx.asia-south1.run.app`).
+Replace with your deployed URL (Cloud Run or Cloudflare Workers).
 
-The `chatbot.js` script will automatically create the chatbot button, the chat app in an iframe, and inject all the necessary CSS for styling.
+The `chatbot.js` script will automatically create a floating chat button (bottom-right), load the chat interface in an iframe, and inject all necessary CSS.
 
 ## License
 
