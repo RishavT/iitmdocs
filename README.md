@@ -115,13 +115,30 @@ gcloud builds submit --config=cloudbuild.yaml
 
 ## Configuration
 
-The chatbot supports multiple API providers through environment variables:
+The chatbot supports three embedding modes via `EMBEDDING_MODE`:
+- `local` - Docker Compose with local Weaviate + Ollama (development)
+- `gce` - GCE VM with Weaviate + Ollama (production, cost-effective)
+- `cloud` - Weaviate Cloud + OpenAI/Cohere APIs (production, managed)
 
-### Required Variables
+### Required Variables by Mode
 
+**Local Mode (`EMBEDDING_MODE=local`)**
+```bash
+LOCAL_WEAVIATE_URL=http://weaviate:8080  # Docker service name
+OLLAMA_MODEL=mxbai-embed-large
+```
+
+**GCE Mode (`EMBEDDING_MODE=gce`)** - Set automatically by Cloud Build
+```bash
+GCE_WEAVIATE_URL=http://<GCE_VM_IP>:8080
+GCE_OLLAMA_URL=http://<GCE_VM_IP>:11434
+```
+
+**Cloud Mode (`EMBEDDING_MODE=cloud`)**
 ```bash
 WEAVIATE_URL=https://your-cluster.weaviate.cloud
 WEAVIATE_API_KEY=your_weaviate_key
+EMBEDDING_PROVIDER=openai  # or cohere
 ```
 
 ### Chat API Configuration
@@ -159,18 +176,21 @@ EMBEDDING_MODEL=embed-multilingual-v3.0  # or any Cohere embedding model
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `WEAVIATE_URL` | Yes | - | Weaviate cluster URL |
-| `WEAVIATE_API_KEY` | Yes | - | Weaviate API key |
-| `OPENAI_API_KEY` | Yes* | - | OpenAI API key (required for OpenAI embeddings or as fallback for chat) |
+| `EMBEDDING_MODE` | Yes | `local` | Mode: `local`, `gce`, or `cloud` |
+| `WEAVIATE_URL` | Cloud only | - | Weaviate Cloud cluster URL |
+| `WEAVIATE_API_KEY` | Cloud only | - | Weaviate Cloud API key |
+| `LOCAL_WEAVIATE_URL` | Local only | `http://weaviate:8080` | Local Weaviate URL |
+| `GCE_WEAVIATE_URL` | GCE only | - | GCE VM Weaviate URL (set by Cloud Build) |
+| `GCE_OLLAMA_URL` | GCE only | - | GCE VM Ollama URL (set by Cloud Build) |
+| `OPENAI_API_KEY` | If using OpenAI | - | OpenAI API key for embeddings/chat |
 | `COHERE_API_KEY` | If using Cohere | - | Cohere API key for embeddings |
-| `CHAT_API_KEY` | No | Falls back to `OPENAI_API_KEY` | API key for chat endpoint (use for AI Pipe, OpenRouter, etc.) |
-| `CHAT_API_ENDPOINT` | No | `https://api.openai.com/v1/chat/completions` | Chat completion endpoint |
+| `CHAT_API_KEY` | No | `OPENAI_API_KEY` | API key for chat (use for custom endpoints) |
+| `CHAT_API_ENDPOINT` | No | OpenAI URL | Chat completion endpoint |
 | `CHAT_MODEL` | No | `gpt-4o-mini` | Chat model to use |
-| `EMBEDDING_PROVIDER` | No | `openai` | Embedding provider (`openai` or `cohere`) |
-| `EMBEDDING_MODEL` | No | Provider default | Embedding model to use |
-| `GITHUB_REPO_URL` | No | `https://github.com/study-iitm/iitmdocs` | GitHub repository URL for document links |
-
-\* At least one of `OPENAI_API_KEY` or `COHERE_API_KEY` is required depending on your embedding provider
+| `EMBEDDING_PROVIDER` | Cloud only | `openai` | `openai` or `cohere` |
+| `EMBEDDING_MODEL` | No | Provider default | Embedding model |
+| `OLLAMA_MODEL` | Local/GCE | `mxbai-embed-large` | Ollama embedding model |
+| `GITHUB_REPO_URL` | No | `https://github.com/study-iitm/iitmdocs` | Repository URL for doc links |
 
 ### ⚠️ CRITICAL: Embedding Provider Compatibility
 
@@ -214,9 +234,39 @@ When source documents change significantly, regenerate the summary:
 3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `worker.js` (condensed version)
 4. The summary is **excluded from Weaviate embeddings** (see `EXCLUDED_FILES` in embed.py)
 
+## Guardrails & Safety
+
+The chatbot includes multiple layers of protection against hallucination and harmful content.
+
+### Fact-Checking
+
+Every response is verified by a secondary LLM call that checks:
+- **Factual accuracy**: Response must be grounded in the retrieved documents
+- **Numerical precision**: Numbers must match exactly (treats "3L", "3 lakhs", "300000" as equivalent)
+- **Contact info whitelist**: Only allows official `@study.iitm.ac.in` emails and approved phone numbers
+- **Prohibited content**: Rejects cheating advice, personal/dating/sexual advice, false facts
+
+If fact-checking fails, the bot returns a safe fallback message instead of potentially incorrect information.
+
+### RAAHAT Mental Health Support
+
+The bot detects emotional distress signals and redirects to RAAHAT (Mental Health & Wellness Society):
+- Does NOT attempt to give psychological advice
+- Provides standardized support message with contact info:
+  - Email: `wellness.society@study.iitm.ac.in`
+  - Instagram: `@wellness.society_iitmbs`
+
+### Query Synonym Mapping
+
+40+ pre-defined patterns map common questions to optimal search queries, providing fast and accurate results without LLM calls for frequent topics (grading, fees, placements, etc.).
+
 ## Embedding
 
-The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) and stores them in Weaviate Cloud with vector embeddings. Supports both OpenAI and Cohere embedding providers (configured via `EMBEDDING_PROVIDER` environment variable).
+The embedding system (`embed.py`) processes `src/*.md` files and stores them in Weaviate with vector embeddings.
+
+**Supports three modes:**
+- **Local/GCE**: Uses Ollama with `mxbai-embed-large` model
+- **Cloud**: Uses OpenAI (`text-embedding-3-small`) or Cohere (`embed-multilingual-v3.0`)
 
 `embed.py` creates a `Document` collection with the following properties:
 
@@ -227,10 +277,7 @@ The embedding system processes `src/*.md` (excluding files in `EXCLUDED_FILES`) 
 - `content_hash`: SHA256 hash for duplicate detection
 - `file_extension`: File extension (.md)
 
-**Default (OpenAI):** Uses `text-embedding-3-small` model (1536 dimensions)
-**Cohere:** Uses `embed-multilingual-v3.0` model (configurable via `EMBEDDING_MODEL`)
-
-Modified files are replaced. New documents are inserted. Deleted documents are _not_ deleted. #TODO
+**Change detection:** Uses SHA256 content hashes. Modified files are updated, new files are inserted. Set `CLEAR_DB=true` to force full re-embedding (used by Cloud Build when files are deleted).
 
 You can query the documents using Weaviate's GraphQL API or Python client. Example:
 
@@ -290,12 +337,12 @@ data: [DONE]
 Add this code to embed the chatbot on any website:
 
 ```html
-<script src="YOUR_CLOUD_RUN_URL/chatbot.js" type="module"></script>
+<script src="{{chatbot url}}"></script>
 ```
 
-Replace `YOUR_CLOUD_RUN_URL` with your deployed Cloud Run service URL (e.g., `https://iitm-chatbot-worker-xxxxx.asia-south1.run.app`).
+Replace with your deployed URL (Cloud Run or Cloudflare Workers).
 
-The `chatbot.js` script will automatically create the chatbot button, the chat app in an iframe, and inject all the necessary CSS for styling.
+The `chatbot.js` script will automatically create a floating chat button (bottom-right), load the chat interface in an iframe, and inject all necessary CSS.
 
 ## License
 
