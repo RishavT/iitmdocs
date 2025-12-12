@@ -28,7 +28,7 @@ The validity of JEE-based entry is for the 3 terms following the release of the 
 ### If the Proof is Valid:
 - The candidate will be declared eligible to join the Foundational level courses
 - They will be issued the admission letter
-- Such candidates can directly register to courses in the foundation level with CCC as 4
+- Such candidates can directly register to courses in the foundation level with CCC (Credit Clearing Capability) as 4, meaning they can register for up to 4 courses in a single term
 
 ### If the Proof is Not Valid:
 - The student will be moved into the category of non-JEE

@@ -34,5 +34,5 @@ On the start date of the Qualifier process Week-1, access to the content for the
 
 - All applicants registering for the Qualifier Exam will receive access to Week-1 sample course content
 - This allows candidates to explore the learning material and understand the structure of the program before attempting the exam
-- To receive access, learners must complete the Qualifier Exam registration form available on the official website
+- To receive access, learners must complete the Qualifier Exam registration form available on the official website: https://study.iitm.ac.in/ds/
 - Access to the Week-1 content will be provided after successful submission of the form

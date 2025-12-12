@@ -19,5 +19,10 @@
 ## Important Notes
 
 - There are no additional eligibility criteria to apply for the Qualifier Exam or to join the Foundation Level after clearing it
-- List of accepted Class 12 equivalents is available on the official website
+- List of accepted Class 12 equivalents: https://study.iitm.ac.in/ds/accepted-class-12-equivalents.html
 - No limit on the number of times a candidate can attempt the qualifier process
+
+## Official Links
+
+- BS in Data Science and Applications: https://study.iitm.ac.in/ds/
+- BS in Electronic Systems admissions page: https://study.iitm.ac.in/es/
