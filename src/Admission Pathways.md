@@ -25,4 +25,4 @@ Candidates eligible to appear for the most recent JEE Advanced are directly admi
 | Eligibility | Class 12 pass + Math & English in Class 10 | JEE Advanced eligible |
 | Process | 4-week qualifier process + exam | Direct admission |
 | Fee | Four thousand rupees (General) | Four thousand rupees |
-| Time to Join | After passing qualifier exam | Immediate |
+| Time to Join | After passing qualifier exam | Immediate, after verification |
