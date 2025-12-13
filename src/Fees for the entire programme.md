@@ -9,7 +9,7 @@
 
 ### Number of Credits in Each Level:
 
-See [Credits by Level Table](resources/fee-credits-by-level.md)
+See [Credits by Level Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-credits-by-level.md)
 
 ---
 
@@ -26,25 +26,25 @@ See [Credits by Level Table](resources/fee-credits-by-level.md)
 
 ### Cost per Credit:
 
-See [Cost per Credit Table](resources/fee-cost-per-credit.md)
+See [Cost per Credit Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-cost-per-credit.md)
 
 ---
 
 ### Sample BSc Level Combinations (Examples):
 
-See [BSc Level Combinations Table](resources/fee-bsc-combinations.md)
+See [BSc Level Combinations Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-bsc-combinations.md)
 
 ---
 
 ### Sample BS Level Combinations (Examples):
 
-See [BS Level Combinations Table](resources/fee-bs-combinations.md)
+See [BS Level Combinations Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-bs-combinations.md)
 
 ---
 
 ## Fee Waivers (Based on Category and Income)
 
-See [Fee Waivers Table](resources/fee-waivers.md)
+See [Fee Waivers Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-waivers.md)
 
 ---
 
@@ -67,4 +67,4 @@ See [Fee Waivers Table](resources/fee-waivers.md)
 
 ## 4.1 For Students Outside India: Facilitation Fees
 
-See [Facilitation Fees for Students Outside India Table](resources/fee-facilitation-outside-india.md)
+See [Facilitation Fees for Students Outside India Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/fee-facilitation-outside-india.md)

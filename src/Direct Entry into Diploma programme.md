@@ -24,7 +24,7 @@ But students who complete the Diploma in Programming and wish to pursue the Dipl
 
 ### Fees for the DAD qualifier exam
 
-See [DAD Qualifier Exam Fees Table](resources/dad-exam-fees.md)
+See [DAD Qualifier Exam Fees Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/dad-exam-fees.md)
 
 [Table 1: Department Core/Elective Courses](https://docs.google.com/document/u/1/d/e/2PACX-1vRxGnnDCVAO3KX2CGtMIcJQuDrAasVk2JHbDxkjsGrTP5ShhZK8N6ZSPX89lexKx86QPAUswSzGLsOA/pub?urp=gmail_link#h.rufxvltqqxqt)
 ![img](https://lh7-rt.googleusercontent.com/docsd/ANYlcfDJrk3f4ydvIjNBei7g5FDDtJwEbAldf4tBZMgw5BVyLWfOLg3RA_1DZkoOCZ9lNt6QksZiySg5_HoqOyf2K-qbudSRTr2V_FBGA9Ajd5wGOUtuFooQvJkWjuptjJVH1q_BVa3fECuTIJZz)

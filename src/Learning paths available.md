@@ -6,13 +6,13 @@ Here are some suggested learning paths...
 4. Diploma in Programming and Data Science
 5. BSc degree in Programming and Data Science
 
-See [Learning Paths by Term Table](resources/learning-paths-by-term.md)
+See [Learning Paths by Term Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/learning-paths-by-term.md)
 
 ## 16.1 Prerequisite course requirements
 
 ### Foundation courses
 
-See [Foundation Course Prerequisites Table](resources/foundation-prerequisites.md)
+See [Foundation Course Prerequisites Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/foundation-prerequisites.md)
 
 **All the 8 Foundation courses should be completed before the candidate can register to any Year 2 Diploma level course.**
 
@@ -20,7 +20,7 @@ See [Foundation Course Prerequisites Table](resources/foundation-prerequisites.m
 
 ### Diploma level courses
 
-See [Diploma Course Prerequisites Table](resources/diploma-prerequisites.md)
+See [Diploma Course Prerequisites Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/diploma-prerequisites.md)
 
 **Without completing all the 8 Foundation courses and the 12 Diploma level courses + 4 project courses, one cannot proceed to register for Year 3 Degree level courses.**
 

@@ -4,7 +4,7 @@
 
 # The table below summarises the main differences between an MTech and an MS program.
 
-See [MTech vs MS Comparison Table](resources/mtech-vs-ms-comparison.md)
+See [MTech vs MS Comparison Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/mtech-vs-ms-comparison.md)
 
 For more details on comparison between MS and MTech Upgrade refer to this document -  
 https://docs.google.com/document/d/e/2PACX-1vTmdXgF6oxRydXjIm_H_VmAWlbhcKGkEZt5D30t2l4rWCRBq9WyaqHXjCJlhZVnzt2yYghTULMFO4-O/pub

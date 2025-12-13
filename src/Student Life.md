@@ -146,7 +146,7 @@ There are a variety of student run clubs and societies for the students to explo
 and join. Current list of clubs and societies are
 given below.
 
-See [Student Clubs and Societies Table](resources/student-clubs-societies.md)
+See [Student Clubs and Societies Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/student-clubs-societies.md)
 
 #### Our Goals & Initiatives
 

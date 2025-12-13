@@ -106,7 +106,7 @@ Extra Activity for Statistics- I Assignment Deadline
 
 Note: If a student does not complete the required number (at least 5) of peer reviews, he/she will be awarded 0 marks for that activity even if he/she submitted the activity.
 
-See [Statistics 1 Extra Activity Deadlines Table](resources/stats1-extra-activity-deadlines.md)
+See [Statistics 1 Extra Activity Deadlines Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/stats1-extra-activity-deadlines.md)
 
 ## 5\. Mathematics for data science 2
 
@@ -237,7 +237,7 @@ F = score in final exam
 
 T = 0.1 GAA1 (objective) + 0.1GAA2 (programming) + 0.1Qz1+ 0.4F+ 0.25 max(PE1, PE2) + 0.15 min(PE1, PE2) — capped to 100
 
-See [Python Course Grading Outcomes Table](resources/python-grading-outcomes.md)
+See [Python Course Grading Outcomes Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/python-grading-outcomes.md)
 
 ## 8\.  Statistics for data science 2
 
@@ -271,4 +271,4 @@ Extra Activity for Statistics- II Assignment Deadline
 
 Note: If a student does not complete the required number (at least 5) of peer review, he will be awarded 0 marks for that activity even if he/she submitted the activity.
 
-See [Statistics 2 Extra Activity Deadlines Table](resources/stats2-extra-activity-deadlines.md)
+See [Statistics 2 Extra Activity Deadlines Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/stats2-extra-activity-deadlines.md)

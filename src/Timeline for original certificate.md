@@ -6,7 +6,7 @@ We need to get the senate approval before generating the original certificate. S
 
 ### Certificate Processing Timeline (Tentative)
 
-See [Certificate Processing Timeline Table](resources/certificate-processing-timeline.md)
+See [Certificate Processing Timeline Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/certificate-processing-timeline.md)
 
 ---
 

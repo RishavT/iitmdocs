@@ -8,7 +8,7 @@
 
 To rejoin the IITM BS program and continue their studies, students who previously exited with an original certificate must take the final exams for specific subjects detailed in the table below. These subjects are determined by the certificate they hold and the level at which they wish to re-enroll.
 
-See [Re-Entry Exam Requirements Table](resources/re-entry-exam-requirements.md)
+See [Re-Entry Exam Requirements Table](https://github.com/rishavt/iitmdocs/blob/feat/better-docs-full/src/resources/re-entry-exam-requirements.md)
 
 ## 20.2 Examination and Fee Structure
 
