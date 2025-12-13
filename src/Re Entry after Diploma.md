@@ -8,14 +8,7 @@
 
 To rejoin the IITM BS program and continue their studies, students who previously exited with an original certificate must take the final exams for specific subjects detailed in the table below. These subjects are determined by the certificate they hold and the level at which they wish to re-enroll.
 
-| Original Certificate taken and exited | Level they wish to join | Subjects for Mandatory Final Exams |
-|--------------------------------------|--------------------------|-------------------------------------|
-| Diploma in Programming               | Diploma in Data Science  | MAD2, PDSA                          |
-| Diploma in Data Science              | Diploma in Programming   | MLT, MLP                            |
-| Both Diplomas                        | BSc level                | MAD2, PDSA, MLT, MLP                |
-| BSc                                  | BS level                 | Deep Learning (DL), Artificial Intelligence (AI), Software Engineering, Software Testing |
-| BS                                   | PG Diploma               | Deep Learning (DL), Artificial Intelligence (AI), Software Engineering, Software Testing |
-| PG Diploma (PGD)                     | MTech level              | MLOps, Mathematical Foundations of GenAI, Algorithms for Data Science |
+See [Re-Entry Exam Requirements Table](resources/re-entry-exam-requirements.md)
 
 ## 20.2 Examination and Fee Structure
 

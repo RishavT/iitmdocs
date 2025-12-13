@@ -106,13 +106,7 @@ Extra Activity for Statistics- I Assignment Deadline
 
 Note: If a student does not complete the required number (at least 5) of peer reviews, he/she will be awarded 0 marks for that activity even if he/she submitted the activity.
 
-|                  |                                 |                            |                          |
-| ---------------- | ------------------------------- | -------------------------- | ------------------------ |
-| Extra activity   | Release date for extra activity | End date of submission     | End date for peer review |
-| Extra Activity 1 | Friday, July 11, 2025           | Wednesday, July 23, 2025   | Sunday, July 27, 2025    |
-| Extra Activity 2 | Friday, July 11, 2025           | Wednesday, July 23, 2025   | Sunday, July 27, 2025    |
-| Extra Activity 3 | Friday, July 25, 2025           | Friday, August 8, 2025     | Sunday, August 10, 2025  |
-| Extra Activity 4 | Friday, August 8, 2025          | Wednesday, August 20, 2025 | Sunday, August 24, 2025  |
+See [Statistics 1 Extra Activity Deadlines Table](resources/stats1-extra-activity-deadlines.md)
 
 ## 5\. Mathematics for data science 2
 
@@ -243,17 +237,7 @@ F = score in final exam
 
 T = 0.1 GAA1 (objective) + 0.1GAA2 (programming) + 0.1Qz1+ 0.4F+ 0.25 max(PE1, PE2) + 0.15 min(PE1, PE2) — capped to 100
 
-|     |                               |         |                          |                                                                                                                                                         |                                                                                                                                                                    |
-| --- | ----------------------------- | ------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|     | OPE1/ OPE2                    | ET      | T                        | Grade                                                                                                                                                   | Possibilities for student                                                                                                                                          |
-| 1.  | Absent                        | Absent  | -                        | U                                                                                                                                                       | Repeat the course.                                                                                                                                                 |
-| 2.  | Absent                        | Present | \>=35                    | I_OP                                                                                                                                                    | Complete OPE alone in next term;Both oppes will be scheduled.<br><br>GA, quiz and ET marks will be carried over<br><br>OR<br><br>Repeat the entire course          |
-| 3.  | <35                           | U       | Repeat the entire course |
-| 4   | Present<br><br>score< 40/100  | Present | \>=40                    | I_OP                                                                                                                                                    | Complete OPE alone in next term, Both oppes will be scheduled.<br><br>GA, quiz and ET marks will be carried over<br><br>OR<br><br>Repeat the entire course         |
-| 5   | <40                           | U       | Repeat the entire course |
-| 6   | Absent                        | \-      | I_BOTH                   | Complete ET and OPE in next term, Both oppes will be scheduled.<br><br>GA and quiz marks will be carried over<br><br>OR<br><br>Repeat the entire course |
-| 7   | Present<br><br>Score > 40/100 | Absent  | \-                       | I                                                                                                                                                       | Complete ET alone in next term;  <br><br>OPPE will NOT be scheduled.<br><br>GA, quiz and OPPE marks will be carried over<br><br>OR<br><br>Repeat the entire course |
-| 8   | Present                       |         |                          | Grade as per the Total score T                                                                                                                          |
+See [Python Course Grading Outcomes Table](resources/python-grading-outcomes.md)
 
 ## 8\.  Statistics for data science 2
 
@@ -287,11 +271,4 @@ Extra Activity for Statistics- II Assignment Deadline
 
 Note: If a student does not complete the required number (at least 5) of peer review, he will be awarded 0 marks for that activity even if he/she submitted the activity.
 
-|                  |                                 |                           |                          |
-| ---------------- | ------------------------------- | ------------------------- | ------------------------ |
-| Extra activity   | Release date for extra activity | End date of submission    | End date for peer review |
-| Extra Activity 1 | Friday, May 9, 2025             | Wednesday, May 21, 2025   | Sunday, May 25, 2025     |
-| Extra Activity 2 | Friday, June 13, 2025           | Wednesday, June 25, 2025  | Sunday, June 29, 2025    |
-| Extra Activity 3 | Friday, June 27, 2025           | Wednesday, July 9, 2025   | Wednesday, July 16, 2025 |
-| Extra Activity 4 | Friday, July 11, 2025           | Wednesday, July 23, 2025  | Sunday, July 27, 2025    |
-| Extra Activity 5 | Friday, July 25, 2025           | Wednesday, August 6, 2025 | Sunday, August 10, 2025  |
+See [Statistics 2 Extra Activity Deadlines Table](resources/stats2-extra-activity-deadlines.md)

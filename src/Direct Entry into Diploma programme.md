@@ -24,12 +24,7 @@ But students who complete the Diploma in Programming and wish to pursue the Dipl
 
 ### Fees for the DAD qualifier exam
 
-| Category         | Fee       | Minimum Score per Subject | Overall Cutoff |
-|------------------|-----------|----------------------------|----------------|
-| GEN / OBC-CL     | Rs 6000/- | 40%                        | 50/100         |
-| SC/ST/PwD        | Rs 3000/- | 30%                        | 40/100         |
-| SC/ST AND PwD    | Rs 1500/- | 30%                        | 40/100         |
-| OBC-NCL, EWS     | Rs 6000/- | 35%                        | 45/100         |
+See [DAD Qualifier Exam Fees Table](resources/dad-exam-fees.md)
 
 [Table 1: Department Core/Elective Courses](https://docs.google.com/document/u/1/d/e/2PACX-1vRxGnnDCVAO3KX2CGtMIcJQuDrAasVk2JHbDxkjsGrTP5ShhZK8N6ZSPX89lexKx86QPAUswSzGLsOA/pub?urp=gmail_link#h.rufxvltqqxqt)
 ![img](https://lh7-rt.googleusercontent.com/docsd/ANYlcfDJrk3f4ydvIjNBei7g5FDDtJwEbAldf4tBZMgw5BVyLWfOLg3RA_1DZkoOCZ9lNt6QksZiySg5_HoqOyf2K-qbudSRTr2V_FBGA9Ajd5wGOUtuFooQvJkWjuptjJVH1q_BVa3fECuTIJZz)
