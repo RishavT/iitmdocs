@@ -12,6 +12,26 @@ const minWordsHint = document.getElementById("min-words-hint");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
+const SESSION_ID_KEY = "iitm-chatbot-session-id";
+
+/**
+ * Gets or creates a unique session ID stored in localStorage.
+ * This persists across page reloads and tabs for the same browser.
+ * @returns {string} - The session ID (UUID format)
+ */
+function getOrCreateSessionId() {
+  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  if (!sessionId) {
+    // Generate a UUID v4
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+    console.log("[Session] Created new session ID:", sessionId);
+  }
+  return sessionId;
+}
+
+// Initialize session ID on page load
+const sessionId = getOrCreateSessionId();
 
 /**
  * Counts words in a string (splits by whitespace)
@@ -168,7 +188,7 @@ async function askQuestion(e) {
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history }),
+      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId }),
     })) {
       Object.assign(chat.at(-1), event);
       redraw();

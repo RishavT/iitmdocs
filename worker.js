@@ -1,3 +1,74 @@
+// ============================================================================
+// LOGGING INFRASTRUCTURE
+// Structured logging for Cloud Run / Google Cloud Logging
+// Logs are in JSON format with severity levels for easy BigQuery export
+// ============================================================================
+
+/**
+ * Generates a UUID v4 for conversation tracking
+ * @returns {string} UUID in standard format
+ */
+function generateUUID() {
+  return crypto.randomUUID();
+}
+
+/**
+ * Logs a structured message to console in Cloud Logging format.
+ * Cloud Run automatically picks up JSON logs and parses them.
+ * @param {string} severity - Log level: DEBUG, INFO, WARNING, ERROR
+ * @param {string} message - Human-readable message
+ * @param {Object} data - Additional structured data to log
+ */
+function structuredLog(severity, message, data = {}) {
+  const logEntry = {
+    severity,
+    message,
+    timestamp: new Date().toISOString(),
+    ...data,
+    // Labels help with filtering in Cloud Logging and BigQuery
+    "logging.googleapis.com/labels": {
+      application: "iitm-chatbot",
+      ...(data.labels || {}),
+    },
+  };
+  // Remove nested labels from root level
+  delete logEntry.labels;
+  console.log(JSON.stringify(logEntry));
+}
+
+/**
+ * Logs a complete conversation turn for analytics.
+ * This is the primary log entry for conversation analysis.
+ * @param {Object} conversationData - All data about the conversation turn
+ */
+function logConversation(conversationData) {
+  structuredLog("INFO", "conversation_turn", {
+    ...conversationData,
+    labels: { type: "conversation" },
+  });
+}
+
+/**
+ * Logs an error with context
+ * @param {string} message - Error message
+ * @param {Error|Object} error - Error object or details
+ * @param {Object} context - Additional context
+ */
+function logError(message, error, context = {}) {
+  structuredLog("ERROR", message, {
+    error: {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    },
+    ...context,
+    labels: { type: "error" },
+  });
+}
+
+// ============================================================================
+// VALIDATION HELPERS
+// ============================================================================
+
 // Validation helpers for hallucination detection
 const OUT_OF_SCOPE_KEYWORDS = [
   'capital', 'country', 'cook', 'recipe', 'weather', 'sports',
@@ -164,13 +235,26 @@ function findSynonymMatch(query) {
  * @param {string} query - The original user query
  * @param {Object} env - Environment variables containing API keys
  * @returns {Promise<string>} - The rewritten query for search
+ * @deprecated Use rewriteQueryWithSource instead for logging
  */
 async function rewriteQuery(query, env) {
+  const { query: rewrittenQuery } = await rewriteQueryWithSource(query, env);
+  return rewrittenQuery;
+}
+
+/**
+ * Rewrites a user query to improve search relevance, returning both the query and source.
+ * First checks synonym mapping, then falls back to LLM rewriting.
+ * @param {string} query - The original user query
+ * @param {Object} env - Environment variables containing API keys
+ * @returns {Promise<{query: string, source: string}>} - The rewritten query and its source
+ */
+async function rewriteQueryWithSource(query, env) {
   // First, check if query matches any synonym pattern (fast path)
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
     console.log('[DEBUG] Synonym match found:', query, '→', synonymMatch);
-    return synonymMatch;
+    return { query: synonymMatch, source: "synonym" };
   }
 
   // Fall back to LLM rewriting for unmatched queries
@@ -218,16 +302,16 @@ Examples:
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
-      return query;
+      return { query: query, source: "original" };
     }
 
     const result = await response.json();
     const rewrittenQuery = result.choices?.[0]?.message?.content?.trim() || query;
     console.log('[DEBUG] Query rewritten:', query, '→', rewrittenQuery);
-    return rewrittenQuery;
+    return { query: rewrittenQuery, source: "llm" };
   } catch (error) {
     console.error('[DEBUG] Query rewrite error:', error.message);
-    return query; // Fallback to original query on error
+    return { query: query, source: "original" }; // Fallback to original query on error
   }
 }
 
@@ -256,9 +340,15 @@ export default {
 };
 
 async function answer(request, env) {
+  const startTime = Date.now();
+  const conversationId = generateUUID();
+
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [] } = await request.json();
+  const { q: question, ndocs = 5, history = [], session_id: sessionId } = await request.json();
   console.log('[DEBUG] Question:', question);
+  console.log('[DEBUG] Session ID:', sessionId || 'not provided');
+  console.log('[DEBUG] Conversation ID:', conversationId);
+
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Validate ndocs to prevent resource exhaustion
@@ -289,15 +379,40 @@ async function answer(request, env) {
   //   });
   // }
 
+  // Logging context - will be populated during processing
+  const logContext = {
+    session_id: sessionId || "anonymous",
+    conversation_id: conversationId,
+    question: question,
+    rewritten_query: null,
+    query_source: "original", // "synonym", "llm", or "original"
+    documents: [],
+    response: null,
+    fact_check_passed: null,
+    contains_raahat: false,
+    history_length: Array.isArray(history) ? history.length : 0,
+    latency_ms: null,
+    error: null,
+  };
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
       try {
         // Rewrite query for better search relevance
-        const searchQuery = await rewriteQuery(question, env);
+        const { query: searchQuery, source: querySource } = await rewriteQueryWithSource(question, env);
+        logContext.rewritten_query = searchQuery;
+        logContext.query_source = querySource;
 
         // Search Weaviate for relevant documents using rewritten query
         const documents = await searchWeaviate(searchQuery, numDocs, env);
+
+        // Log document metadata (not full content)
+        logContext.documents = (documents || []).map((doc) => ({
+          filename: doc.filename,
+          relevance: doc.relevance,
+        }));
+
         // Stream documents first (single enqueue)
         if (documents?.length) {
           // Use configurable repository URL or default
@@ -332,16 +447,38 @@ async function answer(request, env) {
         }
 
         // Generate AI answer using documents as context (with fact-checking)
-        const answerResponse = await generateAnswer(question, documents, history, env);
+        // Pass logContext to collect response data
+        const answerResponse = await generateAnswer(question, documents, history, env, logContext);
+
         // Pipe the SSE response to the client
         await answerResponse.body.pipeTo(
           new WritableStream({
             write: (chunk) => controller.enqueue(chunk),
-            close: () => controller.close(),
-            abort: (reason) => controller.error(reason),
+            close: () => {
+              // Log the conversation when stream closes
+              logContext.latency_ms = Date.now() - startTime;
+              logConversation(logContext);
+              controller.close();
+            },
+            abort: (reason) => {
+              logContext.latency_ms = Date.now() - startTime;
+              logContext.error = reason?.message || String(reason);
+              logConversation(logContext);
+              controller.error(reason);
+            },
           }),
         );
       } catch (error) {
+        // Log the error
+        logContext.latency_ms = Date.now() - startTime;
+        logContext.error = error?.message || String(error);
+        logError("conversation_error", error, {
+          session_id: sessionId,
+          conversation_id: conversationId,
+          question: question,
+        });
+        logConversation(logContext);
+
         const errorMessage = `data: ${JSON.stringify({
           error: {
             message: error.message || "An error occurred while processing your request",
@@ -505,7 +642,7 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
-async function generateAnswer(question, documents, history, env) {
+async function generateAnswer(question, documents, history, env, logContext = null) {
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
@@ -633,6 +770,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   console.log('[DEBUG] RAAHAT split - hasRaahat:', hasRaahat, ', otherChunk statements:', countStatements(otherChunk));
 
   let finalAnswer;
+  let factCheckPassed = null; // Track fact-check result for logging
 
   if (hasRaahat) {
     // Response contains RAAHAT content - handle specially
@@ -651,6 +789,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
         isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: [], env });
       }
 
+      factCheckPassed = isOtherChunkValid;
+
       if (isOtherChunkValid) {
         // Non-RAAHAT content is valid - show it + standardized RAAHAT message
         console.log('[DEBUG] Non-RAAHAT content approved, combining with standard RAAHAT message');
@@ -664,6 +804,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       // Minimal or no non-RAAHAT content - just show standardized RAAHAT message
       console.log('[DEBUG] Minimal non-RAAHAT content, showing only standard RAAHAT message');
       finalAnswer = STANDARD_RAAHAT_MESSAGE;
+      factCheckPassed = true; // No fact-check needed for pure RAAHAT response
     }
   } else {
     // No RAAHAT content - normal fact-checking flow
@@ -679,9 +820,18 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       console.log('[DEBUG] Fact-check retry result (no history):', isFactuallyCorrect);
     }
 
+    factCheckPassed = isFactuallyCorrect;
+
     finalAnswer = isFactuallyCorrect
       ? answerText
       : "I apologize, but I couldn't verify my response against the available documents. Please rephrase your question or ask something specific about the IIT Madras BS programme (admissions, courses, fees, academic policies, etc.). If you feel your question was valid and I made a mistake - please reach out to support@study.iitm.ac.in";
+  }
+
+  // Populate logContext if provided
+  if (logContext) {
+    logContext.response = finalAnswer;
+    logContext.fact_check_passed = factCheckPassed;
+    logContext.contains_raahat = hasRaahat;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
