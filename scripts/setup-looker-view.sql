@@ -16,7 +16,7 @@ SELECT
   timestamp,
   jsonPayload.session_id AS session_id,
   jsonPayload.conversation_id AS conversation_id,
-  jsonPayload.username AS username,
+  JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.username') AS username,
   jsonPayload.question AS question,
   jsonPayload.rewritten_query AS rewritten_query,
   jsonPayload.query_source AS query_source,
