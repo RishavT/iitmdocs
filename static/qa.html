@@ -13,9 +13,12 @@
 <body class="d-flex flex-column vh-100 p-3">
   <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0" style="background-color: #724ae8; color: white; padding: 8px; border-radius: 5px;">
     <h6 class="text-center mb-0">IITM BS Admissions</h6>
-    <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
-      <i class="bi bi-arrow-repeat"></i>
-    </button>
+    <div class="d-flex align-items-center gap-2">
+      <input id="username-input" type="text" class="form-control form-control-sm" placeholder="Username (optional)" style="width: 120px; font-size: 12px;">
+      <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
+        <i class="bi bi-arrow-repeat"></i>
+      </button>
+    </div>
   </div>
   <div id="chat-area" class="flex-grow-1 overflow-auto my-2"></div>
   <form id="chat-form" class="input-group flex-shrink-0">

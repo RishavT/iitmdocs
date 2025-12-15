@@ -9,10 +9,12 @@ const askButton = document.getElementById("ask-button");
 const questionInput = document.getElementById("question-input");
 const clearChatButton = document.getElementById("clear-chat-button");
 const minWordsHint = document.getElementById("min-words-hint");
+const usernameInput = document.getElementById("username-input");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
+const USERNAME_KEY = "iitm-chatbot-username";
 
 /**
  * Gets or creates a unique session ID stored in localStorage.
@@ -32,6 +34,19 @@ function getOrCreateSessionId() {
 
 // Initialize session ID on page load
 const sessionId = getOrCreateSessionId();
+
+// Initialize username: URL param takes priority, then localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const urlUsername = urlParams.get("username");
+if (urlUsername) {
+  usernameInput.value = urlUsername;
+  localStorage.setItem(USERNAME_KEY, urlUsername);
+} else {
+  usernameInput.value = localStorage.getItem(USERNAME_KEY) || "";
+}
+usernameInput.addEventListener("input", () => {
+  localStorage.setItem(USERNAME_KEY, usernameInput.value);
+});
 
 /**
  * Counts words in a string (splits by whitespace)
@@ -188,7 +203,7 @@ async function askQuestion(e) {
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId }),
+      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, username: usernameInput.value || undefined }),
     })) {
       Object.assign(chat.at(-1), event);
       redraw();

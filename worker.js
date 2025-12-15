@@ -344,9 +344,10 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [], session_id: sessionId } = await request.json();
+  const { q: question, ndocs = 5, history = [], session_id: sessionId, username } = await request.json();
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
+  console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
 
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
@@ -383,6 +384,7 @@ async function answer(request, env) {
   const logContext = {
     session_id: sessionId || "anonymous",
     conversation_id: conversationId,
+    username: username || null,
     question: question,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", or "original"
