@@ -113,6 +113,21 @@ async function handleFeedback(request) {
       );
     }
 
+    // Validate feedback_category if provided
+    const validCategories = ["wrong_info", "outdated", "unhelpful", "other"];
+    if (body.feedback_category && !validCategories.includes(body.feedback_category)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid feedback category" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
     // Log the feedback for BigQuery ingestion
     // Limit feedback_text to 1000 chars to prevent abuse
     structuredLog("INFO", "user_feedback", {

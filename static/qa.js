@@ -59,19 +59,21 @@ const FEEDBACK_CATEGORIES = [
 /**
  * Submits feedback to the backend
  * @param {Object} feedbackData - The feedback data to submit
+ * @throws {Error} If the request fails or returns non-OK status
  */
 async function submitFeedback(feedbackData) {
-  try {
-    await fetch("./feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id: sessionId,
-        ...feedbackData,
-      }),
-    });
-  } catch (error) {
-    console.error("Failed to submit feedback:", error);
+  const response = await fetch("./feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      ...feedbackData,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}`);
   }
 }
 
@@ -263,13 +265,21 @@ function redraw() {
 
 /**
  * Handles thumbs up/down feedback
+ * Includes race condition protection and error handling
  */
-function handleThumbsFeedback(messageId, type, question, response) {
+async function handleThumbsFeedback(messageId, type, question, response) {
   const msg = chat.find((m) => m.messageId === messageId);
-  if (msg) {
-    msg.feedback = type;
-    redraw();
-    submitFeedback({
+  if (!msg) return;
+
+  // Race condition protection: prevent duplicate submissions
+  if (msg.feedback && msg.feedback !== "error") return;
+
+  const previousFeedback = msg.feedback;
+  msg.feedback = type;
+  redraw();
+
+  try {
+    await submitFeedback({
       message_id: messageId,
       question,
       response,
@@ -277,6 +287,11 @@ function handleThumbsFeedback(messageId, type, question, response) {
       feedback_category: null,
       feedback_text: null,
     });
+  } catch (error) {
+    // Reset feedback state on error
+    msg.feedback = previousFeedback || "error";
+    redraw();
+    console.error("Failed to submit feedback:", error);
   }
 }
 
@@ -293,19 +308,26 @@ function toggleReportForm(messageId) {
 
 /**
  * Handles report form submission
+ * Includes error handling and submission state management
  */
-function handleReportSubmit(messageId, question, response) {
+async function handleReportSubmit(messageId, question, response) {
   const categorySelect = document.getElementById(`feedback-category-${messageId}`);
   const textArea = document.getElementById(`feedback-text-${messageId}`);
   const category = categorySelect?.value || null;
   const text = textArea?.value?.trim() || null;
 
   const msg = chat.find((m) => m.messageId === messageId);
-  if (msg) {
-    msg.feedback = "submitted";
-    msg.showReportForm = false;
-    redraw();
-    submitFeedback({
+  if (!msg) return;
+
+  // Prevent duplicate report submissions
+  if (msg.feedback === "submitted") return;
+
+  msg.feedback = "submitted";
+  msg.showReportForm = false;
+  redraw();
+
+  try {
+    await submitFeedback({
       message_id: messageId,
       question,
       response,
@@ -313,6 +335,12 @@ function handleReportSubmit(messageId, question, response) {
       feedback_category: category,
       feedback_text: text,
     });
+  } catch (error) {
+    // Reset to allow retry on error
+    msg.feedback = "error";
+    msg.showReportForm = true;
+    redraw();
+    console.error("Failed to submit report:", error);
   }
 }
 
