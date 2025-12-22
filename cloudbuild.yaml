@@ -24,8 +24,8 @@ steps:
           echo "Creating Log Sink 'chatbot-conversations-sink'..."
           gcloud logging sinks create chatbot-conversations-sink \
             bigquery.googleapis.com/projects/$PROJECT_ID/datasets/chatbot_logs \
-            --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="iitm-chatbot-worker" AND jsonPayload.message="conversation_turn"' \
-            --description="Export chatbot conversation logs to BigQuery for analytics"
+            --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="iitm-chatbot-worker" AND (jsonPayload.message="conversation_turn" OR jsonPayload.message="user_feedback")' \
+            --description="Export chatbot conversation and feedback logs to BigQuery for analytics"
 
           # Get the sink's service account and grant BigQuery permissions
           SINK_SA=$$(gcloud logging sinks describe chatbot-conversations-sink --format='value(writerIdentity)')

@@ -235,6 +235,7 @@ function redraw() {
                             <textarea
                               id="feedback-text-${messageId}"
                               placeholder="Optional: Tell us more about the issue..."
+                              maxlength="1000"
                             ></textarea>
                             <div class="feedback-form-buttons">
                               <button class="btn btn-sm btn-outline-secondary" @click=${() => toggleReportForm(messageId)}>

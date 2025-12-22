@@ -114,6 +114,7 @@ async function handleFeedback(request) {
     }
 
     // Log the feedback for BigQuery ingestion
+    // Limit feedback_text to 1000 chars to prevent abuse
     structuredLog("INFO", "user_feedback", {
       session_id,
       message_id,
@@ -121,7 +122,7 @@ async function handleFeedback(request) {
       response: response || null,
       feedback_type,
       feedback_category: body.feedback_category || null,
-      feedback_text: body.feedback_text || null,
+      feedback_text: body.feedback_text?.trim()?.substring(0, 1000) || null,
     });
 
     return new Response(
@@ -292,19 +293,6 @@ function findSynonymMatch(query) {
     }
   }
   return null;
-}
-
-/**
- * Rewrites a user query to improve search relevance.
- * First checks synonym mapping, then falls back to LLM rewriting.
- * @param {string} query - The original user query
- * @param {Object} env - Environment variables containing API keys
- * @returns {Promise<string>} - The rewritten query for search
- * @deprecated Use rewriteQueryWithSource instead for logging
- */
-async function rewriteQuery(query, env) {
-  const { query: rewrittenQuery } = await rewriteQueryWithSource(query, env);
-  return rewrittenQuery;
 }
 
 /**
