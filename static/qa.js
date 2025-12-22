@@ -48,20 +48,6 @@ usernameInput.addEventListener("input", () => {
   localStorage.setItem(USERNAME_KEY, usernameInput.value);
 });
 
-// Session and feedback tracking
-const SESSION_ID_KEY = "iitm-chatbot-session-id";
-
-function getOrCreateSessionId() {
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
-  }
-  return sessionId;
-}
-
-const sessionId = getOrCreateSessionId();
-
 // Feedback categories for the report form
 const FEEDBACK_CATEGORIES = [
   { value: "wrong_info", label: "Wrong information" },
