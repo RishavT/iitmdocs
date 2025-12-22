@@ -36,17 +36,6 @@ function structuredLog(severity, message, data = {}) {
   console.log(JSON.stringify(logEntry));
 }
 
-/**
- * Logs a complete conversation turn for analytics.
- * This is the primary log entry for conversation analysis.
- * @param {Object} conversationData - All data about the conversation turn
- */
-function logConversation(conversationData) {
-  structuredLog("INFO", "conversation_turn", {
-    ...conversationData,
-    labels: { type: "conversation" },
-  });
-}
 
 /**
  * Logs an error with context
@@ -82,6 +71,82 @@ function isLikelyOutOfScope(question) {
   return OUT_OF_SCOPE_KEYWORDS.some(keyword =>
     new RegExp(`\\b${keyword}`, 'i').test(questionLower)
   );
+}
+
+
+/**
+ * Handles user feedback submission
+ * @param {Request} request - The incoming request
+ * @returns {Response} - JSON response
+ */
+async function handleFeedback(request) {
+  try {
+    const body = await request.json();
+
+    // Validate required fields
+    const { session_id, message_id, question, response, feedback_type } = body;
+    if (!session_id || !message_id || !feedback_type) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    // Validate feedback_type
+    const validFeedbackTypes = ["up", "down", "report"];
+    if (!validFeedbackTypes.includes(feedback_type)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid feedback type" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
+
+    // Log the feedback for BigQuery ingestion
+    structuredLog("INFO", "user_feedback", {
+      session_id,
+      message_id,
+      question: question || null,
+      response: response || null,
+      feedback_type,
+      feedback_category: body.feedback_category || null,
+      feedback_text: body.feedback_text || null,
+    });
+
+    return new Response(
+      JSON.stringify({ success: true }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Feedback error:", error.message);
+    return new Response(
+      JSON.stringify({ error: "Failed to process feedback" }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
+    );
+  }
 }
 
 // Query synonym mapping: Maps various question phrasings to canonical search queries
@@ -329,10 +394,17 @@ export default {
       });
     }
 
-    // Only handle POST /answer
+    // Route handling
     const url = new URL(request.url);
+
+    // Handle POST /answer
     if (request.method == "POST" && url.pathname == "/answer") {
       return await answer(request, env);
+    }
+
+    // Handle POST /feedback
+    if (request.method == "POST" && url.pathname == "/feedback") {
+      return await handleFeedback(request);
     }
 
     return env.ASSETS.fetch(request);
@@ -344,12 +416,12 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [], session_id: sessionId, username } = await request.json();
+  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId } = await request.json();
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
+  console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
-
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Validate ndocs to prevent resource exhaustion
@@ -384,6 +456,7 @@ async function answer(request, env) {
   const logContext = {
     session_id: sessionId || "anonymous",
     conversation_id: conversationId,
+    message_id: messageId || null,
     username: username || null,
     question: question,
     rewritten_query: null,
@@ -451,7 +524,6 @@ async function answer(request, env) {
         // Generate AI answer using documents as context (with fact-checking)
         // Pass logContext to collect response data
         const answerResponse = await generateAnswer(question, documents, history, env, logContext);
-
         // Pipe the SSE response to the client
         await answerResponse.body.pipeTo(
           new WritableStream({
@@ -459,13 +531,13 @@ async function answer(request, env) {
             close: () => {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
-              logConversation(logContext);
+              structuredLog("INFO", "conversation_turn", logContext);
               controller.close();
             },
             abort: (reason) => {
               logContext.latency_ms = Date.now() - startTime;
               logContext.error = reason?.message || String(reason);
-              logConversation(logContext);
+              structuredLog("INFO", "conversation_turn", logContext);
               controller.error(reason);
             },
           }),
@@ -479,7 +551,7 @@ async function answer(request, env) {
           conversation_id: conversationId,
           question: question,
         });
-        logConversation(logContext);
+        structuredLog("INFO", "conversation_turn", logContext);
 
         const errorMessage = `data: ${JSON.stringify({
           error: {

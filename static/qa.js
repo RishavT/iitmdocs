@@ -48,6 +48,47 @@ usernameInput.addEventListener("input", () => {
   localStorage.setItem(USERNAME_KEY, usernameInput.value);
 });
 
+// Session and feedback tracking
+const SESSION_ID_KEY = "iitm-chatbot-session-id";
+
+function getOrCreateSessionId() {
+  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+  }
+  return sessionId;
+}
+
+const sessionId = getOrCreateSessionId();
+
+// Feedback categories for the report form
+const FEEDBACK_CATEGORIES = [
+  { value: "wrong_info", label: "Wrong information" },
+  { value: "outdated", label: "Outdated information" },
+  { value: "unhelpful", label: "Unhelpful response" },
+  { value: "other", label: "Other" },
+];
+
+/**
+ * Submits feedback to the backend
+ * @param {Object} feedbackData - The feedback data to submit
+ */
+async function submitFeedback(feedbackData) {
+  try {
+    await fetch("./feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        ...feedbackData,
+      }),
+    });
+  } catch (error) {
+    console.error("Failed to submit feedback:", error);
+  }
+}
+
 /**
  * Counts words in a string (splits by whitespace)
  * @param {string} text - Text to count words in
@@ -152,7 +193,7 @@ if (storedHistory.length > 0) {
 function redraw() {
   render(
     chat.map(
-      ({ q, content, tools }) => html`
+      ({ q, content, tools, messageId, feedback, showReportForm }) => html`
         <div class="bg-light border rounded p-2">${q}</div>
         <div class="my-3">
           ${content ? unsafeHTML(marked.parse(content)) : html`<span class="ms-4 spinner-border"></span>`}
@@ -168,11 +209,124 @@ function redraw() {
               </ul>
             </details>`
           : ""}
+        ${content && messageId
+          ? html`
+              ${feedback === "submitted"
+                ? html`<div class="feedback-thanks"><i class="bi bi-check-circle"></i> Thanks for your feedback!</div>`
+                : html`
+                    <div class="feedback-buttons">
+                      <button
+                        class="feedback-btn ${feedback === "up" ? "active-up" : ""}"
+                        title="Helpful"
+                        @click=${() => handleThumbsFeedback(messageId, "up", q, content)}
+                      >
+                        <i class="bi bi-hand-thumbs-up"></i>
+                      </button>
+                      <button
+                        class="feedback-btn ${feedback === "down" ? "active-down" : ""}"
+                        title="Not helpful"
+                        @click=${() => handleThumbsFeedback(messageId, "down", q, content)}
+                      >
+                        <i class="bi bi-hand-thumbs-down"></i>
+                      </button>
+                      <button
+                        class="feedback-btn report"
+                        title="Report incorrect answer"
+                        @click=${() => toggleReportForm(messageId)}
+                      >
+                        <i class="bi bi-flag"></i> Report
+                      </button>
+                    </div>
+                    ${showReportForm
+                      ? html`
+                          <div class="feedback-form">
+                            <select id="feedback-category-${messageId}">
+                              <option value="">Select issue type...</option>
+                              ${FEEDBACK_CATEGORIES.map(
+                                (cat) => html`<option value="${cat.value}">${cat.label}</option>`,
+                              )}
+                            </select>
+                            <textarea
+                              id="feedback-text-${messageId}"
+                              placeholder="Optional: Tell us more about the issue..."
+                            ></textarea>
+                            <div class="feedback-form-buttons">
+                              <button class="btn btn-sm btn-outline-secondary" @click=${() => toggleReportForm(messageId)}>
+                                Cancel
+                              </button>
+                              <button
+                                class="btn btn-sm btn-warning"
+                                @click=${() => handleReportSubmit(messageId, q, content)}
+                              >
+                                Submit Report
+                              </button>
+                            </div>
+                          </div>
+                        `
+                      : ""}
+                  `}
+            `
+          : ""}
       `,
     ),
     chatArea,
   );
   if (autoScroll) chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+/**
+ * Handles thumbs up/down feedback
+ */
+function handleThumbsFeedback(messageId, type, question, response) {
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (msg) {
+    msg.feedback = type;
+    redraw();
+    submitFeedback({
+      message_id: messageId,
+      question,
+      response,
+      feedback_type: type,
+      feedback_category: null,
+      feedback_text: null,
+    });
+  }
+}
+
+/**
+ * Toggles the report form visibility
+ */
+function toggleReportForm(messageId) {
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (msg) {
+    msg.showReportForm = !msg.showReportForm;
+    redraw();
+  }
+}
+
+/**
+ * Handles report form submission
+ */
+function handleReportSubmit(messageId, question, response) {
+  const categorySelect = document.getElementById(`feedback-category-${messageId}`);
+  const textArea = document.getElementById(`feedback-text-${messageId}`);
+  const category = categorySelect?.value || null;
+  const text = textArea?.value?.trim() || null;
+
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (msg) {
+    msg.feedback = "submitted";
+    msg.showReportForm = false;
+    redraw();
+    submitFeedback({
+      message_id: messageId,
+      question,
+      response,
+      feedback_type: "report",
+      feedback_category: category,
+      feedback_text: text,
+    });
+  }
 }
 
 /**
@@ -190,7 +344,9 @@ async function askQuestion(e) {
   askButton.disabled = true;
   minWordsHint.style.display = "block"; // Show hint again after clearing input
   askButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-  chat.push({ q });
+  // Create unique message ID for feedback tracking
+  const messageId = crypto.randomUUID();
+  chat.push({ q, messageId, feedback: null, showReportForm: false });
   redraw();
 
   // Track this request to prevent race conditions
@@ -203,7 +359,7 @@ async function askQuestion(e) {
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, username: usernameInput.value || undefined }),
+      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined }),
     })) {
       Object.assign(chat.at(-1), event);
       redraw();
