@@ -97,6 +97,46 @@ gcloud builds submit --config=cloudbuild.yaml
 - Cloud Run scales to zero when not in use
 - Embedding job only runs when `src/` files change
 
+#### Analytics & BigQuery
+
+Conversation logs and user feedback are automatically exported to BigQuery for analytics.
+
+**Infrastructure (auto-created by Cloud Build):**
+- BigQuery dataset: `chatbot_logs`
+- Log sink: `chatbot-conversations-sink` (exports conversation_turn and user_feedback logs)
+
+**Setting up BigQuery Views:**
+
+After the first deployment, create analytics views by running:
+
+```bash
+# Replace YOUR_PROJECT_ID with your GCP project ID
+sed 's/YOUR_PROJECT_ID/your-project-id/g' scripts/setup-looker-view.sql | bq query --use_legacy_sql=false
+```
+
+Or run directly in [BigQuery Console](https://console.cloud.google.com/bigquery) after replacing `YOUR_PROJECT_ID`.
+
+**Updating Existing Views:**
+
+When the logging schema changes (new fields added), update the views:
+
+```bash
+# Re-run the SQL script - CREATE OR REPLACE will update existing views
+sed 's/YOUR_PROJECT_ID/your-project-id/g' scripts/setup-looker-view.sql | bq query --use_legacy_sql=false
+```
+
+**Available Views:**
+| View | Description |
+|------|-------------|
+| `conversations` | All conversation turns with latency, fact-check status, etc. |
+| `user_feedback` | Thumbs up/down and report feedback |
+| `feedback_summary` | Daily aggregates (satisfaction rate, report categories) |
+| `conversations_with_feedback` | Conversations joined with feedback by message_id |
+
+**Backward Compatibility:**
+
+Views use `JSON_VALUE()` extraction which returns `NULL` for missing fields. This ensures older logs (before new fields were added) work alongside newer logs.
+
 ## Configuration
 
 Choose one of three deployment modes:
