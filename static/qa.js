@@ -9,9 +9,73 @@ const askButton = document.getElementById("ask-button");
 const questionInput = document.getElementById("question-input");
 const clearChatButton = document.getElementById("clear-chat-button");
 const minWordsHint = document.getElementById("min-words-hint");
+const usernameInput = document.getElementById("username-input");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
+const SESSION_ID_KEY = "iitm-chatbot-session-id";
+const USERNAME_KEY = "iitm-chatbot-username";
+
+/**
+ * Gets or creates a unique session ID stored in localStorage.
+ * This persists across page reloads and tabs for the same browser.
+ * @returns {string} - The session ID (UUID format)
+ */
+function getOrCreateSessionId() {
+  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  if (!sessionId) {
+    // Generate a UUID v4
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(SESSION_ID_KEY, sessionId);
+    console.log("[Session] Created new session ID:", sessionId);
+  }
+  return sessionId;
+}
+
+// Initialize session ID on page load
+const sessionId = getOrCreateSessionId();
+
+// Initialize username: URL param takes priority, then localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const urlUsername = urlParams.get("username");
+if (urlUsername) {
+  usernameInput.value = urlUsername;
+  localStorage.setItem(USERNAME_KEY, urlUsername);
+} else {
+  usernameInput.value = localStorage.getItem(USERNAME_KEY) || "";
+}
+usernameInput.addEventListener("input", () => {
+  localStorage.setItem(USERNAME_KEY, usernameInput.value);
+});
+
+// Feedback categories for the report form
+const FEEDBACK_CATEGORIES = [
+  { value: "wrong_info", label: "Wrong information" },
+  { value: "outdated", label: "Outdated information" },
+  { value: "unhelpful", label: "Unhelpful response" },
+  { value: "other", label: "Other" },
+];
+
+/**
+ * Submits feedback to the backend
+ * @param {Object} feedbackData - The feedback data to submit
+ * @throws {Error} If the request fails or returns non-OK status
+ */
+async function submitFeedback(feedbackData) {
+  const response = await fetch("./feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      ...feedbackData,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}`);
+  }
+}
 
 /**
  * Counts words in a string (splits by whitespace)
@@ -117,7 +181,7 @@ if (storedHistory.length > 0) {
 function redraw() {
   render(
     chat.map(
-      ({ q, content, tools }) => html`
+      ({ q, content, tools, messageId, feedback, showReportForm }) => html`
         <div class="bg-light border rounded p-2">${q}</div>
         <div class="my-3">
           ${content ? unsafeHTML(marked.parse(content)) : html`<span class="ms-4 spinner-border"></span>`}
@@ -133,11 +197,151 @@ function redraw() {
               </ul>
             </details>`
           : ""}
+        ${content && messageId
+          ? html`
+              ${feedback === "submitted"
+                ? html`<div class="feedback-thanks"><i class="bi bi-check-circle"></i> Thanks for your feedback!</div>`
+                : html`
+                    <div class="feedback-buttons">
+                      <button
+                        class="feedback-btn ${feedback === "up" ? "active-up" : ""}"
+                        title="Helpful"
+                        @click=${() => handleThumbsFeedback(messageId, "up", q, content)}
+                      >
+                        <i class="bi bi-hand-thumbs-up"></i>
+                      </button>
+                      <button
+                        class="feedback-btn ${feedback === "down" ? "active-down" : ""}"
+                        title="Not helpful"
+                        @click=${() => handleThumbsFeedback(messageId, "down", q, content)}
+                      >
+                        <i class="bi bi-hand-thumbs-down"></i>
+                      </button>
+                      <button
+                        class="feedback-btn report"
+                        title="Report incorrect answer"
+                        @click=${() => toggleReportForm(messageId)}
+                      >
+                        <i class="bi bi-flag"></i> Report
+                      </button>
+                    </div>
+                    ${showReportForm
+                      ? html`
+                          <div class="feedback-form">
+                            <select id="feedback-category-${messageId}">
+                              <option value="">Select issue type...</option>
+                              ${FEEDBACK_CATEGORIES.map(
+                                (cat) => html`<option value="${cat.value}">${cat.label}</option>`,
+                              )}
+                            </select>
+                            <textarea
+                              id="feedback-text-${messageId}"
+                              placeholder="Optional: Tell us more about the issue..."
+                              maxlength="1000"
+                            ></textarea>
+                            <div class="feedback-form-buttons">
+                              <button class="btn btn-sm btn-outline-secondary" @click=${() => toggleReportForm(messageId)}>
+                                Cancel
+                              </button>
+                              <button
+                                class="btn btn-sm btn-warning"
+                                @click=${() => handleReportSubmit(messageId, q, content)}
+                              >
+                                Submit Report
+                              </button>
+                            </div>
+                          </div>
+                        `
+                      : ""}
+                  `}
+            `
+          : ""}
       `,
     ),
     chatArea,
   );
   if (autoScroll) chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+/**
+ * Handles thumbs up/down feedback
+ * Includes race condition protection and error handling
+ */
+async function handleThumbsFeedback(messageId, type, question, response) {
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (!msg) return;
+
+  // Race condition protection: prevent duplicate submissions
+  if (msg.feedback && msg.feedback !== "error") return;
+
+  const previousFeedback = msg.feedback;
+  msg.feedback = type;
+  redraw();
+
+  try {
+    await submitFeedback({
+      message_id: messageId,
+      question,
+      response,
+      feedback_type: type,
+      feedback_category: null,
+      feedback_text: null,
+    });
+  } catch (error) {
+    // Reset feedback state on error
+    msg.feedback = previousFeedback || "error";
+    redraw();
+    console.error("Failed to submit feedback:", error);
+  }
+}
+
+/**
+ * Toggles the report form visibility
+ */
+function toggleReportForm(messageId) {
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (msg) {
+    msg.showReportForm = !msg.showReportForm;
+    redraw();
+  }
+}
+
+/**
+ * Handles report form submission
+ * Includes error handling and submission state management
+ */
+async function handleReportSubmit(messageId, question, response) {
+  const categorySelect = document.getElementById(`feedback-category-${messageId}`);
+  const textArea = document.getElementById(`feedback-text-${messageId}`);
+  const category = categorySelect?.value || null;
+  const text = textArea?.value?.trim() || null;
+
+  const msg = chat.find((m) => m.messageId === messageId);
+  if (!msg) return;
+
+  // Prevent duplicate report submissions
+  if (msg.feedback === "submitted") return;
+
+  msg.feedback = "submitted";
+  msg.showReportForm = false;
+  redraw();
+
+  try {
+    await submitFeedback({
+      message_id: messageId,
+      question,
+      response,
+      feedback_type: "report",
+      feedback_category: category,
+      feedback_text: text,
+    });
+  } catch (error) {
+    // Reset to allow retry on error
+    msg.feedback = "error";
+    msg.showReportForm = true;
+    redraw();
+    console.error("Failed to submit report:", error);
+  }
 }
 
 /**
@@ -155,7 +359,9 @@ async function askQuestion(e) {
   askButton.disabled = true;
   minWordsHint.style.display = "block"; // Show hint again after clearing input
   askButton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-  chat.push({ q });
+  // Create unique message ID for feedback tracking
+  const messageId = crypto.randomUUID();
+  chat.push({ q, messageId, feedback: null, showReportForm: false });
   redraw();
 
   // Track this request to prevent race conditions
@@ -168,7 +374,7 @@ async function askQuestion(e) {
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history }),
+      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined }),
     })) {
       Object.assign(chat.at(-1), event);
       redraw();

@@ -1,4 +1,46 @@
 steps:
+  # Step 0: Create BigQuery dataset and Log Sink for conversation analytics (if not exists)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'setup-logging-sink'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Setting up conversation logging infrastructure..."
+
+        # Create BigQuery dataset if it doesn't exist
+        if ! bq show --dataset $PROJECT_ID:chatbot_logs 2>/dev/null; then
+          echo "Creating BigQuery dataset 'chatbot_logs'..."
+          bq mk --dataset \
+            --location=asia-south1 \
+            --description="Chatbot conversation logs for analytics" \
+            $PROJECT_ID:chatbot_logs
+        else
+          echo "BigQuery dataset 'chatbot_logs' already exists"
+        fi
+
+        # Create Log Sink if it doesn't exist
+        if ! gcloud logging sinks describe chatbot-conversations-sink 2>/dev/null; then
+          echo "Creating Log Sink 'chatbot-conversations-sink'..."
+          gcloud logging sinks create chatbot-conversations-sink \
+            bigquery.googleapis.com/projects/$PROJECT_ID/datasets/chatbot_logs \
+            --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="iitm-chatbot-worker" AND (jsonPayload.message="conversation_turn" OR jsonPayload.message="user_feedback")' \
+            --description="Export chatbot conversation and feedback logs to BigQuery for analytics"
+
+          # Get the sink's service account and grant BigQuery permissions
+          SINK_SA=$$(gcloud logging sinks describe chatbot-conversations-sink --format='value(writerIdentity)')
+          echo "Granting BigQuery Data Editor to sink service account: $$SINK_SA"
+          gcloud projects add-iam-policy-binding $PROJECT_ID \
+            --member="$$SINK_SA" \
+            --role="roles/bigquery.dataEditor" \
+            --condition=None \
+            --quiet
+        else
+          echo "Log Sink 'chatbot-conversations-sink' already exists"
+        fi
+
+        echo "Logging infrastructure ready!"
+
   # Step 1: Create VPC Connector (if not exists)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'create-vpc-connector'
