@@ -278,20 +278,19 @@ const QUERY_SYNONYMS = [
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. ADMISSION: apply, application, qualifier, eligibility, JEE entry, DAD, documents, enroll, join
-2. PROGRAMME STRUCTURE: foundation, diploma, BSc, BS, levels, credits, certificates, exit points
-3. COURSES: PDSA, DBMS, MLF, MLT, MAD, BDM, Python, Java, electives, syllabus, curriculum
-4. FEES: cost, waiver, scholarship, loan, payment, per credit, fee structure, affordable
-5. ASSESSMENTS: exam, quiz, OPPE, grade, marks, score, pass, fail, assignment, eligibility
-6. CALENDAR: term, semester, schedule, deadline, registration, dates, January, May, September
-7. POLICIES: CCC, probation, struck off, repeat, drop, plagiarism, LLM usage, honor code
-8. PLACEMENTS: job, career, internship, salary, recruiter, company, employment, hiring
-9. HIGHER STUDIES: masters, MTech, MS, PhD, GATE, research, campus upgrade, CFTI
-10. CREDIT TRANSFER: NPTEL, apprenticeship, campus courses, transfer fee
-11. STUDENT LIFE: house, club, society, wellness, grievance, community
-12. TECHNICAL: laptop, software, hardware, system requirements, internet
-13. CERTIFICATES: degree, transcript, merit, distinction, topper
-14. CONTACT: email, phone, support, office address`;
+1. ABOUT PROGRAM: IIT Madras, BS programme, Data Science, Electronic Systems, online learning, in-person exams, levels, exit points, Foundation, Diploma, BSc, BS, PGD, MTech
+2. ADMISSION PATHWAYS: regular entry, JEE-based entry, qualifier process, direct admission, foundation level
+3. QUALIFIER ELIGIBILITY: Class 10, Class 12, Mathematics, English, Physics, age, academic background, Class 11 students
+4. QUALIFIER FEES: application fee, four thousand rupees, two thousand rupees, one thousand rupees, SC, ST, OBC, PwD, disability, non-refundable
+5. QUALIFIER PREPARATION: 4-week process, week-wise content, videos, tutorials, assignments, English 1, Maths-1, Statistics-1, Computational Thinking, Physics-1, Basic Electronics
+6. ASSIGNMENT REQUIREMENTS: graded assignments, eligibility criteria, minimum score, 40%, 35%, 30%, cutoff, hall ticket
+7. QUALIFIER PASSING CRITERIA: exam cutoff, subject cutoff, average score, 50%, 45%, 40%, category-wise criteria
+8. SCORE VALIDITY: 3 terms validity, re-registration, Class XII students, expiry
+9. RESULTS COMMUNICATION: email, WhatsApp, portal, announcements, admission letter
+10. REATTEMPT: second attempt, re-attempt fee, absent, failed, two attempts per term
+11. JEE ENTRY: JEE Advanced, direct entry, proof validation, CCC, 3 terms validity
+12. COURSE REGISTRATION: registration steps, exam cities, prerequisites, level restrictions, credits, payment, BSc eligibility, 114 credits
+13. CONTACT: support@study.iitm.ac.in, IITM BS Degree Office, ICSR Building, Chennai`;
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.

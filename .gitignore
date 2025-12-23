@@ -61,3 +61,6 @@ analysis/
 
 # Temp folder
 temp/
+
+# Any source pdf folders
+src_pdf/
