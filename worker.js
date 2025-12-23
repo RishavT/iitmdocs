@@ -383,6 +383,9 @@ Examples:
   }
 }
 
+// Export functions for testing
+export { handleFeedback, structuredLog, findSynonymMatch };
+
 export default {
   async fetch(request, env) {
     // Handle CORS preflight
