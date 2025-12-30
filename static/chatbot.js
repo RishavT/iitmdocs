@@ -121,17 +121,40 @@ export function addChatbotStyles() {
   document.head.appendChild(style);
 }
 
-export const chatbotHTML = /* html */ `
+/**
+ * Gets the base URL of where chatbot.js was loaded from.
+ * This allows the chatbot to be embedded on any site while loading resources from the correct origin.
+ * @returns {string} Base URL (e.g., "https://chatbot.example.com/")
+ */
+function getChatbotBaseUrl() {
+  // Find the script tag that loaded this file
+  const scripts = document.getElementsByTagName('script');
+  for (const script of scripts) {
+    if (script.src && script.src.includes('chatbot.js')) {
+      // Extract base URL (everything before 'chatbot.js')
+      return script.src.replace(/chatbot\.js.*$/, '');
+    }
+  }
+  // Fallback to current origin if script not found
+  return window.location.origin + '/';
+}
+
+export function getChatbotHTML(baseUrl) {
+  return /* html */ `
   <button class="chatbot-toggler">
     <span class="material-symbols-rounded">mode_comment</span>
     <span class="material-symbols-outlined">close</span>
   </button>
   <div class="chatbot">
     <div class="chatbox">
-      <iframe src="qa.html" style="width: 100%; height: 100%; border: none;"></iframe>
+      <iframe src="${baseUrl}qa.html" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
   </div>
 `;
+}
+
+// Legacy export for backwards compatibility
+export const chatbotHTML = getChatbotHTML('');
 
 export const googleIconsHTML = /* html */ `
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0">
@@ -140,15 +163,20 @@ export const googleIconsHTML = /* html */ `
 
 export function initChatbot() {
   addChatbotStyles();
-  document.body.insertAdjacentHTML("beforeend", chatbotHTML);
+  const baseUrl = getChatbotBaseUrl();
+  document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl));
 
   const chatbotToggler = document.querySelector(".chatbot-toggler");
   chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
 
+  // Determine the expected origin for postMessage validation
+  // If embedded cross-origin, accept messages from the chatbot's origin
+  const chatbotOrigin = new URL(baseUrl).origin;
+
   // Listen for fullscreen toggle messages from the iframe
   window.addEventListener("message", (event) => {
-    // Only accept messages from same origin (the iframe)
-    if (event.origin !== window.location.origin) return;
+    // Only accept messages from the chatbot iframe's origin
+    if (event.origin !== chatbotOrigin) return;
 
     if (event.data?.type === "toggle-fullscreen") {
       if (event.data.isFullscreen) {

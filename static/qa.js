@@ -475,8 +475,10 @@ let isFullscreen = false;
 fullscreenButton.addEventListener("click", function () {
   isFullscreen = !isFullscreen;
   fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
-  // Send message to parent window to toggle fullscreen (use explicit origin for security)
-  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, window.location.origin);
+  // Send message to parent window to toggle fullscreen
+  // Use "*" because parent could be any origin (cross-origin embedding)
+  // Security: parent validates source origin in chatbot.js
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, "*");
 });
 
 // Consent overlay functionality
