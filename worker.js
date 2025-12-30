@@ -86,6 +86,13 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
+// Centralized CORS policy - allows cross-origin embedding of chatbot
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 // Translated "can't answer" messages with embedded contact info
 const CANNOT_ANSWER_MESSAGES = {
   english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
@@ -93,6 +100,19 @@ const CANNOT_ANSWER_MESSAGES = {
   tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும். நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்`,
   hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
 };
+
+// Standardized RAAHAT message for mental health referrals - single source of truth
+const STANDARD_RAAHAT_MESSAGE = `I'm afraid I am not allowed to give you advice of any kind, but we are here. If you're looking for mental health support, our institute has a Wellness Society that provides confidential counseling services to enrolled students.
+
+📧 Reach out to them at: wellness.society@study.iitm.ac.in
+📱 Instagram: @wellness.society_iitmbs
+
+If you are not enrolled in our program yet, but need someone to talk to, please consider reaching out to a local mental health professional or helpline in your area. Some organizations that offer support in India include:
+
+- Aasra - https://www.aasra.info/
+- Sneha - https://snehaindia.org/new/ 
+
+Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
 
 /**
  * Extracts language from rewritten query.
@@ -181,10 +201,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Missing required fields" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -196,10 +213,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Invalid feedback type" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -211,10 +225,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Invalid feedback category" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -235,10 +246,7 @@ async function handleFeedback(request) {
       JSON.stringify({ success: true }),
       {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       }
     );
   } catch (error) {
@@ -247,10 +255,7 @@ async function handleFeedback(request) {
       JSON.stringify({ error: "Failed to process feedback" }),
       {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       }
     );
   }
@@ -506,11 +511,7 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
+        headers: CORS_HEADERS,
       });
     }
 
@@ -527,7 +528,15 @@ export default {
       return await handleFeedback(request);
     }
 
-    return env.ASSETS.fetch(request);
+    // Serve static assets with CORS headers for cross-origin embedding
+    const assetResponse = await env.ASSETS.fetch(request);
+    const newHeaders = new Headers(assetResponse.headers);
+    Object.entries(CORS_HEADERS).forEach(([key, value]) => newHeaders.set(key, value));
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: newHeaders,
+    });
   },
 };
 
@@ -713,10 +722,7 @@ async function answer(request, env) {
     },
   });
   return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Access-Control-Allow-Origin": "*",
-    },
+    headers: { "Content-Type": "text/event-stream", ...CORS_HEADERS },
   });
 }
 
@@ -908,17 +914,12 @@ STRICTLY REFUSE to answer:
 For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language)}"
 
 SPECIAL CASE - Emotional/psychological distress:
-If the user expresses ANY emotional, psychological, interpersonal, or financial distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, money problems, etc.):
+If the user expresses significant signs of emotional, psychological distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, bad money problems, etc.):
 - Do NOT give any advice yourself
 - Do NOT say "I can't help"
 - ONLY direct them warmly to RAAHAT with this response (in ${language}):
 
-"I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
-
-📧 Reach out to them at: wellness.society@study.iitm.ac.in
-📱 Instagram: @wellness.society_iitmbs
-
-Please don't hesitate to contact them - that's what they're there for. You're not alone in this."
+"${STANDARD_RAAHAT_MESSAGE}"
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
@@ -1068,14 +1069,6 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
   return createSSEResponse(finalAnswer);
 }
-
-// Standardized RAAHAT message for mental health referrals
-const STANDARD_RAAHAT_MESSAGE = `I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
-
-📧 Reach out to them at: wellness.society@study.iitm.ac.in
-📱 Instagram: @wellness.society_iitmbs
-
-Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
 
 /**
  * Checks if a response contains RAAHAT-related content.

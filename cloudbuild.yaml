@@ -26,17 +26,22 @@ steps:
             bigquery.googleapis.com/projects/$PROJECT_ID/datasets/chatbot_logs \
             --log-filter='resource.type="cloud_run_revision" AND resource.labels.service_name="iitm-chatbot-worker" AND (jsonPayload.message="conversation_turn" OR jsonPayload.message="user_feedback")' \
             --description="Export chatbot conversation and feedback logs to BigQuery for analytics"
+        else
+          echo "Log Sink 'chatbot-conversations-sink' already exists"
+        fi
 
-          # Get the sink's service account and grant BigQuery permissions
-          SINK_SA=$$(gcloud logging sinks describe chatbot-conversations-sink --format='value(writerIdentity)')
-          echo "Granting BigQuery Data Editor to sink service account: $$SINK_SA"
+        # Check if sink's service account has BigQuery permissions, grant if missing
+        SINK_SA=$$(gcloud logging sinks describe chatbot-conversations-sink --format='value(writerIdentity)')
+        echo "Checking BigQuery permissions for: $$SINK_SA"
+        if gcloud projects get-iam-policy $PROJECT_ID --format=json 2>/dev/null | grep -q "$$SINK_SA"; then
+          echo "Sink service account already has project IAM bindings"
+        else
+          echo "Granting BigQuery Data Editor to sink service account..."
           gcloud projects add-iam-policy-binding $PROJECT_ID \
             --member="$$SINK_SA" \
             --role="roles/bigquery.dataEditor" \
             --condition=None \
             --quiet
-        else
-          echo "Log Sink 'chatbot-conversations-sink' already exists"
         fi
 
         echo "Logging infrastructure ready!"
@@ -307,6 +312,7 @@ steps:
           --region asia-south1 \
           --platform managed \
           --allow-unauthenticated \
+          --no-invoker-iam-check \
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \

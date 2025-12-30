@@ -27,6 +27,8 @@ I can help you with questions about:
 Please type your question below (minimum 5 words).`;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
+// Get parent origin from URL parameter for secure postMessage (set by chatbot.js)
+const PARENT_ORIGIN = new URLSearchParams(window.location.search).get("parentOrigin") || window.location.origin;
 
 /**
  * Gets or creates a unique session ID stored in storage (with fallback for private browsing).
@@ -117,6 +119,37 @@ const marked = new Marked();
 const HISTORY_KEY = "iitm-chatbot-history";
 const MAX_HISTORY_PAIRS = 5;
 let requestCounter = 0; // Track requests to prevent race conditions
+const TYPING_SPEED_MS = 15; // Milliseconds per character for typing effect
+
+/**
+ * Animates typing effect for a chat message
+ * @param {Object} msg - The chat message object
+ * @param {string} fullContent - The complete content to type out
+ * @param {Function} onUpdate - Callback to trigger redraw
+ * @returns {Promise} - Resolves when typing is complete
+ */
+function animateTyping(msg, fullContent, onUpdate) {
+  return new Promise((resolve) => {
+    let charIndex = 0;
+    const totalChars = fullContent.length;
+
+    function typeNextChunk() {
+      // Type multiple characters per frame for smoother feel
+      const charsPerFrame = 3;
+      charIndex = Math.min(charIndex + charsPerFrame, totalChars);
+      msg.content = fullContent.slice(0, charIndex);
+      onUpdate();
+
+      if (charIndex < totalChars) {
+        setTimeout(typeNextChunk, TYPING_SPEED_MS);
+      } else {
+        resolve();
+      }
+    }
+
+    typeNextChunk();
+  });
+}
 
 /**
  * Loads conversation history from sessionStorage
@@ -391,13 +424,29 @@ async function askQuestion(e) {
   const history = buildConversationHistory();
 
   try {
+    let fullContent = "";
+    let otherData = {};
+
+    // Collect the full response
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined }),
     })) {
-      Object.assign(chat.at(-1), event);
-      redraw();
+      if (event.content) {
+        fullContent = event.content;
+      }
+      // Collect other data like tools
+      const { content, ...rest } = event;
+      Object.assign(otherData, rest);
+    }
+
+    // Apply non-content data immediately
+    Object.assign(chat.at(-1), otherData);
+
+    // Animate the typing effect
+    if (fullContent) {
+      await animateTyping(chat.at(-1), fullContent, redraw);
     }
 
     // Only save history if this is still the most recent request
@@ -428,8 +477,9 @@ let isFullscreen = false;
 fullscreenButton.addEventListener("click", function () {
   isFullscreen = !isFullscreen;
   fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
-  // Send message to parent window to toggle fullscreen (use explicit origin for security)
-  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, window.location.origin);
+  // Send message to parent window to toggle fullscreen
+  // Use explicit parent origin passed via URL parameter for security
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, PARENT_ORIGIN);
 });
 
 // Consent overlay functionality
