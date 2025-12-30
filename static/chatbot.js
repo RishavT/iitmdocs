@@ -139,7 +139,9 @@ function getChatbotBaseUrl() {
   return window.location.origin + '/';
 }
 
-export function getChatbotHTML(baseUrl) {
+export function getChatbotHTML(baseUrl, parentOrigin) {
+  // Pass parent origin to iframe so it can use explicit targetOrigin in postMessage
+  const iframeSrc = `${baseUrl}qa.html${parentOrigin ? `?parentOrigin=${encodeURIComponent(parentOrigin)}` : ''}`;
   return /* html */ `
   <button class="chatbot-toggler">
     <span class="material-symbols-rounded">mode_comment</span>
@@ -147,14 +149,11 @@ export function getChatbotHTML(baseUrl) {
   </button>
   <div class="chatbot">
     <div class="chatbox">
-      <iframe src="${baseUrl}qa.html" style="width: 100%; height: 100%; border: none;"></iframe>
+      <iframe src="${iframeSrc}" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
   </div>
 `;
 }
-
-// Legacy export for backwards compatibility
-export const chatbotHTML = getChatbotHTML('');
 
 export const googleIconsHTML = /* html */ `
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0">
@@ -164,7 +163,8 @@ export const googleIconsHTML = /* html */ `
 export function initChatbot() {
   addChatbotStyles();
   const baseUrl = getChatbotBaseUrl();
-  document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl));
+  const parentOrigin = window.location.origin;
+  document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl, parentOrigin));
 
   const chatbotToggler = document.querySelector(".chatbot-toggler");
   chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));

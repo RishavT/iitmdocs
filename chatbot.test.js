@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { JSDOM } from "jsdom";
-import { chatbotCSS, chatbotHTML, addChatbotStyles, initChatbot } from "./static/chatbot.js";
+import { chatbotCSS, getChatbotHTML, addChatbotStyles, initChatbot } from "./static/chatbot.js";
 
 describe("Chatbot Fullscreen Mode", () => {
   let dom;
@@ -42,18 +42,25 @@ describe("Chatbot Fullscreen Mode", () => {
   });
 
   describe("HTML Structure", () => {
+    const testHTML = getChatbotHTML('', '');
+
     it("should include chatbot toggler button (X button)", () => {
-      expect(chatbotHTML).toContain('class="chatbot-toggler"');
+      expect(testHTML).toContain('class="chatbot-toggler"');
     });
 
     it("should include close icon", () => {
-      expect(chatbotHTML).toContain(">close<");
+      expect(testHTML).toContain(">close<");
     });
 
     it("should include chatbox with iframe", () => {
-      expect(chatbotHTML).toContain('class="chatbox"');
-      expect(chatbotHTML).toContain("<iframe");
-      expect(chatbotHTML).toContain('src="qa.html"');
+      expect(testHTML).toContain('class="chatbox"');
+      expect(testHTML).toContain("<iframe");
+      expect(testHTML).toContain('src="qa.html"');
+    });
+
+    it("should include parentOrigin parameter when provided", () => {
+      const htmlWithOrigin = getChatbotHTML('https://example.com/', 'https://parent.com');
+      expect(htmlWithOrigin).toContain('src="https://example.com/qa.html?parentOrigin=https%3A%2F%2Fparent.com"');
     });
   });
 

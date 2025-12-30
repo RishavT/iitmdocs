@@ -27,6 +27,8 @@ I can help you with questions about:
 Please type your question below (minimum 5 words).`;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
+// Get parent origin from URL parameter for secure postMessage (set by chatbot.js)
+const PARENT_ORIGIN = new URLSearchParams(window.location.search).get("parentOrigin") || window.location.origin;
 
 /**
  * Gets or creates a unique session ID stored in storage (with fallback for private browsing).
@@ -476,9 +478,8 @@ fullscreenButton.addEventListener("click", function () {
   isFullscreen = !isFullscreen;
   fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
   // Send message to parent window to toggle fullscreen
-  // Use "*" because parent could be any origin (cross-origin embedding)
-  // Security: parent validates source origin in chatbot.js
-  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, "*");
+  // Use explicit parent origin passed via URL parameter for security
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, PARENT_ORIGIN);
 });
 
 // Consent overlay functionality
