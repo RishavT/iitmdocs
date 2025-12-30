@@ -2,6 +2,8 @@ import { Marked } from "https://cdn.jsdelivr.net/npm/marked@13/+esm";
 import { asyncLLM } from "https://cdn.jsdelivr.net/npm/asyncllm@2";
 import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
+// Storage with fallback for private browsing: localStorage -> sessionStorage -> cookies -> memory
+import { storage } from "https://cdn.jsdelivr.net/npm/local-storage-fallback/+esm";
 
 const chatArea = document.getElementById("chat-area");
 const chatForm = document.getElementById("chat-form");
@@ -13,20 +15,30 @@ const usernameInput = document.getElementById("username-input");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
+const CONSENT_KEY = "iitm-chatbot-consent";
+const WELCOME_MESSAGE = `👋 **Welcome to the IITM BS Degree Program Assistant!**
+
+I can help you with questions about:
+- Admission pathways and eligibility
+- Qualifier exam preparation and fees
+- Course registration steps
+- And more!
+
+Please type your question below (minimum 5 words).`;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
 
 /**
- * Gets or creates a unique session ID stored in localStorage.
+ * Gets or creates a unique session ID stored in storage (with fallback for private browsing).
  * This persists across page reloads and tabs for the same browser.
  * @returns {string} - The session ID (UUID format)
  */
 function getOrCreateSessionId() {
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  let sessionId = storage.getItem(SESSION_ID_KEY);
   if (!sessionId) {
     // Generate a UUID v4
     sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
+    storage.setItem(SESSION_ID_KEY, sessionId);
     console.log("[Session] Created new session ID:", sessionId);
   }
   return sessionId;
@@ -35,17 +47,17 @@ function getOrCreateSessionId() {
 // Initialize session ID on page load
 const sessionId = getOrCreateSessionId();
 
-// Initialize username: URL param takes priority, then localStorage
+// Initialize username: URL param takes priority, then storage
 const urlParams = new URLSearchParams(window.location.search);
 const urlUsername = urlParams.get("username");
 if (urlUsername) {
   usernameInput.value = urlUsername;
-  localStorage.setItem(USERNAME_KEY, urlUsername);
+  storage.setItem(USERNAME_KEY, urlUsername);
 } else {
-  usernameInput.value = localStorage.getItem(USERNAME_KEY) || "";
+  usernameInput.value = storage.getItem(USERNAME_KEY) || "";
 }
 usernameInput.addEventListener("input", () => {
-  localStorage.setItem(USERNAME_KEY, usernameInput.value);
+  storage.setItem(USERNAME_KEY, usernameInput.value);
 });
 
 // Feedback categories for the report form
@@ -170,15 +182,23 @@ if (storedHistory.length > 0) {
       });
     }
   }
-  // Render restored conversation
-  if (chat.length > 0) {
-    redraw();
-    // After restoring, scroll to bottom and enable autoscroll
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
+}
+// Always call redraw - shows welcome message if empty, or restored conversation
+redraw();
+if (chat.length > 0) {
+  chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function redraw() {
+  // Show welcome message if chat is empty
+  if (chat.length === 0) {
+    render(
+      html`<div class="my-3">${unsafeHTML(marked.parse(WELCOME_MESSAGE))}</div>`,
+      chatArea,
+    );
+    return;
+  }
+
   render(
     chat.map(
       ({ q, content, tools, messageId, feedback, showReportForm }) => html`
@@ -398,4 +418,48 @@ clearChatButton.addEventListener("click", function () {
   chat.length = 0;
   sessionStorage.removeItem(HISTORY_KEY);
   redraw();
+});
+
+// Fullscreen toggle functionality
+const fullscreenButton = document.getElementById("fullscreen-button");
+const fullscreenIcon = document.getElementById("fullscreen-icon");
+let isFullscreen = false;
+
+fullscreenButton.addEventListener("click", function () {
+  isFullscreen = !isFullscreen;
+  fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
+  // Send message to parent window to toggle fullscreen (use explicit origin for security)
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, window.location.origin);
+});
+
+// Consent overlay functionality
+const consentOverlay = document.getElementById("consent-overlay");
+const consentButton = document.getElementById("consent-button");
+
+function hasUserConsent() {
+  return storage.getItem(CONSENT_KEY) === "true";
+}
+
+function hideConsentOverlay() {
+  consentOverlay.classList.add("hidden");
+  questionInput.disabled = false;
+  questionInput.focus();
+}
+
+function showConsentOverlay() {
+  consentOverlay.classList.remove("hidden");
+  questionInput.disabled = true;
+}
+
+// Check consent on page load
+if (hasUserConsent()) {
+  hideConsentOverlay();
+} else {
+  showConsentOverlay();
+}
+
+// Handle consent button click
+consentButton.addEventListener("click", function () {
+  storage.setItem(CONSENT_KEY, "true");
+  hideConsentOverlay();
 });

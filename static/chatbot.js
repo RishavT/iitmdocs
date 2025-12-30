@@ -1,4 +1,4 @@
-const chatbotCSS = /* css */ `
+export const chatbotCSS = /* css */ `
 /* Chatbot styles */
 .chatbot-toggler {
   position: fixed;
@@ -13,7 +13,7 @@ const chatbotCSS = /* css */ `
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #724ae8;
+  background: #800020;
   transition: all 0.2s ease;
 }
 
@@ -100,9 +100,19 @@ body.show-chatbot .chatbot {
     padding: 0;
   }
 }
+
+/* Fullscreen state */
+body.chatbot-fullscreen .chatbot {
+  width: 95vw;
+  height: calc(100vh - 100px);
+  max-height: none;
+  right: 2.5vw;
+  bottom: 90px;
+  border-radius: 10px;
+}
 `;
 
-function addChatbotStyles() {
+export function addChatbotStyles() {
   const styleId = "chatbot-styles";
   if (document.getElementById(styleId)) return;
   const style = document.createElement("style");
@@ -111,29 +121,48 @@ function addChatbotStyles() {
   document.head.appendChild(style);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  addChatbotStyles();
-
-  const chatbotHTML = /* html */ `
-    <button class="chatbot-toggler">
-      <span class="material-symbols-rounded">mode_comment</span>
-      <span class="material-symbols-outlined">close</span>
-    </button>
-    <div class="chatbot">
-      <div class="chatbox">
-        <iframe src="qa.html" style="width: 100%; height: 100%; border: none;"></iframe>
-      </div>
+export const chatbotHTML = /* html */ `
+  <button class="chatbot-toggler">
+    <span class="material-symbols-rounded">mode_comment</span>
+    <span class="material-symbols-outlined">close</span>
+  </button>
+  <div class="chatbot">
+    <div class="chatbox">
+      <iframe src="qa.html" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
-  `;
+  </div>
+`;
+
+export const googleIconsHTML = /* html */ `
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0">
+`;
+
+export function initChatbot() {
+  addChatbotStyles();
   document.body.insertAdjacentHTML("beforeend", chatbotHTML);
 
   const chatbotToggler = document.querySelector(".chatbot-toggler");
   chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
 
-  // Add Google Icons links
-  const googleIcons = /* html */ `
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0">
-  `;
-  document.head.insertAdjacentHTML("beforeend", googleIcons);
-});
+  // Listen for fullscreen toggle messages from the iframe
+  window.addEventListener("message", (event) => {
+    // Only accept messages from same origin (the iframe)
+    if (event.origin !== window.location.origin) return;
+
+    if (event.data?.type === "toggle-fullscreen") {
+      if (event.data.isFullscreen) {
+        document.body.classList.add("chatbot-fullscreen");
+      } else {
+        document.body.classList.remove("chatbot-fullscreen");
+      }
+    }
+  });
+
+  document.head.insertAdjacentHTML("beforeend", googleIconsHTML);
+}
+
+// Auto-initialize when DOM is ready (for browser usage)
+if (typeof document !== "undefined" && document.addEventListener) {
+  document.addEventListener("DOMContentLoaded", initChatbot);
+}
