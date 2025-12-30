@@ -526,13 +526,15 @@ async function answer(request, env) {
         logContext.rewritten_query = searchQuery;
         logContext.query_source = querySource;
 
-        // Extract language from rewritten query (e.g., [LANG:hindi])
+        // Extract language from rewritten query (e.g., [LANG:hindi]) and strip the tag
         const detectedLanguage = extractLanguage(searchQuery);
+        const cleanQuery = searchQuery.replace(/\[LANG:\w+\]/i, '').trim();
         logContext.detected_language = detectedLanguage;
         console.log('[DEBUG] Detected language:', detectedLanguage);
+        console.log('[DEBUG] Clean query for search:', cleanQuery);
 
-        // Search Weaviate for relevant documents using rewritten query
-        const documents = await searchWeaviate(searchQuery, numDocs, env);
+        // Search Weaviate for relevant documents using clean query (without language tag)
+        const documents = await searchWeaviate(cleanQuery, numDocs, env);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
