@@ -74,10 +74,56 @@
       font-size: 14px;
       margin-top: 8px;
     }
+    .consent-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.98);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .consent-overlay.hidden {
+      display: none;
+    }
+    .consent-box {
+      max-width: 400px;
+      text-align: center;
+    }
+    .consent-box h5 {
+      color: #800020;
+      margin-bottom: 16px;
+    }
+    .consent-box p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    .consent-box ul {
+      text-align: left;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 
-<body class="d-flex flex-column vh-100 p-3">
+<body class="d-flex flex-column vh-100 p-3" style="position: relative;">
+  <div id="consent-overlay" class="consent-overlay">
+    <div class="consent-box">
+      <h5><i class="bi bi-robot"></i> Before You Start</h5>
+      <p>Please note the following:</p>
+      <ul>
+        <li>This chatbot is <strong>powered by AI</strong> and may occasionally provide inaccurate information.</li>
+        <li>Your conversations are <strong>logged</strong> to help us improve the chat experience.</li>
+      </ul>
+      <button id="consent-button" class="btn w-100" style="background-color: #800020; color: white;">I Agree</button>
+    </div>
+  </div>
   <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0" style="background-color: #800020; color: white; padding: 8px; border-radius: 5px;">
     <h6 class="text-center mb-0">IITM BS Admissions</h6>
     <div class="d-flex align-items-center gap-2">

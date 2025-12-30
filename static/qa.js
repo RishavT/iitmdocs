@@ -13,6 +13,7 @@ const usernameInput = document.getElementById("username-input");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
+const CONSENT_KEY = "iitm-chatbot-consent";
 const WELCOME_MESSAGE = `👋 **Welcome to the IITM BS Degree Program Assistant!**
 
 I can help you with questions about:
@@ -427,4 +428,36 @@ fullscreenButton.addEventListener("click", function () {
   fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
   // Send message to parent window to toggle fullscreen
   window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, "*");
+});
+
+// Consent overlay functionality
+const consentOverlay = document.getElementById("consent-overlay");
+const consentButton = document.getElementById("consent-button");
+
+function hasUserConsent() {
+  return localStorage.getItem(CONSENT_KEY) === "true";
+}
+
+function hideConsentOverlay() {
+  consentOverlay.classList.add("hidden");
+  questionInput.disabled = false;
+  questionInput.focus();
+}
+
+function showConsentOverlay() {
+  consentOverlay.classList.remove("hidden");
+  questionInput.disabled = true;
+}
+
+// Check consent on page load
+if (hasUserConsent()) {
+  hideConsentOverlay();
+} else {
+  showConsentOverlay();
+}
+
+// Handle consent button click
+consentButton.addEventListener("click", function () {
+  localStorage.setItem(CONSENT_KEY, "true");
+  hideConsentOverlay();
 });
