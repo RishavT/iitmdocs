@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, sanitizeQuery } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -546,6 +546,19 @@ describe("getCannotAnswerMessage()", () => {
     expect(getCannotAnswerMessage("hindi")).toContain("7850999966");
     expect(getCannotAnswerMessage("tamil")).toContain("7850999966");
     expect(getCannotAnswerMessage("hinglish")).toContain("7850999966");
+  });
+
+  it("should use centralized contact info from CONTACT_INFO", () => {
+    // Verify CONTACT_INFO is the single source of truth
+    expect(CONTACT_INFO.email).toBe("support@study.iitm.ac.in");
+    expect(CONTACT_INFO.phone).toBe("7850999966");
+
+    // Verify all languages use the centralized contact info
+    for (const lang of SUPPORTED_LANGUAGES) {
+      const message = getCannotAnswerMessage(lang);
+      expect(message).toContain(CONTACT_INFO.email);
+      expect(message).toContain(CONTACT_INFO.phone);
+    }
   });
 });
 
