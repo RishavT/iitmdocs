@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, detectLanguage, translateMessage, getCannotAnswerMessage, CANNOT_ANSWER_MESSAGE } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, detectLanguage, translateMessage, getCannotAnswerMessage } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -372,26 +372,44 @@ describe("Session ID Generation", () => {
 // Task 5: Standardized "Can't Answer" Message with Language Detection
 // ============================================================================
 
-describe("CANNOT_ANSWER_MESSAGE constant", () => {
-  it("should be a non-empty string", () => {
-    expect(typeof CANNOT_ANSWER_MESSAGE).toBe("string");
-    expect(CANNOT_ANSWER_MESSAGE.length).toBeGreaterThan(0);
+describe("CANNOT_ANSWER_MESSAGE content (via getCannotAnswerMessage)", () => {
+  // getCannotAnswerMessage returns the English message when history is empty
+  // This tests the actual constant from worker.js
+
+  it("should be a non-empty string", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(typeof message).toBe("string");
+    expect(message.length).toBeGreaterThan(0);
   });
 
-  it("should contain apology", () => {
-    expect(CANNOT_ANSWER_MESSAGE).toContain("I'm sorry");
+  it("should contain apology", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("I'm sorry");
   });
 
-  it("should mention rephrasing", () => {
-    expect(CANNOT_ANSWER_MESSAGE).toContain("rephrase");
+  it("should mention rephrasing", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("rephrase");
   });
 
-  it("should reference official website", () => {
-    expect(CANNOT_ANSWER_MESSAGE).toContain("official IITM BS degree program website");
+  it("should reference official website", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("official IITM BS degree program website");
   });
 
-  it("should mention feedback option", () => {
-    expect(CANNOT_ANSWER_MESSAGE).toContain("feedback");
+  it("should mention feedback option", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("feedback");
+  });
+
+  it("should include support email", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("support@study.iitm.ac.in");
+  });
+
+  it("should include support phone number", async () => {
+    const message = await getCannotAnswerMessage([], {});
+    expect(message).toContain("7850999966");
   });
 });
 
@@ -602,7 +620,9 @@ describe("getCannotAnswerMessage()", () => {
 
   it("should return English message for empty history", async () => {
     const result = await getCannotAnswerMessage([], {});
-    expect(result).toBe(CANNOT_ANSWER_MESSAGE);
+    // Verify it returns the standardized message (not translated)
+    expect(result).toContain("I'm sorry");
+    expect(result).toContain("support@study.iitm.ac.in");
   });
 
   it("should return English message when language is detected as English", async () => {
@@ -616,7 +636,9 @@ describe("getCannotAnswerMessage()", () => {
     const history = [{ role: "user", content: "What is IITM?" }];
     const result = await getCannotAnswerMessage(history, { OPENAI_API_KEY: "test-key" });
 
-    expect(result).toBe(CANNOT_ANSWER_MESSAGE);
+    // Verify it returns the standardized message (not translated since English)
+    expect(result).toContain("I'm sorry");
+    expect(result).toContain("support@study.iitm.ac.in");
   });
 
   it("should return translated message for non-English history", async () => {
@@ -671,6 +693,8 @@ describe("getCannotAnswerMessage()", () => {
 
     // Second call: translation (contains only standardized message, no user content)
     expect(capturedBodies[1].messages[0].content).toContain("translator");
-    expect(capturedBodies[1].messages[1].content).toBe(CANNOT_ANSWER_MESSAGE);
+    // Verify the translation receives the standardized message (not user content)
+    expect(capturedBodies[1].messages[1].content).toContain("I'm sorry");
+    expect(capturedBodies[1].messages[1].content).toContain("support@study.iitm.ac.in");
   });
 });
