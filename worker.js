@@ -94,6 +94,14 @@ const CANNOT_ANSWER_MESSAGES = {
   hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
 };
 
+// Standardized RAAHAT message for mental health referrals - single source of truth
+const STANDARD_RAAHAT_MESSAGE = `I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
+
+📧 Reach out to them at: wellness.society@study.iitm.ac.in
+📱 Instagram: @wellness.society_iitmbs
+
+Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
+
 /**
  * Extracts language from rewritten query.
  * Looks for [LANG:xxx] pattern added by query rewriting.
@@ -913,12 +921,7 @@ If the user expresses ANY emotional, psychological, interpersonal, or financial 
 - Do NOT say "I can't help"
 - ONLY direct them warmly to RAAHAT with this response (in ${language}):
 
-"I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
-
-📧 Reach out to them at: wellness.society@study.iitm.ac.in
-📱 Instagram: @wellness.society_iitmbs
-
-Please don't hesitate to contact them - that's what they're there for. You're not alone in this."
+"${STANDARD_RAAHAT_MESSAGE}"
 
 Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
@@ -1068,14 +1071,6 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
   return createSSEResponse(finalAnswer);
 }
-
-// Standardized RAAHAT message for mental health referrals
-const STANDARD_RAAHAT_MESSAGE = `I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
-
-📧 Reach out to them at: wellness.society@study.iitm.ac.in
-📱 Instagram: @wellness.society_iitmbs
-
-Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
 
 /**
  * Checks if a response contains RAAHAT-related content.
