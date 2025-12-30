@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch } from "./worker.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { handleFeedback, structuredLog, findSynonymMatch, detectLanguage, translateMessage, getCannotAnswerMessage, CANNOT_ANSWER_MESSAGE } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -365,5 +365,312 @@ describe("Session ID Generation", () => {
     // UUID v4 format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     expect(uuid).toMatch(uuidRegex);
+  });
+});
+
+// ============================================================================
+// Task 5: Standardized "Can't Answer" Message with Language Detection
+// ============================================================================
+
+describe("CANNOT_ANSWER_MESSAGE constant", () => {
+  it("should be a non-empty string", () => {
+    expect(typeof CANNOT_ANSWER_MESSAGE).toBe("string");
+    expect(CANNOT_ANSWER_MESSAGE.length).toBeGreaterThan(0);
+  });
+
+  it("should contain apology", () => {
+    expect(CANNOT_ANSWER_MESSAGE).toContain("I'm sorry");
+  });
+
+  it("should mention rephrasing", () => {
+    expect(CANNOT_ANSWER_MESSAGE).toContain("rephrase");
+  });
+
+  it("should reference official website", () => {
+    expect(CANNOT_ANSWER_MESSAGE).toContain("official IITM BS degree program website");
+  });
+
+  it("should mention feedback option", () => {
+    expect(CANNOT_ANSWER_MESSAGE).toContain("feedback");
+  });
+});
+
+describe("detectLanguage()", () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("should return English when history is empty", async () => {
+    const result = await detectLanguage([], {});
+    expect(result).toBe("English");
+  });
+
+  it("should return English when history is null", async () => {
+    const result = await detectLanguage(null, {});
+    expect(result).toBe("English");
+  });
+
+  it("should return English when history is undefined", async () => {
+    const result = await detectLanguage(undefined, {});
+    expect(result).toBe("English");
+  });
+
+  it("should call API with correct structure for non-empty history", async () => {
+    let capturedBody;
+    global.fetch = vi.fn().mockImplementation(async (url, options) => {
+      capturedBody = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "Hindi" } }]
+        })
+      };
+    });
+
+    const history = [
+      { role: "user", content: "नमस्ते, मुझे IITM के बारे में बताओ" },
+      { role: "assistant", content: "IITM BS degree program..." }
+    ];
+
+    await detectLanguage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(global.fetch).toHaveBeenCalled();
+    expect(capturedBody.model).toBe("gpt-4o-mini");
+    expect(capturedBody.messages[0].role).toBe("system");
+    expect(capturedBody.messages[0].content).toContain("language detector");
+  });
+
+  it("should return detected language from API response", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: "Hindi" } }]
+      })
+    });
+
+    const history = [{ role: "user", content: "कुछ भी" }];
+    const result = await detectLanguage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(result).toBe("Hindi");
+  });
+
+  it("should return English on API error", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500
+    });
+
+    const history = [{ role: "user", content: "कुछ भी" }];
+    const result = await detectLanguage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(result).toBe("English");
+  });
+
+  it("should return English on fetch exception", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+
+    const history = [{ role: "user", content: "test" }];
+    const result = await detectLanguage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(result).toBe("English");
+  });
+
+  it("should use last 4 messages for detection", async () => {
+    let capturedBody;
+    global.fetch = vi.fn().mockImplementation(async (url, options) => {
+      capturedBody = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "English" } }]
+        })
+      };
+    });
+
+    const history = [
+      { role: "user", content: "Message 1" },
+      { role: "assistant", content: "Response 1" },
+      { role: "user", content: "Message 2" },
+      { role: "assistant", content: "Response 2" },
+      { role: "user", content: "Message 3" },
+      { role: "assistant", content: "Response 3" }
+    ];
+
+    await detectLanguage(history, { OPENAI_API_KEY: "test-key" });
+
+    // Should only include last 4 messages
+    const userMessage = capturedBody.messages[1].content;
+    expect(userMessage).toContain("Message 2");
+    expect(userMessage).toContain("Response 2");
+    expect(userMessage).toContain("Message 3");
+    expect(userMessage).toContain("Response 3");
+    expect(userMessage).not.toContain("Message 1");
+  });
+});
+
+describe("translateMessage()", () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("should return original message when target language is English", async () => {
+    const message = "Hello world";
+    const result = await translateMessage(message, "English", {});
+    expect(result).toBe(message);
+  });
+
+  it("should return original message when target language is english (lowercase)", async () => {
+    const message = "Hello world";
+    const result = await translateMessage(message, "english", {});
+    expect(result).toBe(message);
+  });
+
+  it("should call API for non-English target language", async () => {
+    let capturedBody;
+    global.fetch = vi.fn().mockImplementation(async (url, options) => {
+      capturedBody = JSON.parse(options.body);
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "मैं माफी चाहता हूं..." } }]
+        })
+      };
+    });
+
+    await translateMessage("I'm sorry...", "Hindi", { OPENAI_API_KEY: "test-key" });
+
+    expect(global.fetch).toHaveBeenCalled();
+    expect(capturedBody.model).toBe("gpt-4o-mini");
+    expect(capturedBody.messages[0].content).toContain("Hindi");
+    expect(capturedBody.messages[1].content).toBe("I'm sorry...");
+  });
+
+  it("should return translated message from API", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: "Mensaje traducido" } }]
+      })
+    });
+
+    const result = await translateMessage("Original message", "Spanish", { OPENAI_API_KEY: "test-key" });
+    expect(result).toBe("Mensaje traducido");
+  });
+
+  it("should return original message on API error", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500
+    });
+
+    const message = "Original message";
+    const result = await translateMessage(message, "Hindi", { OPENAI_API_KEY: "test-key" });
+    expect(result).toBe(message);
+  });
+
+  it("should return original message on fetch exception", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+
+    const message = "Original message";
+    const result = await translateMessage(message, "Hindi", { OPENAI_API_KEY: "test-key" });
+    expect(result).toBe(message);
+  });
+});
+
+describe("getCannotAnswerMessage()", () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("should return English message for empty history", async () => {
+    const result = await getCannotAnswerMessage([], {});
+    expect(result).toBe(CANNOT_ANSWER_MESSAGE);
+  });
+
+  it("should return English message when language is detected as English", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: "English" } }]
+      })
+    });
+
+    const history = [{ role: "user", content: "What is IITM?" }];
+    const result = await getCannotAnswerMessage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(result).toBe(CANNOT_ANSWER_MESSAGE);
+  });
+
+  it("should return translated message for non-English history", async () => {
+    // First call: detect language -> Hindi
+    // Second call: translate message -> translated text
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: "Hindi" } }]
+          })
+        };
+      } else {
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: "मुझे खेद है, मेरे पास इस प्रश्न का उत्तर देने की जानकारी नहीं है।" } }]
+          })
+        };
+      }
+    });
+
+    const history = [{ role: "user", content: "IITM क्या है?" }];
+    const result = await getCannotAnswerMessage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(callCount).toBe(2); // Both detectLanguage and translateMessage called
+    expect(result).toBe("मुझे खेद है, मेरे पास इस प्रश्न का उत्तर देने की जानकारी नहीं है।");
+  });
+
+  it("should make two separate API calls for safety", async () => {
+    const capturedBodies = [];
+    global.fetch = vi.fn().mockImplementation(async (url, options) => {
+      capturedBodies.push(JSON.parse(options.body));
+      return {
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: capturedBodies.length === 1 ? "Tamil" : "Translated text" } }]
+        })
+      };
+    });
+
+    const history = [{ role: "user", content: "IITM என்றால் என்ன?" }];
+    await getCannotAnswerMessage(history, { OPENAI_API_KEY: "test-key" });
+
+    expect(capturedBodies.length).toBe(2);
+
+    // First call: language detection (contains user content)
+    expect(capturedBodies[0].messages[0].content).toContain("language detector");
+
+    // Second call: translation (contains only standardized message, no user content)
+    expect(capturedBodies[1].messages[0].content).toContain("translator");
+    expect(capturedBodies[1].messages[1].content).toBe(CANNOT_ANSWER_MESSAGE);
   });
 });

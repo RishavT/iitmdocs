@@ -73,6 +73,132 @@ function isLikelyOutOfScope(question) {
   );
 }
 
+// ============================================================================
+// STANDARDIZED "CAN'T ANSWER" MESSAGE
+// ============================================================================
+
+const CANNOT_ANSWER_MESSAGE = `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.`;
+
+/**
+ * Detects the language being used in the conversation history.
+ * Makes a single OpenAI call to identify the language.
+ * @param {Array} history - Conversation history array
+ * @param {Object} env - Environment variables
+ * @returns {Promise<string>} - Detected language (e.g., "English", "Hindi", "Hinglish")
+ */
+async function detectLanguage(history, env) {
+  // Default to English if no history
+  if (!history || history.length === 0) {
+    return "English";
+  }
+
+  // Get last few messages for language detection
+  const recentMessages = history.slice(-4).map(msg => msg.content).join("\n");
+
+  const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+
+  try {
+    const response = await fetch(chatEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a language detector. Analyze the text and respond with ONLY the language name in exactly 1-5 words. Examples: 'English', 'Hindi', 'Hinglish', 'Hindi typed in English script', 'Tamil', 'Telugu'. Do not include any other text."
+          },
+          {
+            role: "user",
+            content: `Detect the language of this conversation:\n\n${recentMessages}`
+          }
+        ],
+        temperature: 0,
+        max_tokens: 20,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[DEBUG] Language detection API error:', response.status);
+      return "English";
+    }
+
+    const result = await response.json();
+    const detectedLanguage = result.choices?.[0]?.message?.content?.trim() || "English";
+    console.log('[DEBUG] Detected language:', detectedLanguage);
+    return detectedLanguage;
+  } catch (error) {
+    console.error('[DEBUG] Language detection error:', error.message);
+    return "English";
+  }
+}
+
+/**
+ * Translates the standardized message to the target language.
+ * Makes a single OpenAI call with only the message and target language (no user data).
+ * @param {string} message - The standardized message to translate
+ * @param {string} targetLanguage - The target language
+ * @param {Object} env - Environment variables
+ * @returns {Promise<string>} - Translated message
+ */
+async function translateMessage(message, targetLanguage, env) {
+  // Skip translation for English
+  if (targetLanguage.toLowerCase() === "english") {
+    return message;
+  }
+
+  const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+
+  try {
+    const response = await fetch(chatEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `You are a translator. Translate the following message to ${targetLanguage}. Keep the same tone and meaning. Only output the translated text, nothing else.`
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('[DEBUG] Translation API error:', response.status);
+      return message;
+    }
+
+    const result = await response.json();
+    const translatedMessage = result.choices?.[0]?.message?.content?.trim() || message;
+    console.log('[DEBUG] Translated message to', targetLanguage);
+    return translatedMessage;
+  } catch (error) {
+    console.error('[DEBUG] Translation error:', error.message);
+    return message;
+  }
+}
+
+/**
+ * Gets the standardized "cannot answer" message, translated to the user's language.
+ * Uses two separate OpenAI calls for safety (no user content in translation call).
+ * @param {Array} history - Conversation history
+ * @param {Object} env - Environment variables
+ * @returns {Promise<string>} - Translated standardized message
+ */
+async function getCannotAnswerMessage(history, env) {
+  const language = await detectLanguage(history, env);
+  const translatedMessage = await translateMessage(CANNOT_ANSWER_MESSAGE, language, env);
+  return translatedMessage;
+}
 
 /**
  * Handles user feedback submission
@@ -383,7 +509,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch };
+export { handleFeedback, structuredLog, findSynonymMatch, detectLanguage, translateMessage, getCannotAnswerMessage, CANNOT_ANSWER_MESSAGE };
 
 export default {
   async fetch(request, env) {
@@ -901,9 +1027,12 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
     factCheckPassed = isFactuallyCorrect;
 
-    finalAnswer = isFactuallyCorrect
-      ? answerText
-      : "I apologize, but I couldn't verify my response against the available documents. Please rephrase your question or ask something specific about the IIT Madras BS programme (admissions, courses, fees, academic policies, etc.). If you feel your question was valid and I made a mistake - please reach out to support@study.iitm.ac.in";
+    if (isFactuallyCorrect) {
+      finalAnswer = answerText;
+    } else {
+      // Get translated "cannot answer" message based on conversation language
+      finalAnswer = await getCannotAnswerMessage(validatedHistory, env);
+    }
   }
 
   // Populate logContext if provided
