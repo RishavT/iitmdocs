@@ -3,7 +3,7 @@ export const chatbotCSS = /* css */ `
 .chatbot-toggler {
   position: fixed;
   bottom: 30px;
-  right: 35px;
+  right: 90px;
   outline: none;
   border: none;
   height: 50px;
@@ -37,7 +37,7 @@ body.show-chatbot .chatbot-toggler span:last-child {
 
 .chatbot {
   position: fixed;
-  right: 35px;
+  right: 90px;
   bottom: 90px;
   width: 420px;
   height: 70vh;
