@@ -13,7 +13,7 @@ export const chatbotCSS = /* css */ `
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #724ae8;
+  background: #800020;
   transition: all 0.2s ease;
 }
 
