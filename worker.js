@@ -95,10 +95,15 @@ const CANNOT_ANSWER_MESSAGES = {
 };
 
 // Standardized RAAHAT message for mental health referrals - single source of truth
-const STANDARD_RAAHAT_MESSAGE = `I hear you, and I want you to know that support is available. RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students - they're here to help with exactly this kind of situation.
+const STANDARD_RAAHAT_MESSAGE = `I'm afraid I am not allowed to give you advice of any kind, but we are here. If you're looking for mental health support, our institute has a Wellness Society that provides confidential counseling services to enrolled students.
 
 📧 Reach out to them at: wellness.society@study.iitm.ac.in
 📱 Instagram: @wellness.society_iitmbs
+
+If you are not enrolled in our program yet, but need someone to talk to, please consider reaching out to a local mental health professional or helpline in your area. Some organizations that offer support in India include:
+
+- Aasra - https://www.aasra.info/
+- Sneha - https://snehaindia.org/new/ 
 
 Please don't hesitate to contact them - that's what they're there for. You're not alone in this.`;
 
@@ -916,7 +921,7 @@ STRICTLY REFUSE to answer:
 For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language)}"
 
 SPECIAL CASE - Emotional/psychological distress:
-If the user expresses ANY emotional, psychological, interpersonal, or financial distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, money problems, etc.):
+If the user expresses significant signs of emotional, psychological, interpersonal, or financial distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, money problems, etc.):
 - Do NOT give any advice yourself
 - Do NOT say "I can't help"
 - ONLY direct them warmly to RAAHAT with this response (in ${language}):
