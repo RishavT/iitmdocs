@@ -86,6 +86,13 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
+// Centralized CORS policy - allows cross-origin embedding of chatbot
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
 // Translated "can't answer" messages with embedded contact info
 const CANNOT_ANSWER_MESSAGES = {
   english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
@@ -194,10 +201,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Missing required fields" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -209,10 +213,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Invalid feedback type" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -224,10 +225,7 @@ async function handleFeedback(request) {
         JSON.stringify({ error: "Invalid feedback category" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
         }
       );
     }
@@ -248,10 +246,7 @@ async function handleFeedback(request) {
       JSON.stringify({ success: true }),
       {
         status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       }
     );
   } catch (error) {
@@ -260,10 +255,7 @@ async function handleFeedback(request) {
       JSON.stringify({ error: "Failed to process feedback" }),
       {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Content-Type": "application/json", ...CORS_HEADERS },
       }
     );
   }
@@ -519,11 +511,7 @@ export default {
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
-        },
+        headers: CORS_HEADERS,
       });
     }
 
@@ -540,7 +528,15 @@ export default {
       return await handleFeedback(request);
     }
 
-    return env.ASSETS.fetch(request);
+    // Serve static assets with CORS headers for cross-origin embedding
+    const assetResponse = await env.ASSETS.fetch(request);
+    const newHeaders = new Headers(assetResponse.headers);
+    Object.entries(CORS_HEADERS).forEach(([key, value]) => newHeaders.set(key, value));
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: newHeaders,
+    });
   },
 };
 
@@ -726,10 +722,7 @@ async function answer(request, env) {
     },
   });
   return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Access-Control-Allow-Origin": "*",
-    },
+    headers: { "Content-Type": "text/event-stream", ...CORS_HEADERS },
   });
 }
 
