@@ -65,9 +65,10 @@ describe("Chatbot Fullscreen Mode", () => {
     it("should add chatbot-fullscreen class when receiving fullscreen message", () => {
       expect(document.body.classList.contains("chatbot-fullscreen")).toBe(false);
 
-      // Simulate postMessage from iframe
+      // Simulate postMessage from iframe with valid origin
       const event = new window.MessageEvent("message", {
         data: { type: "toggle-fullscreen", isFullscreen: true },
+        origin: window.location.origin,
       });
       window.dispatchEvent(event);
 
@@ -79,9 +80,10 @@ describe("Chatbot Fullscreen Mode", () => {
       document.body.classList.add("chatbot-fullscreen");
       expect(document.body.classList.contains("chatbot-fullscreen")).toBe(true);
 
-      // Simulate postMessage to minimize
+      // Simulate postMessage to minimize with valid origin
       const event = new window.MessageEvent("message", {
         data: { type: "toggle-fullscreen", isFullscreen: false },
+        origin: window.location.origin,
       });
       window.dispatchEvent(event);
 
@@ -93,9 +95,24 @@ describe("Chatbot Fullscreen Mode", () => {
 
       const event = new window.MessageEvent("message", {
         data: { type: "other-message", isFullscreen: true },
+        origin: window.location.origin,
       });
       window.dispatchEvent(event);
 
+      expect(document.body.classList.contains("chatbot-fullscreen")).toBe(false);
+    });
+
+    it("should ignore messages from wrong origin", () => {
+      expect(document.body.classList.contains("chatbot-fullscreen")).toBe(false);
+
+      // Simulate postMessage from malicious origin
+      const event = new window.MessageEvent("message", {
+        data: { type: "toggle-fullscreen", isFullscreen: true },
+        origin: "https://evil.com",
+      });
+      window.dispatchEvent(event);
+
+      // Should NOT toggle fullscreen from untrusted origin
       expect(document.body.classList.contains("chatbot-fullscreen")).toBe(false);
     });
 
@@ -109,6 +126,7 @@ describe("Chatbot Fullscreen Mode", () => {
       // Toggle fullscreen via message
       const fullscreenEvent = new window.MessageEvent("message", {
         data: { type: "toggle-fullscreen", isFullscreen: true },
+        origin: window.location.origin,
       });
       window.dispatchEvent(fullscreenEvent);
 
@@ -118,6 +136,7 @@ describe("Chatbot Fullscreen Mode", () => {
       // Minimize via message
       const minimizeEvent = new window.MessageEvent("message", {
         data: { type: "toggle-fullscreen", isFullscreen: false },
+        origin: window.location.origin,
       });
       window.dispatchEvent(minimizeEvent);
 
@@ -132,6 +151,7 @@ describe("Chatbot Fullscreen Mode", () => {
       chatbotToggler.click();
       const fullscreenEvent = new window.MessageEvent("message", {
         data: { type: "toggle-fullscreen", isFullscreen: true },
+        origin: window.location.origin,
       });
       window.dispatchEvent(fullscreenEvent);
 

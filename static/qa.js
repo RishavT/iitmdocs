@@ -428,8 +428,8 @@ let isFullscreen = false;
 fullscreenButton.addEventListener("click", function () {
   isFullscreen = !isFullscreen;
   fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
-  // Send message to parent window to toggle fullscreen
-  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, "*");
+  // Send message to parent window to toggle fullscreen (use explicit origin for security)
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, window.location.origin);
 });
 
 // Consent overlay functionality

@@ -147,6 +147,9 @@ export function initChatbot() {
 
   // Listen for fullscreen toggle messages from the iframe
   window.addEventListener("message", (event) => {
+    // Only accept messages from same origin (the iframe)
+    if (event.origin !== window.location.origin) return;
+
     if (event.data?.type === "toggle-fullscreen") {
       if (event.data.isFullscreen) {
         document.body.classList.add("chatbot-fullscreen");
