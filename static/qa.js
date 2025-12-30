@@ -399,3 +399,15 @@ clearChatButton.addEventListener("click", function () {
   sessionStorage.removeItem(HISTORY_KEY);
   redraw();
 });
+
+// Fullscreen toggle functionality
+const fullscreenButton = document.getElementById("fullscreen-button");
+const fullscreenIcon = document.getElementById("fullscreen-icon");
+let isFullscreen = false;
+
+fullscreenButton.addEventListener("click", function () {
+  isFullscreen = !isFullscreen;
+  fullscreenIcon.className = isFullscreen ? "bi bi-fullscreen-exit" : "bi bi-fullscreen";
+  // Send message to parent window to toggle fullscreen
+  window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, "*");
+});
