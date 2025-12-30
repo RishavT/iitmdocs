@@ -27,24 +27,34 @@ The project uses Google Cloud Build for CI/CD with automatic deployment to Cloud
      containerregistry.googleapis.com
    ```
 
-2. **Grant Cloud Build permissions**:
-   ```bash
-   PROJECT_ID=$(gcloud config get-value project)
-   PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+2. **Grant Cloud Build permissions** using the provided script:
 
-   # Grant Cloud Build service account necessary roles
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
-     --role="roles/compute.admin"
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
-     --role="roles/run.admin"
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
-     --role="roles/vpcaccess.admin"
-   gcloud projects add-iam-policy-binding $PROJECT_ID \
-     --member="serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
-     --role="roles/iam.serviceAccountUser"
+   The script creates custom IAM roles with minimal required permissions.
+
+   **For initial deployment (full permissions, 30-min expiry):**
+   ```bash
+   PROJECT_ID=your-project-id \
+   SA_EMAIL=your-sa@your-project.iam.gserviceaccount.com \
+   MODE=full \
+   ./scripts/grant-sa-permissions.sh
+   ```
+
+   **For subsequent deployments (deploy-only permissions, permanent):**
+   ```bash
+   PROJECT_ID=your-project-id \
+   SA_EMAIL=your-sa@your-project.iam.gserviceaccount.com \
+   MODE=deploy_only \
+   ./scripts/grant-sa-permissions.sh
+   ```
+
+   **Modes:**
+   - `full`: Creates VPC connector, GCE VM, BigQuery dataset, log sink (30-min expiry for security)
+   - `deploy_only`: Updates Cloud Run service, runs embed job, manages firewall rules (permanent)
+
+   **Note:** If using the default Cloud Build service account instead of a custom one:
+   ```bash
+   PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+   SA_EMAIL=$PROJECT_NUMBER@cloudbuild.gserviceaccount.com
    ```
 
 3. **Configure Cloud Build trigger**:
@@ -64,6 +74,56 @@ The project uses Google Cloud Build for CI/CD with automatic deployment to Cloud
    - Build and push Docker images
    - Run the embedding job (if `src/` files changed)
    - Deploy the Cloud Run service
+
+5. **First-time VM setup** (required after initial deployment):
+
+   The GCE VM is created without an external IP for security. However, the startup script needs internet access to download Docker and container images (~1.5GB). You have two options:
+
+   **Option A: Temporary public IP (simpler)**
+   ```bash
+   # Add external IP
+   gcloud compute instances add-access-config iitm-ollama-vm \
+     --zone=asia-south1-a
+
+   # Run startup script
+   gcloud compute ssh iitm-ollama-vm --zone=asia-south1-a \
+     --tunnel-through-iap \
+     --command="sudo google_metadata_script_runner startup"
+
+   # Remove external IP after setup completes (~5-10 min)
+   gcloud compute instances delete-access-config iitm-ollama-vm \
+     --zone=asia-south1-a
+   ```
+
+   **Option B: Cloud NAT (permanent solution)**
+   ```bash
+   # Create router and NAT for the region
+   gcloud compute routers create iitm-nat-router \
+     --network=default --region=asia-south1
+
+   gcloud compute routers nats create iitm-nat \
+     --router=iitm-nat-router --region=asia-south1 \
+     --auto-allocate-nat-external-ips \
+     --nat-custom-subnet-ip-ranges=default:ALL
+
+   # Then run startup script via SSH
+   gcloud compute ssh iitm-ollama-vm --zone=asia-south1-a \
+     --tunnel-through-iap \
+     --command="sudo google_metadata_script_runner startup"
+   ```
+
+   **Verify setup:**
+   ```bash
+   gcloud compute ssh iitm-ollama-vm --zone=asia-south1-a \
+     --tunnel-through-iap \
+     --command="docker ps"
+   ```
+   You should see `weaviate` and `ollama` containers running.
+
+6. **Re-run the embedding job** after VM setup:
+   ```bash
+   gcloud run jobs execute iitm-embed-job --region=asia-south1
+   ```
 
 #### Subsequent Deployments
 
