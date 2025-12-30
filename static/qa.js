@@ -13,6 +13,15 @@ const usernameInput = document.getElementById("username-input");
 
 const chat = [];
 const MIN_WORD_COUNT = 5;
+const WELCOME_MESSAGE = `👋 **Welcome to the IITM BS Degree Program Assistant!**
+
+I can help you with questions about:
+- Admission pathways and eligibility
+- Qualifier exam preparation and fees
+- Course registration steps
+- And more!
+
+Please type your question below (minimum 5 words).`;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
 
@@ -170,15 +179,23 @@ if (storedHistory.length > 0) {
       });
     }
   }
-  // Render restored conversation
-  if (chat.length > 0) {
-    redraw();
-    // After restoring, scroll to bottom and enable autoscroll
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
+}
+// Always call redraw - shows welcome message if empty, or restored conversation
+redraw();
+if (chat.length > 0) {
+  chatArea.scrollTop = chatArea.scrollHeight;
 }
 
 function redraw() {
+  // Show welcome message if chat is empty
+  if (chat.length === 0) {
+    render(
+      html`<div class="my-3">${unsafeHTML(marked.parse(WELCOME_MESSAGE))}</div>`,
+      chatArea,
+    );
+    return;
+  }
+
   render(
     chat.map(
       ({ q, content, tools, messageId, feedback, showReportForm }) => html`
