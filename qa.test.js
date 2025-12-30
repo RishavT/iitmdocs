@@ -129,7 +129,7 @@ describe("Consent Overlay", () => {
 
     it("should have hasUserConsent function", () => {
       expect(qaJs).toContain("function hasUserConsent()");
-      expect(qaJs).toContain('localStorage.getItem(CONSENT_KEY) === "true"');
+      expect(qaJs).toContain('storage.getItem(CONSENT_KEY) === "true"');
     });
 
     it("should have hideConsentOverlay function", () => {
@@ -156,8 +156,8 @@ describe("Consent Overlay", () => {
       expect(qaJs).toContain("showConsentOverlay()");
     });
 
-    it("should save consent to localStorage on button click", () => {
-      expect(qaJs).toContain('localStorage.setItem(CONSENT_KEY, "true")');
+    it("should save consent to storage on button click", () => {
+      expect(qaJs).toContain('storage.setItem(CONSENT_KEY, "true")');
     });
 
     it("should add click listener to consent button", () => {

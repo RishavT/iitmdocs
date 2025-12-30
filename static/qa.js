@@ -2,6 +2,8 @@ import { Marked } from "https://cdn.jsdelivr.net/npm/marked@13/+esm";
 import { asyncLLM } from "https://cdn.jsdelivr.net/npm/asyncllm@2";
 import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
+// Storage with fallback for private browsing: localStorage -> sessionStorage -> cookies -> memory
+import { storage } from "https://cdn.jsdelivr.net/npm/local-storage-fallback/+esm";
 
 const chatArea = document.getElementById("chat-area");
 const chatForm = document.getElementById("chat-form");
@@ -27,16 +29,16 @@ const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
 
 /**
- * Gets or creates a unique session ID stored in localStorage.
+ * Gets or creates a unique session ID stored in storage (with fallback for private browsing).
  * This persists across page reloads and tabs for the same browser.
  * @returns {string} - The session ID (UUID format)
  */
 function getOrCreateSessionId() {
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
+  let sessionId = storage.getItem(SESSION_ID_KEY);
   if (!sessionId) {
     // Generate a UUID v4
     sessionId = crypto.randomUUID();
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
+    storage.setItem(SESSION_ID_KEY, sessionId);
     console.log("[Session] Created new session ID:", sessionId);
   }
   return sessionId;
@@ -45,17 +47,17 @@ function getOrCreateSessionId() {
 // Initialize session ID on page load
 const sessionId = getOrCreateSessionId();
 
-// Initialize username: URL param takes priority, then localStorage
+// Initialize username: URL param takes priority, then storage
 const urlParams = new URLSearchParams(window.location.search);
 const urlUsername = urlParams.get("username");
 if (urlUsername) {
   usernameInput.value = urlUsername;
-  localStorage.setItem(USERNAME_KEY, urlUsername);
+  storage.setItem(USERNAME_KEY, urlUsername);
 } else {
-  usernameInput.value = localStorage.getItem(USERNAME_KEY) || "";
+  usernameInput.value = storage.getItem(USERNAME_KEY) || "";
 }
 usernameInput.addEventListener("input", () => {
-  localStorage.setItem(USERNAME_KEY, usernameInput.value);
+  storage.setItem(USERNAME_KEY, usernameInput.value);
 });
 
 // Feedback categories for the report form
@@ -435,7 +437,7 @@ const consentOverlay = document.getElementById("consent-overlay");
 const consentButton = document.getElementById("consent-button");
 
 function hasUserConsent() {
-  return localStorage.getItem(CONSENT_KEY) === "true";
+  return storage.getItem(CONSENT_KEY) === "true";
 }
 
 function hideConsentOverlay() {
@@ -458,6 +460,6 @@ if (hasUserConsent()) {
 
 // Handle consent button click
 consentButton.addEventListener("click", function () {
-  localStorage.setItem(CONSENT_KEY, "true");
+  storage.setItem(CONSENT_KEY, "true");
   hideConsentOverlay();
 });
