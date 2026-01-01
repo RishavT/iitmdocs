@@ -416,12 +416,31 @@ data: [DONE]
 Add this code to embed the chatbot on any website:
 
 ```html
-<script src="{{chatbot url}}"></script>
+<script type="module" src="{{chatbot url}}/chatbot.js"></script>
 ```
 
 Replace with your deployed URL (Cloud Run or Cloudflare Workers).
 
 The `chatbot.js` script will automatically create a floating chat button (bottom-right), load the chat interface in an iframe, and inject all necessary CSS.
+
+### Position Customization
+
+You can customize the chatbot button position using data attributes:
+
+```html
+<script type="module"
+        src="{{chatbot url}}/chatbot.js"
+        data-offset-right="90"
+        data-offset-bottom="30">
+</script>
+```
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `data-offset-right` | `90` | Distance from right edge in pixels |
+| `data-offset-bottom` | `30` | Distance from bottom edge in pixels |
+
+These offsets apply to both desktop and mobile views.
 
 ## License
 

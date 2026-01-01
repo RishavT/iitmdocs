@@ -482,6 +482,19 @@ fullscreenButton.addEventListener("click", function () {
   window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen }, PARENT_ORIGIN);
 });
 
+// Close chatbot button functionality
+const closeChatbotButton = document.getElementById("close-chatbot-button");
+closeChatbotButton.addEventListener("click", function () {
+  // If fullscreen is active, exit it first
+  if (isFullscreen) {
+    isFullscreen = false;
+    fullscreenIcon.className = "bi bi-fullscreen";
+    window.parent.postMessage({ type: "toggle-fullscreen", isFullscreen: false }, PARENT_ORIGIN);
+  }
+  // Send message to parent window to close the chatbot
+  window.parent.postMessage({ type: "close-chatbot" }, PARENT_ORIGIN);
+});
+
 // Consent overlay functionality
 const consentOverlay = document.getElementById("consent-overlay");
 const consentButton = document.getElementById("consent-button");

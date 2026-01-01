@@ -9,6 +9,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <style>
+    :root {
+      --chatbot-primary: #2563eb;
+      --chatbot-primary-hover: #1d4ed8;
+      --chatbot-text-on-primary: #ffffff;
+    }
     .feedback-buttons {
       display: flex;
       gap: 8px;
@@ -95,7 +100,7 @@
       text-align: center;
     }
     .consent-box h5 {
-      color: #800020;
+      color: var(--chatbot-primary);
       margin-bottom: 16px;
     }
     .consent-box p {
@@ -112,7 +117,7 @@
   </style>
 </head>
 
-<body class="d-flex flex-column vh-100 p-3" style="position: relative;">
+<body class="d-flex flex-column vh-100" style="position: relative;">
   <div id="consent-overlay" class="consent-overlay">
     <div class="consent-box">
       <h5><i class="bi bi-robot"></i> Before You Start</h5>
@@ -120,28 +125,34 @@
       <ul>
         <li>This chatbot is <strong>powered by AI</strong> and may occasionally provide inaccurate information. Please verify against the reference docs.</li>
         <li>Your conversations are <strong>logged</strong> to help us improve the chat experience.</li>
+        <li>This chatbot is for <strong>new applicants only</strong>. If you're an existing IITM BS student, please email <a href="mailto:support@study.iitm.ac.in" style="color: var(--chatbot-primary);">support@study.iitm.ac.in</a>. A chatbot for current students is coming soon!</li>
       </ul>
-      <button id="consent-button" class="btn w-100" style="background-color: #800020; color: white;">I Agree</button>
+      <button id="consent-button" class="btn w-100" style="background-color: var(--chatbot-primary); color: var(--chatbot-text-on-primary);">I Agree</button>
     </div>
   </div>
-  <div class="d-flex justify-content-between align-items-center mb-2 flex-shrink-0" style="background-color: #800020; color: white; padding: 8px; border-radius: 5px;">
+  <div class="d-flex justify-content-between align-items-center flex-shrink-0" style="background-color: var(--chatbot-primary); color: var(--chatbot-text-on-primary); padding: 10px 12px;">
     <h6 class="text-center mb-0">IITM BS Admissions</h6>
     <div class="d-flex align-items-center gap-2">
       <input id="username-input" type="text" class="form-control form-control-sm" placeholder="Email (optional)" style="width: 120px; font-size: 12px;">
       <button id="clear-chat-button" class="btn btn-sm btn-light" title="Clear Chat">
         <i class="bi bi-trash"></i>
       </button>
-      <button id="fullscreen-button" class="btn btn-sm btn-light" title="Toggle Fullscreen">
+      <button id="fullscreen-button" class="btn btn-sm btn-light" title="Toggle Fullscreen" style="font-weight: 900; -webkit-text-stroke: 0.5px;">
         <i class="bi bi-fullscreen" id="fullscreen-icon"></i>
+      </button>
+      <button id="close-chatbot-button" class="btn btn-sm btn-light" title="Close Chat" style="font-weight: 900; -webkit-text-stroke: 0.5px;">
+        <i class="bi bi-x-lg"></i>
       </button>
     </div>
   </div>
-  <div id="chat-area" class="flex-grow-1 overflow-auto my-2"></div>
-  <form id="chat-form" class="input-group flex-shrink-0">
-    <input id="question-input" type="text" class="form-control" placeholder="Ask a question">
-    <button id="ask-button" class="btn" style="background-color: #800020; color: white; border-color: #800020;" disabled>Ask</button>
-  </form>
-  <small id="min-words-hint" class="text-muted mt-1">Please type at least 5 words</small>
+  <div class="d-flex flex-column flex-grow-1 overflow-hidden p-3">
+    <div id="chat-area" class="flex-grow-1 overflow-auto mb-2"></div>
+    <form id="chat-form" class="input-group flex-shrink-0">
+      <input id="question-input" type="text" class="form-control" placeholder="Ask a question">
+      <button id="ask-button" class="btn" style="background-color: var(--chatbot-primary); color: var(--chatbot-text-on-primary); border-color: var(--chatbot-primary);" disabled>Ask</button>
+    </form>
+    <small id="min-words-hint" class="text-muted mt-1">Please type at least 5 words</small>
+  </div>
   <script src="qa.js" type="module"></script>
 </body>
 

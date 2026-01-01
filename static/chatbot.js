@@ -1,49 +1,101 @@
 export const chatbotCSS = /* css */ `
+/* Chatbot CSS Variables */
+:root {
+  --chatbot-primary: #2563eb;
+  --chatbot-primary-hover: #1d4ed8;
+  --chatbot-text-on-primary: #ffffff;
+  --chatbot-offset-right: 90px;
+  --chatbot-offset-bottom: 30px;
+}
+
 /* Chatbot styles */
 .chatbot-toggler {
+  z-index:1000;
   position: fixed;
-  bottom: 30px;
-  right: 90px;
+  bottom: var(--chatbot-offset-bottom);
+  right: var(--chatbot-offset-right);
   outline: none;
-  border: none;
-  height: 50px;
-  width: 50px;
+  border: 2px solid rgba(255,255,255,0.9);
+  height: 48px;
+  padding: 0 20px;
   display: flex;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: #800020;
+  gap: 8px;
+  border-radius: 24px;
+  background: var(--chatbot-primary);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 4px 16px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.3);
   transition: all 0.2s ease;
 }
 
-body.show-chatbot .chatbot-toggler {
-  transform: rotate(90deg);
+.chatbot-toggler:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 6px 20px rgba(0,0,0,0.4), 0 0 25px rgba(255,255,255,0.4);
 }
 
-.chatbot-toggler span {
+@keyframes chatbot-pulse {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.1); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  60% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.chatbot-toggler.pulse {
+  animation: chatbot-pulse 0.6s ease-in-out;
+}
+
+.chatbot-toggler-open {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: #fff;
-  position: absolute;
 }
 
-.chatbot-toggler span:last-child,
-body.show-chatbot .chatbot-toggler span:first-child {
-  opacity: 0;
+.chatbot-toggler-open span.material-symbols-rounded {
+  font-size: 22px;
 }
 
-body.show-chatbot .chatbot-toggler span:last-child {
-  opacity: 1;
+.chatbot-toggler-label {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  white-space: nowrap;
+}
+
+.chatbot-toggler .chatbot-toggler-close {
+  color: #fff;
+  display: none !important;
+  font-size: 24px;
+}
+
+body.show-chatbot .chatbot-toggler .chatbot-toggler-close {
+  display: block !important;
+}
+
+body.show-chatbot .chatbot-toggler {
+  padding: 0;
+  width: 48px;
+  border-radius: 50%;
+}
+
+body.show-chatbot .chatbot-toggler-open {
+  display: none;
 }
 
 .chatbot {
+  z-index:1000;
   position: fixed;
-  right: 90px;
-  bottom: 90px;
+  right: var(--chatbot-offset-right);
+  bottom: calc(var(--chatbot-offset-bottom) + 60px);
   width: 420px;
   height: 70vh;
   max-height: 600px;
   min-height: 400px;
   background: #fff;
+  border: 2px solid var(--chatbot-primary);
   border-radius: 15px;
   overflow: hidden;
   opacity: 0;
@@ -83,8 +135,15 @@ body.show-chatbot .chatbot {
 
 @media (max-width: 490px) {
   .chatbot-toggler {
-    right: 20px;
-    bottom: 20px;
+    right: var(--chatbot-offset-right);
+    bottom: var(--chatbot-offset-bottom);
+    padding: 0;
+    width: 48px;
+    border-radius: 50%;
+  }
+
+  .chatbot-toggler-label {
+    display: none;
   }
 
   .chatbot {
@@ -102,6 +161,17 @@ body.show-chatbot .chatbot {
 }
 
 /* Fullscreen state */
+body.chatbot-fullscreen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
 body.chatbot-fullscreen .chatbot {
   width: 95vw;
   height: calc(100vh - 100px);
@@ -122,21 +192,51 @@ export function addChatbotStyles() {
 }
 
 /**
+ * Finds the script tag that loaded chatbot.js
+ * @returns {HTMLScriptElement|null}
+ */
+function getChatbotScript() {
+  const scripts = document.getElementsByTagName('script');
+  for (const script of scripts) {
+    if (script.src && script.src.includes('chatbot.js')) {
+      return script;
+    }
+  }
+  return null;
+}
+
+/**
  * Gets the base URL of where chatbot.js was loaded from.
  * This allows the chatbot to be embedded on any site while loading resources from the correct origin.
  * @returns {string} Base URL (e.g., "https://chatbot.example.com/")
  */
 function getChatbotBaseUrl() {
-  // Find the script tag that loaded this file
-  const scripts = document.getElementsByTagName('script');
-  for (const script of scripts) {
-    if (script.src && script.src.includes('chatbot.js')) {
-      // Extract base URL (everything before 'chatbot.js')
-      return script.src.replace(/chatbot\.js.*$/, '');
-    }
+  const script = getChatbotScript();
+  if (script) {
+    return script.src.replace(/chatbot\.js.*$/, '');
   }
   // Fallback to current origin if script not found
   return window.location.origin + '/';
+}
+
+/**
+ * Gets position offsets from script tag data attributes.
+ * Usage: <script src="chatbot.js" data-offset-right="90" data-offset-bottom="30"></script>
+ * @returns {{ right: string, bottom: string }}
+ */
+function getPositionOffsets() {
+  const script = getChatbotScript();
+  const defaults = { right: '90px', bottom: '30px' };
+
+  if (!script) return defaults;
+
+  const right = script.dataset.offsetRight;
+  const bottom = script.dataset.offsetBottom;
+
+  return {
+    right: right ? `${right}px` : defaults.right,
+    bottom: bottom ? `${bottom}px` : defaults.bottom
+  };
 }
 
 export function getChatbotHTML(baseUrl, parentOrigin) {
@@ -144,8 +244,11 @@ export function getChatbotHTML(baseUrl, parentOrigin) {
   const iframeSrc = `${baseUrl}qa.html${parentOrigin ? `?parentOrigin=${encodeURIComponent(parentOrigin)}` : ''}`;
   return /* html */ `
   <button class="chatbot-toggler">
-    <span class="material-symbols-rounded">mode_comment</span>
-    <span class="material-symbols-outlined">close</span>
+    <span class="chatbot-toggler-open">
+      <span class="material-symbols-rounded">contact_support</span>
+      <span class="chatbot-toggler-label">Need Help?</span>
+    </span>
+    <span class="material-symbols-outlined chatbot-toggler-close">close</span>
   </button>
   <div class="chatbot">
     <div class="chatbox">
@@ -162,12 +265,46 @@ export const googleIconsHTML = /* html */ `
 
 export function initChatbot() {
   addChatbotStyles();
+
+  // Apply position offsets from script tag data attributes
+  const offsets = getPositionOffsets();
+  document.documentElement.style.setProperty('--chatbot-offset-right', offsets.right);
+  document.documentElement.style.setProperty('--chatbot-offset-bottom', offsets.bottom);
+
   const baseUrl = getChatbotBaseUrl();
   const parentOrigin = window.location.origin;
   document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl, parentOrigin));
 
   const chatbotToggler = document.querySelector(".chatbot-toggler");
-  chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+
+  // Pulse animation every 15 seconds until user clicks
+  let pulseInterval = null;
+
+  function triggerPulse() {
+    chatbotToggler.classList.add('pulse');
+    // Remove class after animation completes to allow re-triggering
+    setTimeout(() => chatbotToggler.classList.remove('pulse'), 600);
+  }
+
+  function startPulseAnimation() {
+    // Initial pulse after 3 seconds, then every 3 seconds
+    pulseInterval = setInterval(triggerPulse, 3000);
+  }
+
+  function stopPulseAnimation() {
+    if (pulseInterval) {
+      clearInterval(pulseInterval);
+      pulseInterval = null;
+    }
+  }
+
+  chatbotToggler.addEventListener("click", () => {
+    stopPulseAnimation();
+    document.body.classList.toggle("show-chatbot");
+  });
+
+  // Start pulse animation
+  startPulseAnimation();
 
   // Determine the expected origin for postMessage validation
   // If embedded cross-origin, accept messages from the chatbot's origin
@@ -184,6 +321,11 @@ export function initChatbot() {
       } else {
         document.body.classList.remove("chatbot-fullscreen");
       }
+    }
+
+    if (event.data?.type === "close-chatbot") {
+      document.body.classList.remove("show-chatbot");
+      document.body.classList.remove("chatbot-fullscreen");
     }
   });
 
