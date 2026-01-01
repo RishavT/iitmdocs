@@ -34,6 +34,19 @@ export const chatbotCSS = /* css */ `
   box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 6px 20px rgba(0,0,0,0.4), 0 0 25px rgba(255,255,255,0.4);
 }
 
+@keyframes chatbot-pulse {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.1); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  60% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.chatbot-toggler.pulse {
+  animation: chatbot-pulse 0.6s ease-in-out;
+}
+
 .chatbot-toggler-open {
   display: flex;
   align-items: center;
@@ -263,7 +276,35 @@ export function initChatbot() {
   document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl, parentOrigin));
 
   const chatbotToggler = document.querySelector(".chatbot-toggler");
-  chatbotToggler.addEventListener("click", () => document.body.classList.toggle("show-chatbot"));
+
+  // Pulse animation every 15 seconds until user clicks
+  let pulseInterval = null;
+
+  function triggerPulse() {
+    chatbotToggler.classList.add('pulse');
+    // Remove class after animation completes to allow re-triggering
+    setTimeout(() => chatbotToggler.classList.remove('pulse'), 600);
+  }
+
+  function startPulseAnimation() {
+    // Initial pulse after 3 seconds, then every 3 seconds
+    pulseInterval = setInterval(triggerPulse, 3000);
+  }
+
+  function stopPulseAnimation() {
+    if (pulseInterval) {
+      clearInterval(pulseInterval);
+      pulseInterval = null;
+    }
+  }
+
+  chatbotToggler.addEventListener("click", () => {
+    stopPulseAnimation();
+    document.body.classList.toggle("show-chatbot");
+  });
+
+  // Start pulse animation
+  startPulseAnimation();
 
   // Determine the expected origin for postMessage validation
   // If embedded cross-origin, accept messages from the chatbot's origin
