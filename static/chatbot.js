@@ -4,14 +4,16 @@ export const chatbotCSS = /* css */ `
   --chatbot-primary: #2563eb;
   --chatbot-primary-hover: #1d4ed8;
   --chatbot-text-on-primary: #ffffff;
+  --chatbot-offset-right: 90px;
+  --chatbot-offset-bottom: 30px;
 }
 
 /* Chatbot styles */
 .chatbot-toggler {
   z-index:1000;
   position: fixed;
-  bottom: 30px;
-  right: 90px;
+  bottom: var(--chatbot-offset-bottom);
+  right: var(--chatbot-offset-right);
   outline: none;
   border: 2px solid rgba(255,255,255,0.9);
   height: 48px;
@@ -73,8 +75,8 @@ body.show-chatbot .chatbot-toggler-open {
 .chatbot {
   z-index:1000;
   position: fixed;
-  right: 90px;
-  bottom: 90px;
+  right: var(--chatbot-offset-right);
+  bottom: calc(var(--chatbot-offset-bottom) + 60px);
   width: 420px;
   height: 70vh;
   max-height: 600px;
@@ -120,8 +122,8 @@ body.show-chatbot .chatbot {
 
 @media (max-width: 490px) {
   .chatbot-toggler {
-    right: 20px;
-    bottom: 20px;
+    right: var(--chatbot-offset-right);
+    bottom: var(--chatbot-offset-bottom);
     padding: 0;
     width: 48px;
     border-radius: 50%;
@@ -177,21 +179,51 @@ export function addChatbotStyles() {
 }
 
 /**
+ * Finds the script tag that loaded chatbot.js
+ * @returns {HTMLScriptElement|null}
+ */
+function getChatbotScript() {
+  const scripts = document.getElementsByTagName('script');
+  for (const script of scripts) {
+    if (script.src && script.src.includes('chatbot.js')) {
+      return script;
+    }
+  }
+  return null;
+}
+
+/**
  * Gets the base URL of where chatbot.js was loaded from.
  * This allows the chatbot to be embedded on any site while loading resources from the correct origin.
  * @returns {string} Base URL (e.g., "https://chatbot.example.com/")
  */
 function getChatbotBaseUrl() {
-  // Find the script tag that loaded this file
-  const scripts = document.getElementsByTagName('script');
-  for (const script of scripts) {
-    if (script.src && script.src.includes('chatbot.js')) {
-      // Extract base URL (everything before 'chatbot.js')
-      return script.src.replace(/chatbot\.js.*$/, '');
-    }
+  const script = getChatbotScript();
+  if (script) {
+    return script.src.replace(/chatbot\.js.*$/, '');
   }
   // Fallback to current origin if script not found
   return window.location.origin + '/';
+}
+
+/**
+ * Gets position offsets from script tag data attributes.
+ * Usage: <script src="chatbot.js" data-offset-right="90" data-offset-bottom="30"></script>
+ * @returns {{ right: string, bottom: string }}
+ */
+function getPositionOffsets() {
+  const script = getChatbotScript();
+  const defaults = { right: '90px', bottom: '30px' };
+
+  if (!script) return defaults;
+
+  const right = script.dataset.offsetRight;
+  const bottom = script.dataset.offsetBottom;
+
+  return {
+    right: right ? `${right}px` : defaults.right,
+    bottom: bottom ? `${bottom}px` : defaults.bottom
+  };
 }
 
 export function getChatbotHTML(baseUrl, parentOrigin) {
@@ -220,6 +252,12 @@ export const googleIconsHTML = /* html */ `
 
 export function initChatbot() {
   addChatbotStyles();
+
+  // Apply position offsets from script tag data attributes
+  const offsets = getPositionOffsets();
+  document.documentElement.style.setProperty('--chatbot-offset-right', offsets.right);
+  document.documentElement.style.setProperty('--chatbot-offset-bottom', offsets.bottom);
+
   const baseUrl = getChatbotBaseUrl();
   const parentOrigin = window.location.origin;
   document.body.insertAdjacentHTML("beforeend", getChatbotHTML(baseUrl, parentOrigin));
