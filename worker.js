@@ -648,7 +648,7 @@ async function answer(request, env) {
         // Stream documents first (single enqueue)
         if (documents?.length) {
           // Use configurable repository URL or default
-          const repoUrl = env.GITHUB_REPO_URL || "https://github.com/study-iitm/iitmdocs";
+          const repoUrl = "https://github.com/RishavT/iitmdocs";
           const sseDocs = documents
             .map(
               (doc) =>
