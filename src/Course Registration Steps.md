@@ -1,7 +1,3 @@
-# Course Registration Steps
-
-Students who are continuing with the program will go through the following steps to sign up for the courses.
-
 ## Registration Process
 
 ### Step 1: Select Courses
@@ -21,18 +17,3 @@ Students who are continuing with the program will go through the following steps
 ### Step 4: Payment
 - Learners pay only for the number of credits they are signing up for
 - Online payment only
-
-## Level Restrictions
-
-Students can take any course within a particular level of study but are not allowed to sign up for courses across levels.
-
-### Progression Between Levels:
-- Students who successfully complete all courses in the Foundation level will be eligible for admission to the Diploma level program
-- Learners who successfully complete all courses in the Foundation and Diploma programme will be eligible for admission to the degree level, if they satisfy the prescribed/regulatory criteria
-- Students who complete 114 credits as per the norms will be eligible for the BSc degree and can continue onto the BS level
-
-## Important Note
-
-Course access will be revoked for students who:
-- Were not eligible for the qualifier exam, OR
-- Did not register for the foundation level in the same term in which they cleared the qualifier
