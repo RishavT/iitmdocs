@@ -142,9 +142,13 @@ function processFAQSuggestions(html) {
       const processedList = list.replace(
         /<li>([\s\S]*?)<\/li>/gi,
         (liMatch, content) => {
-          // Clean up the content (remove leading numbers if present)
-          const cleanContent = content.trim();
-          return `<button type="button" class="faq-suggestion" data-question="${cleanContent.replace(/"/g, '&quot;')}">${cleanContent}</button>`;
+          // Extract FAQ filename if present: [FAQ:filename.md]
+          const faqMatch = content.match(/\[FAQ:([^\]]+)\]/);
+          const faqFile = faqMatch ? faqMatch[1] : '';
+          // Remove the [FAQ:...] tag from display text
+          const displayContent = content.replace(/\s*\[FAQ:[^\]]+\]/, '').trim();
+          const faqAttr = faqFile ? ` data-faq-file="${faqFile}"` : '';
+          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqAttr}>${displayContent}</button>`;
         }
       );
       // Wrap in a container and replace <ol> tags
@@ -439,8 +443,9 @@ async function handleReportSubmit(messageId, question, response) {
  * Handles asking a question and streaming the response
  * Prevents race conditions by tracking request order
  * @param {Event} e - Submit event from the form
+ * @param {string} faqFile - Optional FAQ filename for direct lookup (skips LLM)
  */
-async function askQuestion(e) {
+async function askQuestion(e, faqFile = null) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
@@ -465,11 +470,17 @@ async function askQuestion(e) {
     let fullContent = "";
     let otherData = {};
 
+    // Build request body - include faq_file for direct FAQ lookup
+    const requestBody = { q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
+    if (faqFile) {
+      requestBody.faq_file = faqFile;
+    }
+
     // Collect the full response
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined }),
+      body: JSON.stringify(requestBody),
     })) {
       if (event.content) {
         fullContent = event.content;
@@ -507,13 +518,14 @@ chatArea.addEventListener("click", function (e) {
   const suggestionBtn = e.target.closest(".faq-suggestion");
   if (suggestionBtn) {
     const question = suggestionBtn.dataset.question;
+    const faqFile = suggestionBtn.dataset.faqFile;
     if (question) {
       // Set the question in the input
       questionInput.value = question;
       // Update validation (will enable the ask button)
       updateInputValidation();
-      // Submit the question
-      askQuestion();
+      // Submit the question (with faq_file for direct lookup, skipping LLM)
+      askQuestion(null, faqFile);
       // Smooth scroll to bottom
       chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
     }

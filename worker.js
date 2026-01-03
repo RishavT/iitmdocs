@@ -550,18 +550,226 @@ export default {
   },
 };
 
+/**
+ * Handles direct FAQ lookup without LLM call.
+ * Used when user clicks on a "Did you mean?" suggestion.
+ */
+async function handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env) {
+  const logContext = {
+    session_id: sessionId || "anonymous",
+    conversation_id: conversationId,
+    message_id: messageId || null,
+    username: username || null,
+    question: question,
+    rewritten_query: null,
+    query_source: "faq_direct",
+    rejection_reason: null,
+    documents: [{ filename: faqFile, relevance: "1" }],
+    response: null,
+    fact_check_passed: true,
+    contains_raahat: false,
+    history_length: 0,
+    latency_ms: null,
+    error: null,
+    detected_language: "english",
+  };
+
+  try {
+    // Fetch the FAQ document from Weaviate
+    const doc = await fetchFAQDocument(faqFile, env);
+
+    if (!doc) {
+      console.log('[DEBUG] FAQ document not found:', faqFile);
+      logContext.error = "FAQ document not found";
+      logContext.response = getCannotAnswerMessage("english");
+      logContext.latency_ms = Date.now() - startTime;
+      structuredLog("INFO", "conversation_turn", logContext);
+      return createSSEResponse(logContext.response, { rejected: true });
+    }
+
+    // Format the FAQ content nicely
+    const formattedContent = formatFAQContent(doc.content, question);
+    logContext.response = formattedContent;
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("INFO", "conversation_turn", logContext);
+
+    // Return the FAQ content directly as SSE (with document reference)
+    const encoder = new TextEncoder();
+    const repoUrl = "https://github.com/RishavT/iitmdocs";
+    const docRef = `data: ${JSON.stringify({
+      role: "assistant",
+      choices: [{
+        delta: {
+          tool_calls: [{
+            function: {
+              name: "document",
+              arguments: JSON.stringify({
+                relevance: "1",
+                name: faqFile.replace(/\.md$/, ""),
+                link: `${repoUrl}/blob/main/src/${faqFile}`,
+              }),
+            },
+          }],
+        },
+      }],
+    })}\n\n`;
+
+    const contentData = `data: ${JSON.stringify({
+      choices: [{ delta: { content: formattedContent } }]
+    })}\n\ndata: [DONE]\n\n`;
+
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(docRef));
+        controller.enqueue(encoder.encode(contentData));
+        controller.close();
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (error) {
+    console.error('[DEBUG] FAQ lookup error:', error.message);
+    logContext.error = error.message;
+    logContext.response = getCannotAnswerMessage("english");
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("ERROR", "conversation_turn", logContext);
+    return createSSEResponse(logContext.response, { rejected: true });
+  }
+}
+
+/**
+ * Fetches a specific FAQ document from Weaviate by filename.
+ */
+async function fetchFAQDocument(filename, env) {
+  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  let weaviateUrl;
+  const headers = { "Content-Type": "application/json" };
+
+  if (embeddingMode === "local") {
+    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
+  } else if (embeddingMode === "gce") {
+    weaviateUrl = env.GCE_WEAVIATE_URL;
+  } else {
+    weaviateUrl = env.WEAVIATE_URL;
+    headers.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
+  }
+
+  const graphqlQuery = `{
+    Get {
+      Document(
+        where: {
+          path: ["filename"],
+          operator: Equal,
+          valueText: "${filename}"
+        }
+        limit: 1
+      ) {
+        filename
+        content
+      }
+    }
+  }`;
+
+  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ query: graphqlQuery }),
+  });
+
+  const data = await response.json();
+  const docs = data?.data?.Get?.Document || [];
+  return docs.length > 0 ? docs[0] : null;
+}
+
+/**
+ * Formats FAQ content for display.
+ * Extracts the relevant Q&A section and formats it nicely.
+ */
+function formatFAQContent(content, question) {
+  if (!content) return "FAQ content not available.";
+
+  // The FAQ content contains multiple Q&A pairs
+  // Try to find the matching question and return that section
+  const lines = content.split('\n');
+  let result = [];
+  let capturing = false;
+  let foundMatch = false;
+
+  for (const line of lines) {
+    // Check if this is a question line
+    if (line.match(/^Q\d+:/)) {
+      if (capturing && result.length > 0) {
+        // We were capturing the previous Q&A, stop now
+        break;
+      }
+      // Check if this question matches (fuzzy match)
+      const questionText = line.replace(/^Q\d+:\s*/, '').trim();
+      if (questionText.toLowerCase().includes(question.toLowerCase().slice(0, 20)) ||
+          question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
+        capturing = true;
+        foundMatch = true;
+        result.push(`### ${questionText}`);
+      }
+    } else if (capturing) {
+      // Capture answer lines
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('Answer:')) {
+        result.push(trimmedLine.replace('Answer:', '').trim());
+      } else if (trimmedLine) {
+        result.push(trimmedLine);
+      }
+    }
+  }
+
+  // If no match found, return the full content formatted
+  if (!foundMatch || result.length === 0) {
+    // Just return the first Q&A from the document
+    result = [];
+    capturing = false;
+    for (const line of lines) {
+      if (line.match(/^Q\d+:/)) {
+        if (capturing) break;
+        capturing = true;
+        const questionText = line.replace(/^Q\d+:\s*/, '').trim();
+        result.push(`### ${questionText}`);
+      } else if (capturing) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('Answer:')) {
+          result.push(trimmedLine.replace('Answer:', '').trim());
+        } else if (trimmedLine) {
+          result.push(trimmedLine);
+        }
+      }
+    }
+  }
+
+  return result.join('\n\n') || content;
+}
+
 async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId } = await request.json();
+  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
+  console.log('[DEBUG] FAQ file:', faqFile || 'not provided');
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
+
+  // Direct FAQ lookup - skip LLM if faq_file is provided
+  if (faqFile) {
+    console.log('[DEBUG] Direct FAQ lookup for:', faqFile);
+    return await handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env);
+  }
 
   // Validate ndocs to prevent resource exhaustion
   const numDocs = parseInt(ndocs);
@@ -1050,7 +1258,8 @@ async function getFAQSuggestions(query, env, language = 'english') {
     };
 
     const header = didYouMean[language] || didYouMean.english;
-    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question}`).join('\n');
+    // Include filename in a parseable format for direct FAQ lookup
+    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question} [FAQ:${faq.filename}]`).join('\n');
 
     // Need blank line between header and list for proper markdown parsing
     return `\n\n${header}\n\n${suggestions}`;
