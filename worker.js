@@ -430,8 +430,10 @@ async function rewriteQueryWithSource(query, env) {
   // First, check if query matches any synonym pattern (fast path)
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
-    console.log('[DEBUG] Synonym match found:', query, '→', synonymMatch);
-    return { query: synonymMatch, source: "synonym" };
+    // Augment: Prepend original query to synonym keywords for better FAQ matching
+    const augmentedSynonym = `${query} ${synonymMatch}`;
+    console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    return { query: augmentedSynonym, source: "synonym" };
   }
 
   // Fall back to LLM rewriting for unmatched queries
@@ -493,9 +495,17 @@ Examples:
     }
 
     const result = await response.json();
-    const rewrittenQuery = result.choices?.[0]?.message?.content?.trim() || query;
-    console.log('[DEBUG] Query rewritten:', query, '→', rewrittenQuery);
-    return { query: rewrittenQuery, source: "llm" };
+    const llmRewrite = result.choices?.[0]?.message?.content?.trim() || query;
+
+    // Augment: Prepend original query to LLM keywords for better FAQ matching
+    // Extract language tag from LLM response, combine original + keywords, re-add tag
+    const langTagMatch = llmRewrite.match(/\[LANG:\w+\]/i);
+    const langTag = langTagMatch ? langTagMatch[0] : '[LANG:english]';
+    const keywordsOnly = llmRewrite.replace(/\[LANG:\w+\]/i, '').trim();
+    const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
+
+    console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
+    return { query: augmentedQuery, source: "llm" };
   } catch (error) {
     console.error('[DEBUG] Query rewrite error:', error.message);
     return { query: query, source: "original" }; // Fallback to original query on error
@@ -503,7 +513,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions };
 
 export default {
   async fetch(request, env) {
@@ -540,18 +550,226 @@ export default {
   },
 };
 
+/**
+ * Handles direct FAQ lookup without LLM call.
+ * Used when user clicks on a "Did you mean?" suggestion.
+ */
+async function handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env) {
+  const logContext = {
+    session_id: sessionId || "anonymous",
+    conversation_id: conversationId,
+    message_id: messageId || null,
+    username: username || null,
+    question: question,
+    rewritten_query: null,
+    query_source: "faq_direct",
+    rejection_reason: null,
+    documents: [{ filename: faqFile, relevance: "1" }],
+    response: null,
+    fact_check_passed: true,
+    contains_raahat: false,
+    history_length: 0,
+    latency_ms: null,
+    error: null,
+    detected_language: "english",
+  };
+
+  try {
+    // Fetch the FAQ document from Weaviate
+    const doc = await fetchFAQDocument(faqFile, env);
+
+    if (!doc) {
+      console.log('[DEBUG] FAQ document not found:', faqFile);
+      logContext.error = "FAQ document not found";
+      logContext.response = getCannotAnswerMessage("english");
+      logContext.latency_ms = Date.now() - startTime;
+      structuredLog("INFO", "conversation_turn", logContext);
+      return createSSEResponse(logContext.response, { rejected: true });
+    }
+
+    // Format the FAQ content nicely
+    const formattedContent = formatFAQContent(doc.content, question);
+    logContext.response = formattedContent;
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("INFO", "conversation_turn", logContext);
+
+    // Return the FAQ content directly as SSE (with document reference)
+    const encoder = new TextEncoder();
+    const repoUrl = "https://github.com/RishavT/iitmdocs";
+    const docRef = `data: ${JSON.stringify({
+      role: "assistant",
+      choices: [{
+        delta: {
+          tool_calls: [{
+            function: {
+              name: "document",
+              arguments: JSON.stringify({
+                relevance: "1",
+                name: faqFile.replace(/\.md$/, ""),
+                link: `${repoUrl}/blob/main/src/${faqFile}`,
+              }),
+            },
+          }],
+        },
+      }],
+    })}\n\n`;
+
+    const contentData = `data: ${JSON.stringify({
+      choices: [{ delta: { content: formattedContent } }]
+    })}\n\ndata: [DONE]\n\n`;
+
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(docRef));
+        controller.enqueue(encoder.encode(contentData));
+        controller.close();
+      }
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  } catch (error) {
+    console.error('[DEBUG] FAQ lookup error:', error.message);
+    logContext.error = error.message;
+    logContext.response = getCannotAnswerMessage("english");
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("ERROR", "conversation_turn", logContext);
+    return createSSEResponse(logContext.response, { rejected: true });
+  }
+}
+
+/**
+ * Fetches a specific FAQ document from Weaviate by filename.
+ */
+async function fetchFAQDocument(filename, env) {
+  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  let weaviateUrl;
+  const headers = { "Content-Type": "application/json" };
+
+  if (embeddingMode === "local") {
+    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
+  } else if (embeddingMode === "gce") {
+    weaviateUrl = env.GCE_WEAVIATE_URL;
+  } else {
+    weaviateUrl = env.WEAVIATE_URL;
+    headers.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
+  }
+
+  const graphqlQuery = `{
+    Get {
+      Document(
+        where: {
+          path: ["filename"],
+          operator: Equal,
+          valueText: "${filename}"
+        }
+        limit: 1
+      ) {
+        filename
+        content
+      }
+    }
+  }`;
+
+  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ query: graphqlQuery }),
+  });
+
+  const data = await response.json();
+  const docs = data?.data?.Get?.Document || [];
+  return docs.length > 0 ? docs[0] : null;
+}
+
+/**
+ * Formats FAQ content for display.
+ * Extracts the relevant Q&A section and formats it nicely.
+ */
+function formatFAQContent(content, question) {
+  if (!content) return "FAQ content not available.";
+
+  // The FAQ content contains multiple Q&A pairs
+  // Try to find the matching question and return that section
+  const lines = content.split('\n');
+  let result = [];
+  let capturing = false;
+  let foundMatch = false;
+
+  for (const line of lines) {
+    // Check if this is a question line
+    if (line.match(/^Q\d+:/)) {
+      if (capturing && result.length > 0) {
+        // We were capturing the previous Q&A, stop now
+        break;
+      }
+      // Check if this question matches (fuzzy match)
+      const questionText = line.replace(/^Q\d+:\s*/, '').trim();
+      if (questionText.toLowerCase().includes(question.toLowerCase().slice(0, 20)) ||
+          question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
+        capturing = true;
+        foundMatch = true;
+        result.push(`### ${questionText}`);
+      }
+    } else if (capturing) {
+      // Capture answer lines
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith('Answer:')) {
+        result.push(trimmedLine.replace('Answer:', '').trim());
+      } else if (trimmedLine) {
+        result.push(trimmedLine);
+      }
+    }
+  }
+
+  // If no match found, return the full content formatted
+  if (!foundMatch || result.length === 0) {
+    // Just return the first Q&A from the document
+    result = [];
+    capturing = false;
+    for (const line of lines) {
+      if (line.match(/^Q\d+:/)) {
+        if (capturing) break;
+        capturing = true;
+        const questionText = line.replace(/^Q\d+:\s*/, '').trim();
+        result.push(`### ${questionText}`);
+      } else if (capturing) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('Answer:')) {
+          result.push(trimmedLine.replace('Answer:', '').trim());
+        } else if (trimmedLine) {
+          result.push(trimmedLine);
+        }
+      }
+    }
+  }
+
+  return result.join('\n\n') || content;
+}
+
 async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId } = await request.json();
+  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
+  console.log('[DEBUG] FAQ file:', faqFile || 'not provided');
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
+
+  // Direct FAQ lookup - skip LLM if faq_file is provided
+  if (faqFile) {
+    console.log('[DEBUG] Direct FAQ lookup for:', faqFile);
+    return await handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env);
+  }
 
   // Validate ndocs to prevent resource exhaustion
   const numDocs = parseInt(ndocs);
@@ -615,12 +833,18 @@ async function answer(request, env) {
           logContext.rejection_reason = "prompt_injection";
           logContext.detected_language = "english";
           logContext.fact_check_passed = false;
-          const rejectMessage = getCannotAnswerMessage("english");
+          let rejectMessage = getCannotAnswerMessage("english");
+
+          // Add "Did you mean?" FAQ suggestions
+          const faqSuggestions = await getFAQSuggestions(question, env, "english");
+          rejectMessage += faqSuggestions;
+
           logContext.response = rejectMessage;
 
-          // Return the cannot-answer message as SSE
+          // Return the cannot-answer message as SSE (with rejected flag to skip history)
           const sseData = `data: ${JSON.stringify({
-            choices: [{ delta: { content: rejectMessage } }]
+            choices: [{ delta: { content: rejectMessage } }],
+            rejected: true
           })}\n\ndata: [DONE]\n\n`;
           controller.enqueue(encoder.encode(sseData));
           logContext.latency_ms = Date.now() - startTime;
@@ -870,6 +1094,181 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
+/**
+ * Extracts the first question from FAQ document content.
+ * FAQ format: "Q#: <question text>\nAnswer: ..."
+ * Prefers questions ending with "?" over section headers.
+ * @param {string} content - The FAQ document content
+ * @returns {string|null} - The first question text, or null if not found
+ */
+function extractFirstQuestion(content) {
+  if (!content) return null;
+
+  // Find all Q#: lines
+  const matches = content.matchAll(/^Q\d+:\s*(.+?)(?:\n|$)/gm);
+
+  let firstQuestion = null;
+  for (const match of matches) {
+    const question = match[1].trim();
+    // Prefer questions that end with "?"
+    if (question.endsWith('?')) {
+      return question;
+    }
+    // Keep the first match as fallback
+    if (!firstQuestion) {
+      firstQuestion = question;
+    }
+  }
+
+  return firstQuestion;
+}
+
+/**
+ * Searches Weaviate for FAQ documents only.
+ * @param {string} query - The search query
+ * @param {number} limit - Maximum number of results
+ * @param {Object} env - Environment variables
+ * @returns {Promise<Array>} - Array of FAQ documents with questions extracted
+ */
+async function searchFAQs(query, limit, env) {
+  console.log('[DEBUG] searchFAQs() called, query:', query);
+
+  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  let weaviateUrl;
+  const embeddingHeaders = { "Content-Type": "application/json" };
+
+  if (embeddingMode === "local") {
+    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
+  } else if (embeddingMode === "gce") {
+    weaviateUrl = env.GCE_WEAVIATE_URL;
+  } else {
+    weaviateUrl = env.WEAVIATE_URL;
+    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
+    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
+    if (embeddingProvider === "cohere") {
+      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
+    } else {
+      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
+    }
+  }
+
+  const sanitizedQuery = query
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ")
+    .replace(/\t/g, " ");
+
+  // Filter for FAQ files only using 'where' clause with Like operator
+  let graphqlQuery;
+  if (embeddingMode === "gce") {
+    const ollamaUrl = env.GCE_OLLAMA_URL;
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
+    const vectorStr = `[${queryVector.join(",")}]`;
+
+    graphqlQuery = `{
+      Get {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            vector: ${vectorStr}
+            alpha: 0.5
+          }
+          where: {
+            path: ["filename"],
+            operator: Like,
+            valueText: "faq_*"
+          }
+          limit: ${limit}
+        ) {
+          filename content
+          _additional { score }
+        }
+      }
+    }`;
+  } else {
+    graphqlQuery = `{
+      Get {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            alpha: 0.5
+          }
+          where: {
+            path: ["filename"],
+            operator: Like,
+            valueText: "faq_*"
+          }
+          limit: ${limit}
+        ) {
+          filename content
+          _additional { score }
+        }
+      }
+    }`;
+  }
+
+  try {
+    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+      method: "POST",
+      headers: embeddingHeaders,
+      body: JSON.stringify({ query: graphqlQuery }),
+    });
+
+    const responseText = await response.text();
+    const data = JSON.parse(responseText);
+
+    if (data.errors) {
+      console.error('[DEBUG] FAQ search error:', data.errors);
+      return [];
+    }
+
+    const documents = data.data?.Get?.Document || [];
+    console.log('[DEBUG] FAQ search returned', documents.length, 'documents');
+
+    // Extract first question from each FAQ and return with relevance
+    return documents.map((doc) => ({
+      filename: doc.filename,
+      question: extractFirstQuestion(doc.content),
+      relevance: doc._additional?.score || 0
+    })).filter(doc => doc.question); // Only include docs where we found a question
+  } catch (error) {
+    console.error('[DEBUG] FAQ search failed:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Gets FAQ suggestions formatted for "Did you mean?" display.
+ * @param {string} query - The user's original query
+ * @param {Object} env - Environment variables
+ * @param {string} language - The detected language
+ * @returns {Promise<string>} - Formatted suggestions string, or empty string if none
+ */
+async function getFAQSuggestions(query, env, language = 'english') {
+  try {
+    const faqs = await searchFAQs(query, 3, env);
+    if (!faqs.length) return '';
+
+    const didYouMean = {
+      english: "**Did you mean:**",
+      hindi: "**क्या आपका मतलब था:**",
+      tamil: "**நீங்கள் கருதுவது:**",
+      hinglish: "**Kya aap ye poochna chahte the:**"
+    };
+
+    const header = didYouMean[language] || didYouMean.english;
+    // Include filename in a parseable format for direct FAQ lookup
+    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question} [FAQ:${faq.filename}]`).join('\n');
+
+    // Need blank line between header and list for proper markdown parsing
+    return `\n\n${header}\n\n${suggestions}`;
+  } catch (error) {
+    console.error('[DEBUG] Failed to get FAQ suggestions:', error.message);
+    return '';
+  }
+}
+
 async function generateAnswer(question, documents, history, env, logContext = null, language = 'english') {
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
@@ -1053,6 +1452,11 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
       finalAnswer = getCannotAnswerMessage(language);
+
+      // Add "Did you mean?" FAQ suggestions
+      const faqSuggestions = await getFAQSuggestions(question, env, language);
+      finalAnswer += faqSuggestions;
+
       if (logContext) {
         logContext.rejection_reason = "fact_check_failed";
       }
@@ -1067,7 +1471,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
-  return createSSEResponse(finalAnswer);
+  // Mark as rejected if fact check failed (to exclude from conversation history)
+  return createSSEResponse(finalAnswer, { rejected: !factCheckPassed });
 }
 
 /**
@@ -1152,16 +1557,22 @@ function countStatements(text) {
  * Creates a simulated SSE streaming response from a complete text.
  * This maintains compatibility with the existing SSE client format.
  * @param {string} text - The complete response text
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.rejected - If true, marks response as rejected (excluded from history)
  * @returns {Response} - A Response object with SSE-formatted body
  */
-function createSSEResponse(text) {
+function createSSEResponse(text, options = {}) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
       // Send the content as a single SSE chunk (simulating streaming)
-      const sseData = `data: ${JSON.stringify({
+      const responseData = {
         choices: [{ delta: { content: text } }]
-      })}\n\n`;
+      };
+      if (options.rejected) {
+        responseData.rejected = true;
+      }
+      const sseData = `data: ${JSON.stringify(responseData)}\n\n`;
       controller.enqueue(encoder.encode(sseData));
 
       // Send the done signal

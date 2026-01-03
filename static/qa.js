@@ -117,6 +117,47 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 const HISTORY_KEY = "iitm-chatbot-history";
+
+/**
+ * Post-processes HTML to make "Did you mean?" FAQ suggestions clickable.
+ * Detects the pattern and converts list items to clickable buttons.
+ * @param {string} html - The HTML string from marked.parse()
+ * @returns {string} - Processed HTML with clickable suggestions
+ */
+function processFAQSuggestions(html) {
+  // Match "Did you mean:" (or translations) followed by an ordered list
+  // The pattern covers: English, Hindi, Tamil, Hinglish variations
+  const didYouMeanPatterns = [
+    /(<p><strong>Did you mean:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>क्या आपका मतलब था:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>நீங்கள் கருதுவது:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>Kya aap ye poochna chahte the:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+  ];
+
+  let processedHtml = html;
+
+  for (const pattern of didYouMeanPatterns) {
+    processedHtml = processedHtml.replace(pattern, (match, header, list) => {
+      // Convert each <li> to a clickable button
+      const processedList = list.replace(
+        /<li>([\s\S]*?)<\/li>/gi,
+        (liMatch, content) => {
+          // Extract FAQ filename if present: [FAQ:filename.md]
+          const faqMatch = content.match(/\[FAQ:([^\]]+)\]/);
+          const faqFile = faqMatch ? faqMatch[1] : '';
+          // Remove the [FAQ:...] tag from display text
+          const displayContent = content.replace(/\s*\[FAQ:[^\]]+\]/, '').trim();
+          const faqAttr = faqFile ? ` data-faq-file="${faqFile}"` : '';
+          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqAttr}>${displayContent}</button>`;
+        }
+      );
+      // Wrap in a container and replace <ol> tags
+      return `<div class="faq-suggestions">${header}${processedList.replace(/<\/?ol>/gi, '')}</div>`;
+    });
+  }
+
+  return processedHtml;
+}
 const MAX_HISTORY_PAIRS = 5;
 let requestCounter = 0; // Track requests to prevent race conditions
 const TYPING_SPEED_MS = 15; // Milliseconds per character for typing effect
@@ -180,12 +221,13 @@ function saveHistoryToStorage(history) {
 /**
  * Builds conversation history from completed chat messages
  * Only includes last MAX_HISTORY_PAIRS Q&A pairs
+ * Excludes rejected responses (fact check failed, prompt injection)
  * @returns {Array} Array of message objects with role and content
  */
 function buildConversationHistory() {
-  // Build history from last N Q&A pairs (excluding current incomplete exchange)
+  // Build history from last N Q&A pairs (excluding current incomplete exchange and rejected)
   const history = [];
-  const completedChats = chat.filter((msg) => msg.content); // Only completed Q&A pairs
+  const completedChats = chat.filter((msg) => msg.content && !msg.rejected); // Only completed, non-rejected Q&A pairs
   const recentChats = completedChats.slice(-MAX_HISTORY_PAIRS);
 
   for (const msg of recentChats) {
@@ -237,7 +279,7 @@ function redraw() {
       ({ q, content, tools, messageId, feedback, showReportForm }) => html`
         <div class="bg-light border rounded p-2">${q}</div>
         <div class="my-3">
-          ${content ? unsafeHTML(marked.parse(content)) : html`<span class="ms-4 spinner-border"></span>`}
+          ${content ? unsafeHTML(processFAQSuggestions(marked.parse(content))) : html`<span class="ms-4 spinner-border"></span>`}
         </div>
         ${tools
           ? html`<details class="my-3 px-2" open>
@@ -401,8 +443,9 @@ async function handleReportSubmit(messageId, question, response) {
  * Handles asking a question and streaming the response
  * Prevents race conditions by tracking request order
  * @param {Event} e - Submit event from the form
+ * @param {string} faqFile - Optional FAQ filename for direct lookup (skips LLM)
  */
-async function askQuestion(e) {
+async function askQuestion(e, faqFile = null) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
@@ -427,11 +470,17 @@ async function askQuestion(e) {
     let fullContent = "";
     let otherData = {};
 
+    // Build request body - include faq_file for direct FAQ lookup
+    const requestBody = { q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
+    if (faqFile) {
+      requestBody.faq_file = faqFile;
+    }
+
     // Collect the full response
     for await (const event of asyncLLM("./answer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined }),
+      body: JSON.stringify(requestBody),
     })) {
       if (event.content) {
         fullContent = event.content;
@@ -449,9 +498,10 @@ async function askQuestion(e) {
       await animateTyping(chat.at(-1), fullContent, redraw);
     }
 
-    // Only save history if this is still the most recent request
+    // Only save history if this is still the most recent request and not rejected
     // This prevents out-of-order saves if multiple requests were somehow triggered
-    if (currentRequest === requestCounter) {
+    // Rejected responses (fact check failed, prompt injection) should not pollute history
+    if (currentRequest === requestCounter && !otherData.rejected) {
       saveHistoryToStorage(buildConversationHistory());
     }
   } finally {
@@ -462,6 +512,25 @@ async function askQuestion(e) {
 questionInput.focus();
 
 chatForm.addEventListener("submit", askQuestion);
+
+// Event delegation for FAQ suggestion clicks
+chatArea.addEventListener("click", function (e) {
+  const suggestionBtn = e.target.closest(".faq-suggestion");
+  if (suggestionBtn) {
+    const question = suggestionBtn.dataset.question;
+    const faqFile = suggestionBtn.dataset.faqFile;
+    if (question) {
+      // Set the question in the input
+      questionInput.value = question;
+      // Update validation (will enable the ask button)
+      updateInputValidation();
+      // Submit the question (with faq_file for direct lookup, skipping LLM)
+      askQuestion(null, faqFile);
+      // Smooth scroll to bottom
+      chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+    }
+  }
+});
 
 clearChatButton.addEventListener("click", function () {
   chat.length = 0;
