@@ -625,7 +625,12 @@ async function answer(request, env) {
           logContext.rejection_reason = "prompt_injection";
           logContext.detected_language = "english";
           logContext.fact_check_passed = false;
-          const rejectMessage = getCannotAnswerMessage("english");
+          let rejectMessage = getCannotAnswerMessage("english");
+
+          // Add "Did you mean?" FAQ suggestions
+          const faqSuggestions = await getFAQSuggestions(question, env, "english");
+          rejectMessage += faqSuggestions;
+
           logContext.response = rejectMessage;
 
           // Return the cannot-answer message as SSE
@@ -880,6 +885,179 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
+/**
+ * Extracts the first question from FAQ document content.
+ * FAQ format: "Q#: <question text>\nAnswer: ..."
+ * Prefers questions ending with "?" over section headers.
+ * @param {string} content - The FAQ document content
+ * @returns {string|null} - The first question text, or null if not found
+ */
+function extractFirstQuestion(content) {
+  if (!content) return null;
+
+  // Find all Q#: lines
+  const matches = content.matchAll(/^Q\d+:\s*(.+?)(?:\n|$)/gm);
+
+  let firstQuestion = null;
+  for (const match of matches) {
+    const question = match[1].trim();
+    // Prefer questions that end with "?"
+    if (question.endsWith('?')) {
+      return question;
+    }
+    // Keep the first match as fallback
+    if (!firstQuestion) {
+      firstQuestion = question;
+    }
+  }
+
+  return firstQuestion;
+}
+
+/**
+ * Searches Weaviate for FAQ documents only.
+ * @param {string} query - The search query
+ * @param {number} limit - Maximum number of results
+ * @param {Object} env - Environment variables
+ * @returns {Promise<Array>} - Array of FAQ documents with questions extracted
+ */
+async function searchFAQs(query, limit, env) {
+  console.log('[DEBUG] searchFAQs() called, query:', query);
+
+  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  let weaviateUrl;
+  const embeddingHeaders = { "Content-Type": "application/json" };
+
+  if (embeddingMode === "local") {
+    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
+  } else if (embeddingMode === "gce") {
+    weaviateUrl = env.GCE_WEAVIATE_URL;
+  } else {
+    weaviateUrl = env.WEAVIATE_URL;
+    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
+    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
+    if (embeddingProvider === "cohere") {
+      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
+    } else {
+      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
+    }
+  }
+
+  const sanitizedQuery = query
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, " ")
+    .replace(/\r/g, " ")
+    .replace(/\t/g, " ");
+
+  // Filter for FAQ files only using 'where' clause with Like operator
+  let graphqlQuery;
+  if (embeddingMode === "gce") {
+    const ollamaUrl = env.GCE_OLLAMA_URL;
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
+    const vectorStr = `[${queryVector.join(",")}]`;
+
+    graphqlQuery = `{
+      Get {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            vector: ${vectorStr}
+            alpha: 0.5
+          }
+          where: {
+            path: ["filename"],
+            operator: Like,
+            valueText: "faq_*"
+          }
+          limit: ${limit}
+        ) {
+          filename content
+          _additional { score }
+        }
+      }
+    }`;
+  } else {
+    graphqlQuery = `{
+      Get {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            alpha: 0.5
+          }
+          where: {
+            path: ["filename"],
+            operator: Like,
+            valueText: "faq_*"
+          }
+          limit: ${limit}
+        ) {
+          filename content
+          _additional { score }
+        }
+      }
+    }`;
+  }
+
+  try {
+    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+      method: "POST",
+      headers: embeddingHeaders,
+      body: JSON.stringify({ query: graphqlQuery }),
+    });
+
+    const responseText = await response.text();
+    const data = JSON.parse(responseText);
+
+    if (data.errors) {
+      console.error('[DEBUG] FAQ search error:', data.errors);
+      return [];
+    }
+
+    const documents = data.data?.Get?.Document || [];
+    console.log('[DEBUG] FAQ search returned', documents.length, 'documents');
+
+    // Extract first question from each FAQ and return with relevance
+    return documents.map((doc) => ({
+      filename: doc.filename,
+      question: extractFirstQuestion(doc.content),
+      relevance: doc._additional?.score || 0
+    })).filter(doc => doc.question); // Only include docs where we found a question
+  } catch (error) {
+    console.error('[DEBUG] FAQ search failed:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Gets FAQ suggestions formatted for "Did you mean?" display.
+ * @param {string} query - The user's original query
+ * @param {Object} env - Environment variables
+ * @param {string} language - The detected language
+ * @returns {Promise<string>} - Formatted suggestions string, or empty string if none
+ */
+async function getFAQSuggestions(query, env, language = 'english') {
+  try {
+    const faqs = await searchFAQs(query, 3, env);
+    if (!faqs.length) return '';
+
+    const didYouMean = {
+      english: "**Did you mean:**",
+      hindi: "**क्या आपका मतलब था:**",
+      tamil: "**நீங்கள் கருதுவது:**",
+      hinglish: "**Kya aap ye poochna chahte the:**"
+    };
+
+    const header = didYouMean[language] || didYouMean.english;
+    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question}`).join('\n');
+
+    return `\n\n${header}\n${suggestions}`;
+  } catch (error) {
+    console.error('[DEBUG] Failed to get FAQ suggestions:', error.message);
+    return '';
+  }
+}
+
 async function generateAnswer(question, documents, history, env, logContext = null, language = 'english') {
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
@@ -1063,6 +1241,11 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
       finalAnswer = getCannotAnswerMessage(language);
+
+      // Add "Did you mean?" FAQ suggestions
+      const faqSuggestions = await getFAQSuggestions(question, env, language);
+      finalAnswer += faqSuggestions;
+
       if (logContext) {
         logContext.rejection_reason = "fact_check_failed";
       }
