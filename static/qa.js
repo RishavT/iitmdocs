@@ -217,12 +217,13 @@ function saveHistoryToStorage(history) {
 /**
  * Builds conversation history from completed chat messages
  * Only includes last MAX_HISTORY_PAIRS Q&A pairs
+ * Excludes rejected responses (fact check failed, prompt injection)
  * @returns {Array} Array of message objects with role and content
  */
 function buildConversationHistory() {
-  // Build history from last N Q&A pairs (excluding current incomplete exchange)
+  // Build history from last N Q&A pairs (excluding current incomplete exchange and rejected)
   const history = [];
-  const completedChats = chat.filter((msg) => msg.content); // Only completed Q&A pairs
+  const completedChats = chat.filter((msg) => msg.content && !msg.rejected); // Only completed, non-rejected Q&A pairs
   const recentChats = completedChats.slice(-MAX_HISTORY_PAIRS);
 
   for (const msg of recentChats) {
@@ -486,9 +487,10 @@ async function askQuestion(e) {
       await animateTyping(chat.at(-1), fullContent, redraw);
     }
 
-    // Only save history if this is still the most recent request
+    // Only save history if this is still the most recent request and not rejected
     // This prevents out-of-order saves if multiple requests were somehow triggered
-    if (currentRequest === requestCounter) {
+    // Rejected responses (fact check failed, prompt injection) should not pollute history
+    if (currentRequest === requestCounter && !otherData.rejected) {
       saveHistoryToStorage(buildConversationHistory());
     }
   } finally {

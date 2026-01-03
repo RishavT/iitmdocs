@@ -633,9 +633,10 @@ async function answer(request, env) {
 
           logContext.response = rejectMessage;
 
-          // Return the cannot-answer message as SSE
+          // Return the cannot-answer message as SSE (with rejected flag to skip history)
           const sseData = `data: ${JSON.stringify({
-            choices: [{ delta: { content: rejectMessage } }]
+            choices: [{ delta: { content: rejectMessage } }],
+            rejected: true
           })}\n\ndata: [DONE]\n\n`;
           controller.enqueue(encoder.encode(sseData));
           logContext.latency_ms = Date.now() - startTime;
@@ -1051,7 +1052,8 @@ async function getFAQSuggestions(query, env, language = 'english') {
     const header = didYouMean[language] || didYouMean.english;
     const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question}`).join('\n');
 
-    return `\n\n${header}\n${suggestions}`;
+    // Need blank line between header and list for proper markdown parsing
+    return `\n\n${header}\n\n${suggestions}`;
   } catch (error) {
     console.error('[DEBUG] Failed to get FAQ suggestions:', error.message);
     return '';
@@ -1260,7 +1262,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
-  return createSSEResponse(finalAnswer);
+  // Mark as rejected if fact check failed (to exclude from conversation history)
+  return createSSEResponse(finalAnswer, { rejected: !factCheckPassed });
 }
 
 /**
@@ -1345,16 +1348,22 @@ function countStatements(text) {
  * Creates a simulated SSE streaming response from a complete text.
  * This maintains compatibility with the existing SSE client format.
  * @param {string} text - The complete response text
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.rejected - If true, marks response as rejected (excluded from history)
  * @returns {Response} - A Response object with SSE-formatted body
  */
-function createSSEResponse(text) {
+function createSSEResponse(text, options = {}) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
       // Send the content as a single SSE chunk (simulating streaming)
-      const sseData = `data: ${JSON.stringify({
+      const responseData = {
         choices: [{ delta: { content: text } }]
-      })}\n\n`;
+      };
+      if (options.rejected) {
+        responseData.rejected = true;
+      }
+      const sseData = `data: ${JSON.stringify(responseData)}\n\n`;
       controller.enqueue(encoder.encode(sseData));
 
       // Send the done signal
