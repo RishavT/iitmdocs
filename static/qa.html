@@ -79,6 +79,41 @@
       font-size: 14px;
       margin-top: 8px;
     }
+    /* FAQ Suggestion Styles */
+    .faq-suggestions {
+      margin-top: 12px;
+    }
+    .faq-suggestions p {
+      margin-bottom: 8px;
+      color: #495057;
+    }
+    .faq-suggestion {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #212529;
+      transition: all 0.2s ease;
+    }
+    .faq-suggestion:hover {
+      background: #e9ecef;
+      border-color: var(--chatbot-primary);
+      color: var(--chatbot-primary);
+    }
+    .faq-suggestion:active {
+      background: #dee2e6;
+    }
+    .faq-suggestion::before {
+      content: "→ ";
+      color: var(--chatbot-primary);
+      font-weight: bold;
+    }
     .consent-overlay {
       position: absolute;
       top: 0;

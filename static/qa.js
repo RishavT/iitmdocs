@@ -117,6 +117,43 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 const HISTORY_KEY = "iitm-chatbot-history";
+
+/**
+ * Post-processes HTML to make "Did you mean?" FAQ suggestions clickable.
+ * Detects the pattern and converts list items to clickable buttons.
+ * @param {string} html - The HTML string from marked.parse()
+ * @returns {string} - Processed HTML with clickable suggestions
+ */
+function processFAQSuggestions(html) {
+  // Match "Did you mean:" (or translations) followed by an ordered list
+  // The pattern covers: English, Hindi, Tamil, Hinglish variations
+  const didYouMeanPatterns = [
+    /(<p><strong>Did you mean:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>क्या आपका मतलब था:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>நீங்கள் கருதுவது:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+    /(<p><strong>Kya aap ye poochna chahte the:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
+  ];
+
+  let processedHtml = html;
+
+  for (const pattern of didYouMeanPatterns) {
+    processedHtml = processedHtml.replace(pattern, (match, header, list) => {
+      // Convert each <li> to a clickable button
+      const processedList = list.replace(
+        /<li>([\s\S]*?)<\/li>/gi,
+        (liMatch, content) => {
+          // Clean up the content (remove leading numbers if present)
+          const cleanContent = content.trim();
+          return `<button type="button" class="faq-suggestion" data-question="${cleanContent.replace(/"/g, '&quot;')}">${cleanContent}</button>`;
+        }
+      );
+      // Wrap in a container and replace <ol> tags
+      return `<div class="faq-suggestions">${header}${processedList.replace(/<\/?ol>/gi, '')}</div>`;
+    });
+  }
+
+  return processedHtml;
+}
 const MAX_HISTORY_PAIRS = 5;
 let requestCounter = 0; // Track requests to prevent race conditions
 const TYPING_SPEED_MS = 15; // Milliseconds per character for typing effect
@@ -237,7 +274,7 @@ function redraw() {
       ({ q, content, tools, messageId, feedback, showReportForm }) => html`
         <div class="bg-light border rounded p-2">${q}</div>
         <div class="my-3">
-          ${content ? unsafeHTML(marked.parse(content)) : html`<span class="ms-4 spinner-border"></span>`}
+          ${content ? unsafeHTML(processFAQSuggestions(marked.parse(content))) : html`<span class="ms-4 spinner-border"></span>`}
         </div>
         ${tools
           ? html`<details class="my-3 px-2" open>
@@ -462,6 +499,24 @@ async function askQuestion(e) {
 questionInput.focus();
 
 chatForm.addEventListener("submit", askQuestion);
+
+// Event delegation for FAQ suggestion clicks
+chatArea.addEventListener("click", function (e) {
+  const suggestionBtn = e.target.closest(".faq-suggestion");
+  if (suggestionBtn) {
+    const question = suggestionBtn.dataset.question;
+    if (question) {
+      // Set the question in the input
+      questionInput.value = question;
+      // Update validation (will enable the ask button)
+      updateInputValidation();
+      // Submit the question
+      askQuestion();
+      // Smooth scroll to bottom
+      chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+    }
+  }
+});
 
 clearChatButton.addEventListener("click", function () {
   chat.length = 0;
