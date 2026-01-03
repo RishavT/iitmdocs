@@ -430,8 +430,10 @@ async function rewriteQueryWithSource(query, env) {
   // First, check if query matches any synonym pattern (fast path)
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
-    console.log('[DEBUG] Synonym match found:', query, '→', synonymMatch);
-    return { query: synonymMatch, source: "synonym" };
+    // Augment: Prepend original query to synonym keywords for better FAQ matching
+    const augmentedSynonym = `${query} ${synonymMatch}`;
+    console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    return { query: augmentedSynonym, source: "synonym" };
   }
 
   // Fall back to LLM rewriting for unmatched queries
@@ -493,9 +495,17 @@ Examples:
     }
 
     const result = await response.json();
-    const rewrittenQuery = result.choices?.[0]?.message?.content?.trim() || query;
-    console.log('[DEBUG] Query rewritten:', query, '→', rewrittenQuery);
-    return { query: rewrittenQuery, source: "llm" };
+    const llmRewrite = result.choices?.[0]?.message?.content?.trim() || query;
+
+    // Augment: Prepend original query to LLM keywords for better FAQ matching
+    // Extract language tag from LLM response, combine original + keywords, re-add tag
+    const langTagMatch = llmRewrite.match(/\[LANG:\w+\]/i);
+    const langTag = langTagMatch ? langTagMatch[0] : '[LANG:english]';
+    const keywordsOnly = llmRewrite.replace(/\[LANG:\w+\]/i, '').trim();
+    const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
+
+    console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
+    return { query: augmentedQuery, source: "llm" };
   } catch (error) {
     console.error('[DEBUG] Query rewrite error:', error.message);
     return { query: query, source: "original" }; // Fallback to original query on error
