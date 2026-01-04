@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions, accumulateTokenUsage } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -1057,6 +1057,203 @@ Answer: Complete registration.`,
       // Should prefer the actual question over the section header
       expect(result).toContain("What should I do after clearing the qualifier?");
       expect(result).not.toContain("Post-Qualifier Process");
+    });
+  });
+});
+
+// ============================================================================
+// Token Usage Accumulation Tests
+// ============================================================================
+describe("accumulateTokenUsage()", () => {
+  describe("Basic accumulation", () => {
+    it("should accumulate tokens from simplified format (input_tokens/output_tokens)", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      const usage = {
+        input_tokens: 100,
+        output_tokens: 50,
+        cached_prompt_tokens: 20,
+      };
+
+      accumulateTokenUsage(logContext, usage);
+
+      expect(logContext.total_input_tokens).toBe(100);
+      expect(logContext.total_output_tokens).toBe(50);
+      expect(logContext.cached_prompt_tokens).toBe(20);
+      expect(logContext.non_cached_prompt_tokens).toBe(80); // 100 - 20
+    });
+
+    it("should accumulate tokens from OpenAI format (prompt_tokens/completion_tokens)", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      const usage = {
+        prompt_tokens: 200,
+        completion_tokens: 75,
+        prompt_tokens_details: {
+          cached_tokens: 50,
+        },
+      };
+
+      accumulateTokenUsage(logContext, usage);
+
+      expect(logContext.total_input_tokens).toBe(200);
+      expect(logContext.total_output_tokens).toBe(75);
+      expect(logContext.cached_prompt_tokens).toBe(50);
+      expect(logContext.non_cached_prompt_tokens).toBe(150); // 200 - 50
+    });
+
+    it("should accumulate multiple LLM calls correctly", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      // First LLM call (query rewrite)
+      accumulateTokenUsage(logContext, {
+        input_tokens: 100,
+        output_tokens: 20,
+        cached_prompt_tokens: 0,
+      });
+
+      // Second LLM call (answer generation)
+      accumulateTokenUsage(logContext, {
+        prompt_tokens: 500,
+        completion_tokens: 150,
+        prompt_tokens_details: { cached_tokens: 100 },
+      });
+
+      // Third LLM call (fact check)
+      accumulateTokenUsage(logContext, {
+        prompt_tokens: 300,
+        completion_tokens: 10,
+        prompt_tokens_details: { cached_tokens: 50 },
+      });
+
+      expect(logContext.total_input_tokens).toBe(900); // 100 + 500 + 300
+      expect(logContext.total_output_tokens).toBe(180); // 20 + 150 + 10
+      expect(logContext.cached_prompt_tokens).toBe(150); // 0 + 100 + 50
+      expect(logContext.non_cached_prompt_tokens).toBe(750); // 100 + 400 + 250
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should handle null logContext gracefully", () => {
+      const result = accumulateTokenUsage(null, { input_tokens: 100 });
+      expect(result).toBeNull();
+    });
+
+    it("should handle null usage gracefully", () => {
+      const logContext = { total_input_tokens: 50 };
+      const result = accumulateTokenUsage(logContext, null);
+      expect(result).toEqual({ total_input_tokens: 50 });
+    });
+
+    it("should handle undefined usage gracefully", () => {
+      const logContext = { total_input_tokens: 50 };
+      const result = accumulateTokenUsage(logContext, undefined);
+      expect(result).toEqual({ total_input_tokens: 50 });
+    });
+
+    it("should handle missing cached tokens", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      accumulateTokenUsage(logContext, {
+        input_tokens: 100,
+        output_tokens: 50,
+        // No cached_prompt_tokens
+      });
+
+      expect(logContext.cached_prompt_tokens).toBe(0);
+      expect(logContext.non_cached_prompt_tokens).toBe(100); // All tokens are non-cached
+    });
+
+    it("should handle zero token values", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      accumulateTokenUsage(logContext, {
+        input_tokens: 0,
+        output_tokens: 0,
+        cached_prompt_tokens: 0,
+      });
+
+      expect(logContext.total_input_tokens).toBe(0);
+      expect(logContext.total_output_tokens).toBe(0);
+      expect(logContext.cached_prompt_tokens).toBe(0);
+      expect(logContext.non_cached_prompt_tokens).toBe(0);
+    });
+
+    it("should handle empty usage object", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      accumulateTokenUsage(logContext, {});
+
+      expect(logContext.total_input_tokens).toBe(0);
+      expect(logContext.total_output_tokens).toBe(0);
+      expect(logContext.cached_prompt_tokens).toBe(0);
+      expect(logContext.non_cached_prompt_tokens).toBe(0);
+    });
+
+    it("should prefer input_tokens over prompt_tokens when both exist", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      accumulateTokenUsage(logContext, {
+        input_tokens: 100,
+        prompt_tokens: 200, // Should be ignored
+        output_tokens: 50,
+      });
+
+      expect(logContext.total_input_tokens).toBe(100);
+    });
+  });
+
+  describe("Return value", () => {
+    it("should return the updated logContext", () => {
+      const logContext = {
+        total_input_tokens: null,
+        total_output_tokens: null,
+        cached_prompt_tokens: null,
+        non_cached_prompt_tokens: null,
+      };
+
+      const result = accumulateTokenUsage(logContext, {
+        input_tokens: 100,
+        output_tokens: 50,
+      });
+
+      expect(result).toBe(logContext); // Same object reference
+      expect(result.total_input_tokens).toBe(100);
     });
   });
 });

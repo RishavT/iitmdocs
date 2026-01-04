@@ -534,8 +534,42 @@ Examples:
   }
 }
 
+/**
+ * Accumulates token usage from an LLM API response into the logContext object.
+ * Handles both OpenAI-style (prompt_tokens, completion_tokens) and
+ * simplified formats (input_tokens, output_tokens).
+ *
+ * @param {Object} logContext - The logging context to accumulate tokens into
+ * @param {Object} usage - Token usage object from LLM response
+ * @param {number} [usage.input_tokens] - Input tokens (simplified format)
+ * @param {number} [usage.output_tokens] - Output tokens (simplified format)
+ * @param {number} [usage.prompt_tokens] - Prompt tokens (OpenAI format)
+ * @param {number} [usage.completion_tokens] - Completion tokens (OpenAI format)
+ * @param {number} [usage.cached_prompt_tokens] - Cached tokens (simplified format)
+ * @param {Object} [usage.prompt_tokens_details] - Token details (OpenAI format)
+ * @param {number} [usage.prompt_tokens_details.cached_tokens] - Cached tokens (OpenAI format)
+ * @returns {Object} The updated logContext (also mutates in place)
+ */
+function accumulateTokenUsage(logContext, usage) {
+  if (!logContext || !usage) {
+    return logContext;
+  }
+
+  // Handle both formats: OpenAI (prompt_tokens) and simplified (input_tokens)
+  const inputTokens = usage.input_tokens ?? usage.prompt_tokens ?? 0;
+  const outputTokens = usage.output_tokens ?? usage.completion_tokens ?? 0;
+  const cachedTokens = usage.cached_prompt_tokens ?? usage.prompt_tokens_details?.cached_tokens ?? 0;
+
+  logContext.total_input_tokens = (logContext.total_input_tokens ?? 0) + inputTokens;
+  logContext.total_output_tokens = (logContext.total_output_tokens ?? 0) + outputTokens;
+  logContext.cached_prompt_tokens = (logContext.cached_prompt_tokens ?? 0) + cachedTokens;
+  logContext.non_cached_prompt_tokens = (logContext.non_cached_prompt_tokens ?? 0) + (inputTokens - cachedTokens);
+
+  return logContext;
+}
+
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions, accumulateTokenUsage };
 
 export default {
   async fetch(request, env) {
