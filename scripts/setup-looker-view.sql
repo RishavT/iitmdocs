@@ -31,6 +31,11 @@ SELECT
   JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.contains_raahat') AS contains_raahat,
   CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.history_length') AS INT64) AS history_length,
   JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.documents') AS documents,
+  -- Token usage fields (for cost analysis)
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_input_tokens') AS INT64) AS total_input_tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_output_tokens') AS INT64) AS total_output_tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.cached_prompt_tokens') AS INT64) AS cached_prompt_tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.non_cached_prompt_tokens') AS INT64) AS non_cached_prompt_tokens,
   -- Derived fields for analytics
   DATE(timestamp) AS date,
   EXTRACT(HOUR FROM timestamp) AS hour,
@@ -113,6 +118,10 @@ SELECT
   c.contains_raahat,
   c.history_length,
   c.documents,
+  c.total_input_tokens,
+  c.total_output_tokens,
+  c.cached_prompt_tokens,
+  c.non_cached_prompt_tokens,
   c.latency_category,
   f.timestamp AS feedback_timestamp,
   f.feedback_type,
@@ -125,3 +134,31 @@ FROM `YOUR_PROJECT_ID.chatbot_logs.conversations` c
 LEFT JOIN `YOUR_PROJECT_ID.chatbot_logs.user_feedback` f
   ON c.message_id = f.message_id
 WHERE c.message_id IS NOT NULL;
+
+-- ============================================================================
+-- View 5: Token Usage Summary (aggregate statistics for cost analysis)
+-- ============================================================================
+CREATE OR REPLACE VIEW `YOUR_PROJECT_ID.chatbot_logs.token_usage_summary` AS
+SELECT
+  DATE(timestamp) AS date,
+  COUNT(*) AS total_conversations,
+  -- Token totals
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_input_tokens') AS INT64)) AS total_input_tokens,
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_output_tokens') AS INT64)) AS total_output_tokens,
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.cached_prompt_tokens') AS INT64)) AS total_cached_tokens,
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.non_cached_prompt_tokens') AS INT64)) AS total_non_cached_tokens,
+  -- Averages per conversation
+  AVG(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_input_tokens') AS INT64)) AS avg_input_tokens,
+  AVG(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_output_tokens') AS INT64)) AS avg_output_tokens,
+  -- Cache hit rate (cached / total input)
+  SAFE_DIVIDE(
+    SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.cached_prompt_tokens') AS INT64)),
+    SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_input_tokens') AS INT64))
+  ) AS cache_hit_rate,
+  -- Total tokens (input + output)
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_input_tokens') AS INT64)) +
+  SUM(CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.total_output_tokens') AS INT64)) AS total_tokens
+FROM `YOUR_PROJECT_ID.chatbot_logs.run_googleapis_com_stdout_*`
+WHERE jsonPayload.message = "conversation_turn"
+GROUP BY date
+ORDER BY date DESC;
