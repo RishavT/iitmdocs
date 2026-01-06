@@ -1,4 +1,12 @@
 // ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+// Set to true to enable conversation history (multi-turn conversations)
+// Set to false to treat each message as a new conversation
+const ENABLE_HISTORY = false;
+
+// ============================================================================
 // LOGGING INFRASTRUCTURE
 // Structured logging for Cloud Run / Google Cloud Logging
 // Logs are in JSON format with severity levels for easy BigQuery export
@@ -756,7 +764,8 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const { q: question, ndocs = 5, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
