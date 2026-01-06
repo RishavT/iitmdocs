@@ -6,7 +6,7 @@ Answer: Reattempt fees (within same term):
 General/OBC: Rs 2000
 SC/ST/PwD (40%+ disability): Rs 1000
 SC/ST who is also PwD: Rs 500
-Note: For subsequent term attempts, full application fee applies (Rs 3000/1500/750).
+Note: For subsequent term attempts, full application fee applies (Rs 4000/2000/1000).
 
 Q127: I missed one graded assignment. Am I still eligible for the qualifier exam?
 Answer: Missing an assignment gives you 0 marks for that assignment. You are still eligible if your average score across all assignments meets the minimum cutoff for your category: 40% for General, 35% for OBC-NCL/EWS, 30% for SC/ST/PwD.
