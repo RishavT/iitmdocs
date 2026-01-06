@@ -170,14 +170,17 @@ def main():
     """Main function to run the embedding process"""
     load_dotenv()
 
-    # Check if we should clear the database first (used when files are deleted)
-    clear_db = os.getenv("CLEAR_DB", "false").lower() == "true"
+    # Clear existing embeddings before re-embedding (default: true)
+    # Set CLEAR_DB=false to keep existing embeddings and only update changed files
+    clear_db = os.getenv("CLEAR_DB", "true").lower() == "true"
 
     # Determine embedding mode: 'local', 'gce', or 'cloud'
     embedding_mode = os.getenv("EMBEDDING_MODE", "cloud").lower()
     logger.info(f"Embedding mode: {embedding_mode}")
     if clear_db:
-        logger.info("CLEAR_DB=true: Will clear existing embeddings before re-embedding")
+        logger.info("Will clear existing embeddings before re-embedding (set CLEAR_DB=false to disable)")
+    else:
+        logger.info("CLEAR_DB=false: Keeping existing embeddings, only updating changed files")
 
     if embedding_mode == "local":
         # Local mode: connect to local Weaviate (no auth needed)
