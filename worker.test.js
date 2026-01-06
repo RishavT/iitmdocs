@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -690,6 +690,373 @@ describe("sanitizeQuery()", () => {
 
     it("should preserve Tamil queries", () => {
       expect(sanitizeQuery("கட்டணம் என்ன")).toBe("கட்டணம் என்ன");
+    });
+  });
+});
+
+// ============================================================================
+// Task 3: FAQ Suggestions ("Did you mean?") Tests
+// ============================================================================
+
+describe("extractFirstQuestion()", () => {
+  describe("Basic extraction", () => {
+    it("should extract question from standard FAQ format", () => {
+      const content = "Q1: What is the admission fee?\nAnswer: The fee is 10000.";
+      expect(extractFirstQuestion(content)).toBe("What is the admission fee?");
+    });
+
+    it("should extract question with double-digit Q number", () => {
+      const content = "Q12: How do I register?\nAnswer: Visit the portal.";
+      expect(extractFirstQuestion(content)).toBe("How do I register?");
+    });
+
+    it("should extract question with triple-digit Q number", () => {
+      const content = "Q123: Is there a deadline?\nAnswer: Yes, check the portal.";
+      expect(extractFirstQuestion(content)).toBe("Is there a deadline?");
+    });
+  });
+
+  describe("Preferring actual questions over headers", () => {
+    it("should prefer question ending with ? over section header", () => {
+      const content = `Q81: 🔹 Post-Qualifier Process
+Answer: Check your dashboard.
+
+Q82: What should I do after clearing the qualifier?
+Answer: Complete course registration.`;
+      expect(extractFirstQuestion(content)).toBe("What should I do after clearing the qualifier?");
+    });
+
+    it("should fall back to first Q# line if no question mark found", () => {
+      const content = `Q1: Section Header
+Answer: Some info.
+
+Q2: Another Header
+Answer: More info.`;
+      expect(extractFirstQuestion(content)).toBe("Section Header");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should return null for null content", () => {
+      expect(extractFirstQuestion(null)).toBe(null);
+    });
+
+    it("should return null for undefined content", () => {
+      expect(extractFirstQuestion(undefined)).toBe(null);
+    });
+
+    it("should return null for empty string", () => {
+      expect(extractFirstQuestion("")).toBe(null);
+    });
+
+    it("should return null for content without Q# pattern", () => {
+      const content = "This is just some text without FAQ format.";
+      expect(extractFirstQuestion(content)).toBe(null);
+    });
+
+    it("should handle question at end of line without newline", () => {
+      const content = "Q1: What is IITM?";
+      expect(extractFirstQuestion(content)).toBe("What is IITM?");
+    });
+
+    it("should trim whitespace from extracted question", () => {
+      const content = "Q1:   What is the fee?   \nAnswer: 10000";
+      expect(extractFirstQuestion(content)).toBe("What is the fee?");
+    });
+  });
+
+  describe("Multiple questions in content", () => {
+    it("should find first question with ? from multiple entries", () => {
+      const content = `Q1: Overview Section
+Answer: General info.
+
+Q2: What are the eligibility criteria?
+Answer: You need 12th pass.
+
+Q3: What is the fee structure?
+Answer: Check the portal.`;
+      expect(extractFirstQuestion(content)).toBe("What are the eligibility criteria?");
+    });
+
+    it("should handle mixed format with emojis", () => {
+      const content = `Q1: 📚 About IITM BS
+Answer: Description.
+
+Q2: 🎓 How to apply?
+Answer: Apply online.`;
+      // The emoji is part of the question text, and it ends with ? so it's selected
+      expect(extractFirstQuestion(content)).toBe("🎓 How to apply?");
+    });
+  });
+});
+
+describe("getFAQSuggestions()", () => {
+  // Mock global fetch for Weaviate API calls
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+    mockLogs.length = 0;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  describe("Formatting suggestions", () => {
+    it("should format English suggestions correctly", async () => {
+      // Mock successful Weaviate response with FAQ documents
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the admission fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                },
+                {
+                  filename: "faq_2.md",
+                  content: "Q2: How do I register?\nAnswer: Online",
+                  _additional: { score: "0.8" }
+                },
+                {
+                  filename: "faq_3.md",
+                  content: "Q3: When is the deadline?\nAnswer: Check portal",
+                  _additional: { score: "0.7" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("fee query", env, "english");
+
+      expect(result).toContain("**Did you mean:**");
+      expect(result).toContain("1. What is the admission fee?");
+      expect(result).toContain("2. How do I register?");
+      expect(result).toContain("3. When is the deadline?");
+    });
+
+    it("should format Hindi suggestions correctly", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("fee", env, "hindi");
+
+      expect(result).toContain("**क्या आपका मतलब था:**");
+    });
+
+    it("should format Tamil suggestions correctly", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("fee", env, "tamil");
+
+      expect(result).toContain("**நீங்கள் கருதுவது:**");
+    });
+
+    it("should format Hinglish suggestions correctly", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("fee", env, "hinglish");
+
+      expect(result).toContain("**Kya aap ye poochna chahte the:**");
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should return empty string when no FAQs found", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: []
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("random query", env, "english");
+
+      expect(result).toBe("");
+    });
+
+    it("should return empty string on fetch error", async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("query", env, "english");
+
+      expect(result).toBe("");
+    });
+
+    it("should default to English for unknown language", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("query", env, "spanish");
+
+      expect(result).toContain("**Did you mean:**");
+    });
+
+    it("should default to English when language is undefined", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_1.md",
+                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("query", env);
+
+      expect(result).toContain("**Did you mean:**");
+    });
+  });
+
+  describe("Question extraction in suggestions", () => {
+    it("should extract actual questions from FAQ content", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: async () => JSON.stringify({
+          data: {
+            Get: {
+              Document: [
+                {
+                  filename: "faq_18.md",
+                  content: `Q81: 🔹 Post-Qualifier Process
+Answer: Check your dashboard.
+
+Q82: What should I do after clearing the qualifier?
+Answer: Complete registration.`,
+                  _additional: { score: "0.9" }
+                }
+              ]
+            }
+          }
+        })
+      });
+
+      const env = {
+        EMBEDDING_MODE: "local",
+        LOCAL_WEAVIATE_URL: "http://weaviate:8080"
+      };
+
+      const result = await getFAQSuggestions("qualifier", env, "english");
+
+      // Should prefer the actual question over the section header
+      expect(result).toContain("What should I do after clearing the qualifier?");
+      expect(result).not.toContain("Post-Qualifier Process");
     });
   });
 });
