@@ -64,3 +64,5 @@ temp/
 
 # Any source pdf folders
 src_pdf/
+failed_queries.csv
+failed_queries.json
