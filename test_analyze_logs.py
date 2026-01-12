@@ -2,7 +2,22 @@
 """
 Tests for analyze-logs-headless.py
 
-Run with: pytest test_analyze_logs.py -v
+Run with:
+    pytest test_analyze_logs.py -v
+
+Run specific test class:
+    pytest test_analyze_logs.py::TestAutoClassifyQuery -v
+
+Run with coverage:
+    pytest test_analyze_logs.py --cov=analyze-logs-headless -v
+
+Test Categories:
+    - TestParseDate: Date parsing in various formats (MM/DD/YYYY, YYYY-MM-DD, etc.)
+    - TestParseCLIDate: CLI date argument parsing and error handling
+    - TestAutoClassifyQuery: Query classification (valid/invalid, reasons)
+    - TestIsCannotAnswer: Detection of "cannot answer" responses
+    - TestAnalyzeFile: Full file analysis with date filtering
+    - TestDateFilterEdgeCases: Boundary conditions for date filters
 """
 
 import csv

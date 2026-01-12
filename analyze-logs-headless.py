@@ -9,9 +9,32 @@ This script analyzes chatbot logs using:
 Usage:
     python3 analyze-logs-headless.py [--staging-file FILE] [--production-file FILE] [--output FILE]
 
+Examples:
+    # Basic analysis
+    python3 analyze-logs-headless.py
+
+    # Filter by date range (inclusive)
+    python3 analyze-logs-headless.py --on-or-after 2025-12-01 --on-or-before 2026-01-01
+
+    # With LLM classification for ambiguous queries
+    python3 analyze-logs-headless.py --use-llm
+
+    # With fact-checking (5 samples per file)
+    python3 analyze-logs-headless.py --fact-check 5
+
 Requirements:
-    - Claude Code CLI installed and authenticated
-    - CSV log files in the current directory
+    - Python 3.10+
+    - Claude Code CLI installed and authenticated (for --use-llm and --fact-check)
+    - CSV log files with columns: timestamp, question, response
+
+Testing:
+    pytest test_analyze_logs.py -v
+
+    Tests cover:
+    - Date parsing (various formats)
+    - Query classification (valid/invalid patterns)
+    - Cannot-answer detection
+    - File analysis with date filtering
 """
 
 import argparse
