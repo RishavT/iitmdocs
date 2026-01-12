@@ -15,7 +15,13 @@ A single-file Flask app for analyzing chatbot logs with:
 Usage:
     uv run log-analyzer-app.py
 
-    Then open http://localhost:5000 in your browser.
+    Then open http://localhost:5123 in your browser.
+
+    With custom port:
+        uv run log-analyzer-app.py --port 8080
+
+    With debug mode:
+        uv run log-analyzer-app.py --debug
 
 Alternative (with virtualenv):
     pip install flask
@@ -955,9 +961,15 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 # ============================================================================
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser(description='Chatbot Log Analyzer Web App')
+    parser.add_argument('--port', type=int, default=5123, help='Port to run on (default: 5123)')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    args = parser.parse_args()
+
     print("=" * 50)
     print("Chatbot Log Analyzer")
     print("=" * 50)
-    print("\nStarting server at http://localhost:5000")
+    print(f"\nStarting server at http://localhost:{args.port}")
     print("Press Ctrl+C to stop\n")
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+    app.run(debug=args.debug, host='0.0.0.0', port=args.port, threaded=True)
