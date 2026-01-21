@@ -502,6 +502,114 @@ Examples:
   }
 }
 
+/**
+ * Resolves the actual intent of the current question using a history of
+ * {original_question, actual_intent} pairs stored server-side.
+ * @param {Array<{original_question: string, actual_intent: string}>} original_question_and_actual_intent_history
+ * @param {string} current_question
+ * @param {Object} env
+ * @returns {Promise<{ resolvedQuestion: string, wasResolved: boolean }>}
+ */
+async function resolveActualIntent(original_question_and_actual_intent_history, current_question, env) {
+  // Basic guards
+  if (!current_question || typeof current_question !== "string") {
+    console.log("[DEBUG] resolveActualIntent: invalid current_question");
+    return { resolvedQuestion: current_question, wasResolved: false };
+  }
+
+  // Validate and limit history to last 5 items
+  const MAX_HISTORY_ITEMS = 5;
+  const validHistory = Array.isArray(original_question_and_actual_intent_history)
+    ? original_question_and_actual_intent_history
+        .slice(-MAX_HISTORY_ITEMS)
+        .filter(
+          (item) =>
+            item &&
+            typeof item.original_question === "string" &&
+            typeof item.actual_intent === "string",
+        )
+    : [];
+
+  if (validHistory.length === 0) {
+    // Treat as first question; nothing to resolve
+    console.log("[DEBUG] resolveActualIntent: no valid history, skipping resolution");
+    return { resolvedQuestion: current_question, wasResolved: false };
+  }
+
+  // Build history text for the LLM prompt
+  const historyText = validHistory
+    .map(
+      (item, idx) =>
+        `Q${idx + 1}: ${item.original_question}\nResolved Intent: ${
+          item.actual_intent || "NA"
+        }`,
+    )
+    .join("\n\n");
+
+  // System prompt with few-shot style instructions
+  const systemPrompt = `You are an intent resolver for a chatbot.
+
+Given a history of previous questions and their resolved intents, resolve the CURRENT QUESTION into an explicit, unambiguous question.
+
+Rules:
+- If the current question depends on previous context, make that context explicit.
+- If the current question is unrelated to prior context or already explicit, return it unchanged.
+- Output ONLY the resolved question. No explanations. No quotes. No "NA".
+- Be concise and clear. Temperature=0 behavior.`;
+
+  // User prompt with history and current question
+  const userPrompt = `HISTORY:
+${historyText}
+
+CURRENT QUESTION: ${current_question}
+
+Output the resolved intent as a single, well-formed question.`;
+
+  const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
+  const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
+  const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
+
+  try {
+    console.log("[DEBUG] resolveActualIntent: calling LLM with history length", validHistory.length);
+    const response = await fetch(chatEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
+      body: JSON.stringify({
+        model: chatModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0,
+        max_tokens: 150,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error("[DEBUG] resolveActualIntent: LLM call failed, status:", response.status);
+      return { resolvedQuestion: current_question, wasResolved: false };
+    }
+
+    const result = await response.json();
+    const resolved = result.choices?.[0]?.message?.content?.trim();
+    if (!resolved) {
+      console.log("[DEBUG] resolveActualIntent: empty resolution, using current question");
+      return { resolvedQuestion: current_question, wasResolved: false };
+    }
+
+    const wasResolved = resolved !== current_question;
+    console.log("[DEBUG] resolveActualIntent: resolved intent:", resolved, "wasResolved:", wasResolved);
+    return { resolvedQuestion: resolved, wasResolved };
+  } catch (error) {
+    logError("resolve_actual_intent_error", error, { current_question });
+    return { resolvedQuestion: current_question, wasResolved: false };
+  }
+}
+
+// In-memory storage for resolved intent history per session
+// Key: session_id, Value: Array<{original_question: string, actual_intent: string}>
+const resolvedIntentHistoryMap = new Map();
+
 // Export functions for testing
 export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery };
 
@@ -544,7 +652,7 @@ async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
-  console.log('[DEBUG] answer() called');
+  console.log('\n++++++++++++++ [DEBUG] answer() called ++++++++++++++\n');
   const { q: question, ndocs = 5, history = [], session_id: sessionId, username, message_id: messageId } = await request.json();
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
@@ -588,6 +696,10 @@ async function answer(request, env) {
     message_id: messageId || null,
     username: username || null,
     question: question,
+    original_question: null,
+    resolved_question: null,
+    intent_resolved: false,
+    resolved_intent_history_length: 0,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", "original", or "rejected"
     rejection_reason: null, // "prompt_injection", "fact_check_failed", or null
@@ -604,8 +716,46 @@ async function answer(request, env) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        // Resolve actual intent using resolved intent history (server-side storage)
+        // Retrieve resolved intent history from Map
+        const resolved_intent_history = sessionId ? (resolvedIntentHistoryMap.get(sessionId) || []) : [];
+        let resolvedQuestion = question;
+        let wasResolved = false;
+
+        if (resolved_intent_history.length > 0) {
+          // Not the first question - resolve intent
+          console.log("[DEBUG] Resolving intent with history length:", resolved_intent_history.length);
+          console.log("[DEBUG] resolved_intent_history content:\n=======================\n", JSON.stringify(resolved_intent_history, null, 2), "\n=======================\n");
+          const intentResult = await resolveActualIntent(resolved_intent_history, question, env);
+          resolvedQuestion = intentResult.resolvedQuestion || question;
+          wasResolved = intentResult.wasResolved;
+        } else {
+          // First question - no resolution needed
+          console.log("\n[DEBUG] First question in session - skipping intent resolution\n");
+          console.log("\n[DEBUG] Session ID:", sessionId || 'not provided',"\n=======================\n");
+          resolvedQuestion = "NA"; // For logging purposes
+        }
+
+        // Store resolved intent for next request (if we have a session_id)
+        if (sessionId) {
+          const newHistory = [...resolved_intent_history, {
+            original_question: question,
+            actual_intent: resolvedQuestion === question || resolvedQuestion === "NA" ? "NA" : resolvedQuestion
+          }].slice(-5); // Keep only last 5 items
+          resolvedIntentHistoryMap.set(sessionId, newHistory);
+          console.log("[DEBUG] Stored resolved intent history for session, length:", newHistory.length);
+        }
+
+        logContext.original_question = question;
+        logContext.resolved_question = resolvedQuestion;
+        logContext.intent_resolved = wasResolved;
+        logContext.resolved_intent_history_length = resolved_intent_history.length;
+
+        // Use resolved question for rewriting (or original if first question):
+        const questionForRetrieval = (resolvedQuestion === "NA") ? question : resolvedQuestion;
+
         // Rewrite query for better search relevance
-        const { query: searchQuery, source: querySource } = await rewriteQueryWithSource(question, env);
+        const { query: searchQuery, source: querySource } = await rewriteQueryWithSource(questionForRetrieval, env);
         logContext.rewritten_query = searchQuery;
         logContext.query_source = querySource;
 
@@ -954,6 +1104,10 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
           return true;
         })
     : [];
+
+  console.log('[DEBUG] Original history length:', history?.length || 0);
+  console.log('[DEBUG] Validated history length:', validatedHistory.length);
+  console.log('[DEBUG] Validated history:\n=======================\n', JSON.stringify(validatedHistory, null, 2), '\n=======================\n');
 
   // Build messages array with conversation history
   const messages = [
