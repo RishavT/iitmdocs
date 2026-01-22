@@ -11,6 +11,7 @@ English 1
 Maths-1
 Statistics-1
 Computational Thinking
+
 BS in Electronic Systems (ES) includes:
 
  English I, Math for Electronics I, Electronic Systems Thinking and Circuits, and Introduction to C Programming
@@ -22,6 +23,7 @@ English 1
 Maths-1
 Statistics-1
 Computational Thinking
+
 BS in Electronic Systems (ES) includes:
 
  English I, Math for Electronics I, Electronic Systems Thinking and Circuits, and Introduction to C Programming

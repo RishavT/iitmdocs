@@ -1,11 +1,15 @@
-Q133: I registered via JEE Mains but my portal shows "Qualifier" level. Why?
-Answer: JEE scores are valid for only 3 terms from qualification date. If you qualified JEE in 2023 and applying in 2025/2026, your scores are no longer valid. You will be enrolled from Qualifier level. For JEE-based direct entry, scores must be from within the valid window (e.g., 2024 scores valid till Sep 2026).
+Q132: are the classes conducted daily , is it offline or online
+Answer: The classess are recoded session and every week the recordings are released on the student portal.
 
-Q134: Can I get a refund if I don't want the course anymore or can't write the exam?
-Answer: No. The application fee for the Qualifier exam is non-refundable under any circumstances, including inability to write the exam, absence, or failure. The reattempt fee is also non-refundable. Please consider this before registering.
+Q133: what JEe based entry fees
+Answer: The application fee for the JEE-based entry into the IIT Madras BS program is four thousand rupees (₹4000). This fee is applicable to all candidates applying through the JEE Advanced eligibility route.
 
-Q135: I uploaded my JEE scorecard but can't see it after submitting my application. Why?
-Answer: After application submission, uploaded documents may not be visible in the preview. If your JEE proof is invalid or outside the valid eligibility window, you may be moved to non-JEE category and must complete the qualifier process. Contact support@study.iitm.ac.in if you believe there is an error.
+For more details please refer to the website link : https://study.iitm.ac.in/ds/admissions.html#AD8
 
-Q136: I made a payment but cannot access the rest of the registration form. What should I do?
-Answer: If payment is successful but you cannot complete registration, please contact support@study.iitm.ac.in with your payment receipt/transaction ID and registered email. Keep screenshots of payment confirmation for reference.
+Q134: I m 2024 JEE mains cleared student can apply on May 2026 batch for BS degree
+Answer: A student can apply as  a JEE based applicant (Eligible Admission Cycles (JEE Main qualified & eligible for JEE Advanced, or JEE Advanced qualified)) till Sep 2026 if he/she has qualfied JEE mains in the year 2024
+
+
+Example – Jan 2026 term considers 2024 and 2025 JEE qualification years.
+Example – May 2026 term considers 2024, 2025, and 2026 JEE qualification years.
+Example – Sep 2026 term considers 2025 and 2026 JEE qualification years.

@@ -1,18 +1,19 @@
-Q76: What proof is required for qualifier exemption?
-Answer: For students seeking exemption from the qualifier exam through the JEE-Based Entry pathway, the following documents are required:
+Q74: Do exempted students need to do qualifier assignments?
+Answer: All the regular based applicants must mandatorily submit the assignments as the qulaifier eligibility depends on the assignment scores
 
-Valid proof of eligibility for JEE Advanced - admit card or JEE Mains score card. This proof is necessary to ensure that the candidate qualifies for direct admission to the Foundation Level without needing to complete the qualifier process. If the proof is valid, the candidate will be declared eligible to join the program directly.
+Eligibility to appear for the qualifier exam
+At the end of the 4 weeks, a qualifier exam will be conducted for eligible candidates based on
+the content covered in the 4 weeks of study.
+Each assignment will be graded out of 100
+Any assignment that is not attempted will be marked as 0.
+● If the average of the first 2 weeks’ assignment scores is >= 40/100 (or as per the cutoff
+for each category of students) in each of the 4 subjects, the students will be eligible to
+write the qualifier exam in the first attempt within the term.
+● For those who do not qualify after the week 2 assignments, the average of the best 2 out
+of the first 3 weeks’ assignment scores will be considered. If this score is >= 40/100 (or
+as per the cutoff for each category of students) in each of the 4 subjects, the students
+will become eligible to write the qualifier exam in the second attempt within the term.
+● Reattempts within the term will be given suitably.
 
-Q77: Can exemption be rejected?
-Answer: Yes, an exemption may be rejected if the required criteria is not met or the relevant documents are not submitted.
-
-Q78: Can exempted students directly register for courses?
-Answer: No, there are no "exempted students" for the qualifier or Foundation in the IITM BS online program, so no one registers directly for courses without it
-
-Q79: Is exemption available for other national exams?
-Answer: The students who are JEE advance eligible can apply as a JEE based entrant and join the BS in Data science program.
-Students who are eligible for JEE advance from JAN 2024 can apply for the program till Sep 2026.
-
-Q80: Can international exams be used for exemption?
-Answer: No, international exams like AP, SAT, A-Levels, or IB cannot be used for exemptions or credit transfers in the IITM BS program.
-​Only NPTEL/SWAYAM courses (approved ones) qualify for credit transfer at later levels (e.g., BSc/BS), but the qualifier and Foundation require completing IITM's coursework without such exemptions.
+Q75: Can exemption be claimed after applying normally?
+Answer: No. It is not possible for changing this option. Once the application has been submitted for regular entry, it cannot be changed for that particular term.

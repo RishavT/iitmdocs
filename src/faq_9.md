@@ -2,7 +2,7 @@ Q32: Is the qualifier exam online or offline?
 Answer: Qualifier is conducted offline for students within India and for students outside India will have remote proctored exam
 
 Q33: Where is the qualifier exam conducted?
-Answer: Qualifier is conducted offline for stduents within India and for students outside India will have remote proctored exam
+Answer: Qualifier is conducted offline for stduents within India and for students outside India will have remote proctored exam based on the city you're its decided. If we have center in the city you're applying from then it will be center based test.
 
 Q34: How long is the qualifier exam duration?
 Answer: The qualifier exam is 4 hours (240 minutes).

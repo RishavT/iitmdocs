@@ -1,4 +1,19 @@
-Q81: 🔹 Post-Qualifier Process
+Q76: What proof is required for qualifier exemption?
+Answer: For students seeking exemption from the qualifier exam through the JEE-Based Entry pathway, the following documents are required:
+
+Valid proof of eligibility for JEE Advanced - admit card or JEE Mains score card. This proof is necessary to ensure that the candidate qualifies for direct admission to the Foundation Level without needing to complete the qualifier process. If the proof is valid, the candidate will be declared eligible to join the program directly.
+
+Q77: Can exemption be rejected?
+Answer: Yes, an exemption may be rejected if the required criteria is not met or the relevant documents are not submitted.
+
+Q78: Can exempted students directly register for courses?
+Answer: No, there are no "exempted students" for the qualifier or Foundation in the IITM BS online program, so no one registers directly for courses without it
+
+Q79: Can international exams be used for exemption?
+Answer: No, international exams like AP, SAT, A-Levels, or IB cannot be used for exemptions or credit transfers in the IITM BS program.
+​Only NPTEL/SWAYAM courses (approved ones) qualify for credit transfer at later levels (e.g., BSc/BS), but the qualifier and Foundation require completing IITM's coursework without such exemptions.
+
+Q80: 🔹 Post-Qualifier Process
 Answer: Check your dashboard/email for results within 1-2 weeks of the exam.
 ​
 
@@ -7,14 +22,3 @@ Access the Course Registration Form (opens immediately post-results), select 1-4
 ​
 
 Attend orientation, complete Week 5-6 assignments, and start the term (or defer up to 3 terms validity
-
-Q82: What should I do after clearing the qualifier?
-Answer: After clearing the qualifier, check your dashboard for results (usually within 1-2 weeks), then complete course registration (select up to 4 Foundation courses based on your score, upload Class 12 docs if needed, choose exam cities, pay fees ~₹6,000/course)
-
-Q83: How soon can I register for Foundation courses?
-Answer: You can register for Foundation courses as soon as you receive your admission letter after successfully completing the qualifier exam. If you are a JEE-based entry candidate and your proof of eligibility is valid, you can register for the Foundation courses immediately after verification.
-
-For regular entry candidates, registration for Foundation courses will be available after passing the qualifier exam.
-
-Q84: Is course registration automatic after qualifier?
-Answer: No, course registration is not automatic after clearing the qualifier—you must log in to the portal, access the registration form, select courses (up to 4 based on your score), upload proof of Class 12 completion, and pay the course fees.

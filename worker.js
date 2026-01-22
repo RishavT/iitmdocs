@@ -382,19 +382,99 @@ const QUERY_SYNONYMS = [
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. ABOUT PROGRAM: IIT Madras, BS programme, Data Science, Electronic Systems, online learning, in-person exams, levels, exit points, Foundation, Diploma, BSc, BS, PGD, MTech
-2. ADMISSION PATHWAYS: regular entry, JEE-based entry, qualifier process, direct admission, foundation level
-3. QUALIFIER ELIGIBILITY: Class 10, Class 12, Mathematics, English, Physics, age, academic background, Class 11 students
-4. QUALIFIER FEES: application fee, four thousand rupees, two thousand rupees, one thousand rupees, SC, ST, OBC, PwD, disability, non-refundable
-5. QUALIFIER PREPARATION: 4-week process, week-wise content, videos, tutorials, assignments, English 1, Maths-1, Statistics-1, Computational Thinking, Physics-1, Basic Electronics
-6. ASSIGNMENT REQUIREMENTS: graded assignments, eligibility criteria, minimum score, 40%, 35%, 30%, cutoff, hall ticket
-7. QUALIFIER PASSING CRITERIA: exam cutoff, subject cutoff, average score, 50%, 45%, 40%, category-wise criteria
-8. SCORE VALIDITY: 3 terms validity, re-registration, Class XII students, expiry
-9. RESULTS COMMUNICATION: email, WhatsApp, portal, announcements, admission letter
-10. REATTEMPT: second attempt, re-attempt fee, absent, failed, two attempts per term
-11. JEE ENTRY: JEE Advanced, direct entry, proof validation, CCC, 3 terms validity
-12. COURSE REGISTRATION: registration steps, exam cities, prerequisites, level restrictions, credits, payment, BSc eligibility, 114 credits
-13. CONTACT: support@study.iitm.ac.in, IITM BS Degree Office, ICSR Building, Chennai`;
+1. Program Overview & About: about program, IIT Madras BS, BS Data Science, BS in Data Science and Applications, IITM online degree, online degree IIT Madras, program overview, program details, degree overview, what is IIT Madras BS, data science degree IITM
+
+2. Admission & Application Process: admission, apply, application process, how to apply, admissions IITM BS, application steps, admission timeline, application portal
+
+3. Admission Pathways & Entry Modes: entry modes, admission pathways, direct admission, qualifier route, JEE entry, JEE based entry, alternate entry, multiple entry options
+
+4. Class 12 Eligibility: class 12 eligibility, 12th pass, higher secondary eligibility, minimum qualification, maths requirement, board eligibility, class XII criteria
+
+5. JEE-Based Admission: JEE entry, JEE Advanced validity, JEE Main acceptance, JEE cutoff, JEE eligibility, direct entry via JEE, JEE score validity
+
+6. Qualifier Exam – Overview: qualifier exam, IITM qualifier, entrance test, foundation qualifier, qualifier structure, qualifier details
+
+7. Qualifier Exam – Eligibility & Attempts: qualifier eligibility, who can write qualifier, number of attempts, attempt limit, reattempt eligibility, age limit qualifier
+
+8. Qualifier Exam – Fees & Payments: qualifier fee, exam fees, qualifier payment, reattempt fee, retry charges, qualifier cost
+
+9. Qualifier Exam – Cutoffs & Passing Criteria: qualifier cutoff, passing marks, minimum score, category cutoff, SC ST cutoff, OBC cutoff, EWS cutoff, cutoff relaxation
+
+10. Qualifier Exam – Assignments & Grading: qualifier assignments, assignment weightage, internal marks, grading scheme, assignment evaluation, category cutoffs
+
+11. Qualifier Exam – Results & Validity: qualifier result, result date, score validity, validity period, score expiration, result announcement
+
+12. Qualifier Exam – Preparation & Syllabus: qualifier preparation, how to prepare, syllabus, mock tests, sample questions, study material
+
+13. Exams – Format, Mode & Proctoring: exam format, online exam, proctored exam, remote proctoring, camera required, exam rules, exam guidelines
+
+14. Exam Cities & Centers: exam cities, test centers, exam location, offline exam city, nearest exam center
+
+15. Program Structure & Levels: program structure, foundation level, diploma level, degree level, stages of program, level progression
+
+16. Courses & Curriculum: courses, subjects, curriculum, syllabus, course list, core courses, electives, foundation courses, diploma courses, degree courses
+
+17. Course Registration: course registration, how to register courses, add drop courses, semester registration, registration steps
+
+18. Course Load & Credit Limits: maximum courses per term, minimum courses, credit limit, max credits, min credits, overload courses, underload term
+
+19. Academic Calendar & Duration: academic calendar, term schedule, semesters, program duration, how long is the program, term duration
+
+20. Fees – Program & Course Fees: program fees, course fees, total cost, fee structure, tuition fees, semester fees, level-wise fees
+
+21. Payments, Refunds & Cancellations: payment process, fee payment, refund policy, cancellation refund, fee refund eligibility, payment issues
+
+22. Academic Policies & Rules: academic rules, regulations, policies, progression rules, academic guidelines
+
+23. Grading System & Assessment: grading system, grades, evaluation, assessment pattern, internal assessment, exams and assignments
+
+24. Assignments & Deadlines: assignment submission, late submission, deadline extension, missed assignment, penalty, grace period
+
+25. Course Repetition & Backlogs: repeat course, re-registration, backlog, failed course, U grade, reattempt course, improvement attempt
+
+26. Grade Improvement & Records: grade improvement, improve grade, re-evaluation, rechecking marks, transcript correction, marks correction
+
+27. Attendance & Participation Rules: attendance requirement, minimum attendance, attendance policy, live session attendance, compulsory attendance
+
+28. Exam Conduct & Violations: cheating, malpractice, exam violation, disciplinary action, unfair means, plagiarism exam, disqualification
+
+29. Exit Options & Partial Completion: exit option, early exit, exit after foundation, exit after diploma, discontinue program, withdraw from program, certificate on exit
+
+30. Program Flexibility & Breaks: pause program, break from studies, gap term, resume later, self-paced degree, flexibility
+
+31. Working Professionals & Parallel Study: working professionals, job along with degree, parallel study, part-time study, flexible learning
+
+32. International & NRI Students: international students, foreign students, NRI eligibility, overseas admission, global learners
+
+33. Credit Transfer & Multiple Programs: credit transfer, transfer credits, overlapping courses, multiple degrees, switch programs
+
+34. Higher Studies & Masters Pathways: higher studies, MS eligibility, masters admission, PhD eligibility, postgraduate options, abroad studies
+
+35. Placements & Career Outcomes: placements, job opportunities, career prospects, placement support, employment outcomes, hiring companies
+
+36. Certificates & Degree Recognition: certificate, degree certificate, IIT Madras degree, UGC approval, AICTE approval, recognition, validity abroad, WES evaluation
+
+37. Academic Documents & Transcripts: transcript, marksheet, grade card, academic records, official transcript, provisional certificate
+
+38. Technical Requirements – General: technical requirements, laptop specs, internet requirement, system requirements, software needed
+
+39. Exam Environment & Device Requirements: exam room rules, quiet room, desk rules, room scan, proctoring environment, camera microphone
+
+40. Language & Medium of Instruction: language of instruction, exam language, English medium, Hindi exam, medium of teaching
+
+41. Communication & Notifications: official email, announcements, portal notifications, email communication, missed email, updates posting
+
+42. Student Life & Support Services: student support, helpdesk, grievance, support email, academic help, mentoring
+
+43. Program Comparison & Alternatives: BS vs BSc, BS vs online degree, IIT Madras vs other IITs, program comparison, data science vs electronic systems
+
+44. Electronic Systems Program (Related): BS Electronic Systems, electronic systems program, ES vs DS, alternate BS program
+
+45. Alumni & Post-Graduation Access: alumni access, portal access after graduation, alumni benefits, lifelong email
+
+46. FAQs & General Queries: FAQ, frequently asked questions, common doubts, general questions, clarifications
+
+47. Contact Information: contact support, helpdesk contact, IITM BS contact, official email, support phone`;
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.

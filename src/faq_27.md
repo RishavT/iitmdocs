@@ -1,16 +1,27 @@
-Q121: What is the minimum score needed to pass a subject? I got 47 marks - have I passed or failed?
-Answer: Passing criteria depends on your category:
-General: 40% minimum in each subject, 50% overall average
-OBC-NCL/EWS: 35% minimum per subject, 45% overall average
-SC/ST/PwD: 30% minimum per subject, 40% overall average
-If you scored 47 out of 100, you have passed for General category (above 40% threshold).
+Q120: when is qualifier exam and how it works
+Answer: The Qualifier Exam dates are listed on the programme website under Admissions → Important Dates and are announced for each term:- https://study.iitm.ac.in/ds/admissions.html#AD0
 
-Q122: What are the passing criteria for SC/ST/PwD candidates in the qualifier exam?
-Answer: SC/ST/PwD candidates need 30% minimum in each subject and 40% overall average across all 4 subjects to pass the qualifier exam. These relaxed criteria apply only to the qualifier process.
+How it works:
 
-Q123: What does U grade mean? How do I clear a U grade subject?
-Answer: U grade means Unsatisfactory - you did not pass the subject. To clear it, you must re-register for the course in a future term and complete all requirements (assignments, quizzes, exams) again. The course fee applies for re-registration.
+You apply online during the application window
 
-Q124: What is the total score formula for calculating my final marks?
-Answer: Total Score T = 0.1*GAA + max(0.6*F + 0.2*max(Quiz1,Quiz2), 0.4*F + 0.2*Quiz1 + 0.3*Quiz2)
-Where GAA = Graded Assignment Average, F = Final Exam score. The formula picks whichever calculation gives you better marks.
+You get access to online qualifier coursework
+
+You complete the assignments
+
+You take the exam in designated exam centres in the city you added as preference. If you're applicant from overseas based on the center availability it might a center base exam or Online proctored exam
+
+If you pass, you can enroll in the Foundation level
+
+Q121: What is paradox event m
+Answer: For ore details on paradox event please refer 
+https://paradox-showcase.web.app/
+
+Q122: I am aboard student can do this degree
+Answer: This program is open to learners from all around the globe. You can study from IIT Madras and earn the BS in Data Science and Applications irrespective of the country you are from.
+
+for more details please check for International students in the link 
+https://study.iitm.ac.in/ds/admissions.html#AD9
+
+Q123: I want to know whether my exam is online or offline
+Answer: Quiz Exams are center based you have to attend the exam in desginated center in the city you have added in your preference where as the Programming Quiz is a Online proctored test. - https://study.iitm.ac.in/ds/academics.html#AC9 If you're a student outside India then based on the center availability in your city it will be decided whether its a center based or Online proctored assessment.

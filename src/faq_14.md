@@ -9,12 +9,12 @@ Q63: Is there a limit on the number of qualifier attempts?
 Answer: there is no any such limit for appearing in qualifier
 
 Q64: Is there a separate fee for qualifier reattempt?
-Answer: es, there is a separate fee for reattempting the qualifier exam within the same term. The reattempt fee varies based on the applicant's category:
+Answer: Yes, there is a separate fee for reattempting the qualifier exam within the same term. The reattempt fee varies based on the applicant's category:
 
-Category	Re-attempt Fee
-General Category / OBC Applicant	Two thousand rupees (Rs. 2000)
-SC / ST Category / PwD (40% or more disability) Applicant	One thousand rupees (Rs. 1000)
-SC / ST Category Applicant who is ALSO PwD (40% or more disability)	Five hundred rupees (Rs. 500)
+Category        Re-attempt Fee
+General Category / OBC Applicant        Two thousand rupees (Rs. 2000)
+SC / ST Category / PwD (40% or more disability) Applicant        One thousand rupees (Rs. 1000)
+SC / ST Category Applicant who is ALSO PwD (40% or more disability)        Five hundred rupees (Rs. 500)
 This fee is applicable if you were absent for the exam or if you failed the first attempt and wish to reattempt within the same term.
 
 Q65: Do I need to redo assignments for reattempt?

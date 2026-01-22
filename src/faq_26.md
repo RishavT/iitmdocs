@@ -1,13 +1,33 @@
-Q117: Can international students from countries like Bangladesh enroll in the IIT Madras BS program?
-Answer: Yes, students from other countries can enroll in the program. Exams are conducted online with live remote proctoring for international students. Check exam city availability outside India at: https://study.iitm.ac.in/ds/academics.html#AC9. For queries, contact: ge@study.iitm.ac.in
+Q116: I m in 12th know i m eligible for Qualifier application
+Answer: Yes, as a Class 12 student, you are eligible to apply for the Qualifier Exam for the IIT Madras BS Degree programme.
 
-Q118: What are the fees and exam timings for international students outside India?
-Answer: International students pay the same tuition fees as listed on the website, plus Rs 2000 per subject as facilitation fees for exams. Exam timings are 9 AM IST and 2 PM IST (synced with India). You take exams from your residence, so consider the time difference.
+Key points:
 
-Q119: What documents do international students need for residence proof outside India?
-Answer: Required documents include:
-Residence Proof (any one): Residence Card, Driving License with address, Bank Statement with address (transactions can be masked), or Utility Bill (phone/electricity)
-ID Proof: Recent visa page with date stamp or citizenship document
+You must have studied Mathematics and English in Class 10.
 
-Q120: I have a medical emergency (fracture/injury). Can my exam be conducted online at home instead of the exam center?
-Answer: No. All students residing in India or physically present in India on exam day must write the exam at an exam center in India. There are no exceptions under any circumstances for medical emergencies. Additionally, attending at least one of the two quizzes is mandatory to be eligible for the final exam.
+You can apply for the Qualifier irrespective of your stream, group, or board.
+
+If you pass the Qualifier Exam, you can join the programme after completing Class 12.
+
+The Qualifier score remains valid as per the admission rules mentioned on the website.
+
+We strongly recommend checking the official website for the latest information on:
+
+Q117: What is the fees structure of this course to complete BS degree
+Answer: Please refer to https://study.iitm.ac.in/ds/academics.html#AC10
+
+Q118: Fees Structure of this course
+Answer: Please refer to https://study.iitm.ac.in/ds/academics.html#AC10
+
+Q119: What is qualifier exam mean in website
+Answer: The Qualifier Exam is the official entry process to join the IIT Madras BS Degree programme if you are not entering through direct admission.
+
+As mentioned on the website :- https://study.iitm.ac.in/ds/academics.html#AC1
+
+It is designed to check basic readiness for the programme
+
+It is meant for students from any background
+
+You first complete qualifier coursework, and then take the Qualifier Exam
+
+Clearing the Qualifier makes you eligible to enroll in Foundation level courses

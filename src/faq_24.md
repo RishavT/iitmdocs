@@ -1,13 +1,21 @@
-Q109: I am already pursuing another degree. Can I apply?
+Q108: I am already pursuing another degree. Can I apply?
 Answer: Yes. You may pursue this program alongside another degree or job.
 
-Q110: What are the ways to enter the BS program?
+Q109: What are the ways to enter the BS program?
 Answer: There are two entry routes:
 Qualifier Exam Route
 Direct Entry via JEE Advanced (eligible years only)
+A student can apply as  a JEE based applicant (Eligible Admission Cycles (JEE Main qualified & eligible for JEE Advanced, or JEE Advanced qualified)) till Sep 2026 if he/she has qualfied JEE mains in the year 2024
+
+
+Example – Jan 2026 term considers 2024 and 2025 JEE qualification years.
+Example – May 2026 term considers 2024, 2025, and 2026 JEE qualification years.
+Example – Sep 2026 term considers 2025 and 2026 JEE qualification years.
+
+For more details please check
 https://study.iitm.ac.in/ds/admissions.html#AD8
 
-Q111: I’m unable to write the qualifier exam do i will be getting my money back
+Q110: I’m unable to write the qualifier exam do i will be getting my money back
 Answer: Ans: 
 Refund Policy for Qualifier Exam Fees
 According to the official documentation regarding the Qualifier Exam fees:
@@ -18,9 +26,3 @@ Re-attempt Fee: Similarly, if you are unable to write the exam and wish to re-at
 
 Important Notes
 Since the fees are non-refundable, it is advisable to consider this before making any decisions regarding your participation in the Qualifier Exam.
-
-Q112: I had completed my JEE Mains in 2023 and qualified for JEE Advance, and I wanted to know whether I can apply for the program now?
-Answer: The JEE scores are valid for three terms. Since you qualified for JEE Advanced in 2023, your scores are no longer valid, and you will be enrolled from the qualifier level of the program.
-
-Q113: Can I enter as a qualifier applicant and then shift to a JEE based entrant?
-Answer: No, a student who is entering as a qualifier cannot swap to JEE based entry.

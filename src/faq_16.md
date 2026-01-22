@@ -1,19 +1,15 @@
-Q74: Do exempted students need to do qualifier assignments?
-Answer: All the regular based applicants must mandatorily submit the assignments as the qulaifier eligibility depends on the assignment scores
+Q72: How does JEE Advanced exemption work?
+Answer: JEE Advanced Exemption Process
+Candidates eligible to attempt the most recent JEE Advanced (e.g., qualified JEE Main CRL rank ≤2.5 lakh) are automatically exempt from the qualifier exam.
 
-Eligibility to appear for the qualifier exam
-At the end of the 4 weeks, a qualifier exam will be conducted for eligible candidates based on
-the content covered in the 4 weeks of study.
-Each assignment will be graded out of 100
-Any assignment that is not attempted will be marked as 0.
-● If the average of the first 2 weeks’ assignment scores is >= 40/100 (or as per the cutoff
-for each category of students) in each of the 4 subjects, the students will be eligible to
-write the qualifier exam in the first attempt within the term.
-● For those who do not qualify after the week 2 assignments, the average of the best 2 out
-of the first 3 weeks’ assignment scores will be considered. If this score is >= 40/100 (or
-as per the cutoff for each category of students) in each of the 4 subjects, the students
-will become eligible to write the qualifier exam in the second attempt within the term.
-● Reattempts within the term will be given suitably.
 
-Q75: Can exemption be claimed after applying normally?
-Answer: No. It is not possible for changing this option. Once the application has been submitted for regular entry, it cannot be changed for that particular term.
+How to Claim
+Apply during the regular application window (₹3,000-4,000 fee), upload JEE Main scorecard/proof of Advanced eligibility for verification, then directly access Foundation course registration (pay ₹6,000 registration fee + course fees
+
+Q73: Which JEE Advanced years are eligible for exemption?
+Answer: A student can apply as  a JEE based applicant (Eligible Admission Cycles (JEE Main qualified & eligible for JEE Advanced, or JEE Advanced qualified)) till Sep 2026 if he/she has qualfied JEE mains in the year 2024
+
+
+Example – Jan 2026 term considers 2024 and 2025 JEE qualification years.
+Example – May 2026 term considers 2024, 2025, and 2026 JEE qualification years.
+Example – Sep 2026 term considers 2025 and 2026 JEE qualification years.
