@@ -1,0 +1,71 @@
+Topic: Academic Structure, Exams, OPPE, Certificates, and Schedule
+
+
+
+Question: How long is each term?
+Answer: Each term in the IIT Madras BS program lasts 16 weeks.
+
+
+
+Question: When will exams be conducted in a term?
+Answer: Exams in a term include:
+
+* Quizzes: Usually two per term, with dates announced at the beginning of the term
+* End-term exam: Conducted at the end of the term
+
+Exact dates are published in the academic calendar.
+
+
+
+Question: Is the academic schedule available?
+
+Answer: Yes.
+The academic schedule and important dates are available on the official IIT Madras BS program website under the Admissions section.
+
+
+
+Question: What is OPPE?
+
+Answer: OPPE (Online Proctored Programming Exam) is conducted for programming-based courses that require learners to write and execute code.
+
+
+
+Question: Which courses have OPPE?
+
+Answer: OPPE is applicable only to selected programming courses, including:
+
+Foundation level
+
+* Introduction to Python Programming
+
+Diploma level
+
+* DBMS
+* PDSA (Programming, Data Structures & Algorithms)
+* Java
+* System Commands / Linux
+* Machine Learning Practice
+
+Degree level
+
+* C Programming
+* Introduction to Big Data
+
+
+
+Question: What happens if I get an Incomplete (I) grade?
+
+Learners with an Incomplete (I) grade may:
+
+* Register for a Make-Up Examination in the immediately subsequent term
+
+If they do not register for the Make-Up Exam in the next term:
+
+* They must repeat the entire course as a full course in a later term
+
+
+
+Question: Will I receive certificates or marksheets?
+
+Answer: Certificate formats and samples are available on the official website.
+Learners are advised to refer to the website for the latest certificate templates.

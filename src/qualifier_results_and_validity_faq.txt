@@ -1,0 +1,125 @@
+Topic: Qualifier Results, Validity Period, and Post-Qualifier Process
+
+
+
+Question: When are qualifier results announced?
+Answer: Qualifier results are announced on the student dashboard.
+Learners are notified on their registered email ID when results are released.
+
+
+
+Question: Where can I check my qualifier result?
+Answer: Qualifier results can be checked on the student dashboard after logging in.
+
+
+
+Question: What does “qualifier cleared” status mean?
+Answer: “Qualifier cleared” means the learner has successfully passed the qualifier exam and is eligible to proceed to Foundation-level registration.
+
+
+
+Question: How long is the qualifier result valid?
+Answer: The qualifier marks are valid for the next 3 terms following the qualifier exam date.
+
+For students who are in Class 12 at the time of writing the qualifier:
+The validity is 3 terms from the term in which they pass Class 12.
+
+
+
+Question: Does qualifier validity expire automatically?
+Answer: Yes.
+Qualifier validity expires automatically after the validity period ends.
+
+
+
+Question: What happens if qualifier validity expires?
+Answer: If validity expires:
+
+* The qualifier score becomes invalid
+* The learner must redo the entire qualifier process, including:
+
+  * 4 weeks of coursework
+  * Weekly graded assignments
+  * Retaking the qualifier exam
+
+
+
+Question: Can qualifier validity be extended?
+Answer: No.
+Qualifier validity cannot be extended under any circumstances.
+
+
+
+Question: Can I use the same qualifier result for future terms?
+Answer: No.
+Qualifier results cannot be reused beyond the validity period.
+
+
+
+Question: Will I receive a certificate for clearing the qualifier?
+Answer: Learners who clear the qualifier receive an admission letter.
+The admission letter specifies the terms for which the qualifier score is valid.
+
+
+
+Question: What should I do after clearing the qualifier?
+Answer: After clearing the qualifier:
+
+1. Check dashboard/email for results
+2. Access the Course Registration Form
+3. Select 1–4 Foundation courses (based on score)
+4. Upload required documents (Class 12 / category)
+5. Choose exam cities
+6. Pay course fees
+7. Submit before the deadline
+
+
+
+Question: How soon can I register for Foundation courses?
+Answer:
+
+* Regular-entry learners: after passing the qualifier exam
+* JEE-based entry learners: immediately after document verification
+
+
+
+Question: Is course registration automatic after clearing the qualifier?
+Answer: No.
+Learners must manually complete course registration through the portal.
+
+
+
+Question: Can I delay registration after clearing the qualifier?
+Answer: Yes.
+Registration can be delayed within the qualifier validity period (3 terms).
+
+
+
+Question: What happens if I clear the qualifier but don’t register?
+Answer: If registration is not completed within the validity period:
+
+* The qualifier result expires
+* The learner must redo the entire qualifier process
+
+
+
+Question: Will I lose my seat if I delay registration?
+Answer: No.
+The qualifier status remains valid until the validity period ends.
+
+
+
+Question: Can I take a break after clearing the qualifier?
+Answer: Yes.
+Learners may take a break and register later within the validity period.
+
+
+
+Question: Does clearing the qualifier lock my program choice?
+Answer: Yes.
+Clearing the qualifier for:
+
+* Data Science locks eligibility for the Data Science program
+* Electronic Systems locks eligibility for the Electronic Systems program
+
+The learner must join within the validity period.
