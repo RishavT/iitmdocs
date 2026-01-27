@@ -38,8 +38,10 @@ def clear_collection(weaviate_client):
 def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None):
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
+    logger.debug(f"EMBEDDING MODE: {embedding_mode}")
     if embedding_mode == "local":
-        model = embedding_model or "mxbai-embed-large"
+        model = embedding_model or "bge-m3"
+        logger.warning(f"EMBEDDING_MODEL: {embedding_model}")
         vectorizer_config = Configure.Vectorizer.text2vec_ollama(
             model=model,
             api_endpoint="http://ollama:11434"
@@ -47,7 +49,7 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
         expected_vectorizer = "text2vec-ollama"
     elif embedding_mode == "gce":
         # GCE mode: connect to remote Ollama on GCE VM
-        model = embedding_model or "mxbai-embed-large"
+        model = embedding_model or "bge-m3"
         ollama_url = ollama_endpoint or os.getenv("GCE_OLLAMA_URL", "http://localhost:11434")
         vectorizer_config = Configure.Vectorizer.text2vec_ollama(
             model=model,
@@ -144,6 +146,10 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud",
                 filters=Filter.by_property("filepath").equal(doc_data["filepath"]), limit=1
             )
 
+            # Log character length for tracking (success path will log later)
+            content_char_length = len(content)
+            logger.info(f"[{idx}/{total_files}] Processing: {file_path.name} ({content_char_length} chars)")
+
             if existing.objects:
                 existing_doc = existing.objects[0]
                 if existing_doc.properties["content_hash"] == doc_data["content_hash"]:
@@ -158,7 +164,13 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud",
 
             successful_embeds += 1
         except Exception as e:
-            logger.error(f"[{idx}/{total_files}] Failed {file_path.name}: {e}")
+            # LOG FULL PAYLOAD ONLY WHEN EMBEDDING FAILS
+            logger.error(f"[{idx}/{total_files}] EMBEDDING FAILED for {file_path.name}")
+            logger.error(f"[{idx}/{total_files}] Failed payload had {len(content)} characters")
+            # logger.error(f"[{idx}/{total_files}] FULL PAYLOAD TEXT START >>>")
+            # logger.error(content)
+            # logger.error(f"[{idx}/{total_files}] FULL PAYLOAD TEXT END <<<")
+            logger.error(f"[{idx}/{total_files}] Error: {e}")
             failed += 1
             continue
 
@@ -185,7 +197,7 @@ def main():
     if embedding_mode == "local":
         # Local mode: connect to local Weaviate (no auth needed)
         weaviate_url = os.getenv("LOCAL_WEAVIATE_URL", "http://weaviate:8080")
-        embedding_model = os.getenv("OLLAMA_MODEL", "mxbai-embed-large")
+        embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
 
         logger.info(f"Connecting to local Weaviate at {weaviate_url}")
         client = weaviate.connect_to_local(
@@ -200,7 +212,7 @@ def main():
         # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
         weaviate_url = os.getenv("GCE_WEAVIATE_URL")
         ollama_url = os.getenv("GCE_OLLAMA_URL")
-        embedding_model = os.getenv("OLLAMA_MODEL", "mxbai-embed-large")
+        embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
 
         if not weaviate_url:
             raise ValueError("GCE_WEAVIATE_URL is required for GCE mode")

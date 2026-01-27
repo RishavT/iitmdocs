@@ -1052,7 +1052,7 @@ async function answer(request, env) {
  * @param {string} model - The embedding model name
  * @returns {Promise<number[]>} - The embedding vector
  */
-async function getOllamaEmbedding(text, ollamaUrl, model = "mxbai-embed-large") {
+async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
   console.log('[DEBUG] Getting embedding from Ollama:', ollamaUrl);
   const response = await fetch(`${ollamaUrl}/api/embeddings`, {
     method: "POST",
@@ -1122,7 +1122,11 @@ async function searchWeaviate(query, limit, env) {
   if (embeddingMode === "gce") {
     // GCE mode: get embedding from Ollama first, then use hybrid search with vector
     const ollamaUrl = env.GCE_OLLAMA_URL;
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
+    const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
+
+    console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
+
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
