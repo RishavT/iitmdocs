@@ -18,6 +18,7 @@ import weaviate
 from dotenv import load_dotenv
 from pathlib import Path
 from weaviate.classes.config import Configure, Property, DataType
+from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 
 # Configure logging
@@ -202,7 +203,8 @@ def main():
         logger.info(f"Connecting to local Weaviate at {weaviate_url}")
         client = weaviate.connect_to_local(
             host=weaviate_url.replace("http://", "").split(":")[0],
-            port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080
+            port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080,
+            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
         if clear_db:
             clear_collection(client)
@@ -235,7 +237,8 @@ def main():
             grpc_host=host,
             grpc_port=50051,
             grpc_secure=False,
-            skip_init_checks=True
+            skip_init_checks=True,
+            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
         if clear_db:
             clear_collection(client)
@@ -286,6 +289,7 @@ def main():
             cluster_url=os.getenv("WEAVIATE_URL"),
             auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
             headers=headers,
+            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
         if clear_db:
             clear_collection(client)
