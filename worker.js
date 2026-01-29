@@ -850,7 +850,7 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');

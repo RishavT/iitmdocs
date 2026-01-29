@@ -471,7 +471,7 @@ async function askQuestion(e, faqFile = null) {
     let otherData = {};
 
     // Build request body - include faq_file for direct FAQ lookup
-    const requestBody = { q, ndocs: 5, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
+    const requestBody = { q, ndocs: 2, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
     if (faqFile) {
       requestBody.faq_file = faqFile;
     }
