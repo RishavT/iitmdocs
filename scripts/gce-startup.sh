@@ -28,6 +28,7 @@ services:
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.27.0
     restart: always
+    command: --host 0.0.0.0 --port 8080 --scheme http --write-timeout=900s --read-timeout=900s
     ports:
       - "8080:8080"
       - "50051:50051"
@@ -38,6 +39,7 @@ services:
       DEFAULT_VECTORIZER_MODULE: 'text2vec-ollama'
       ENABLE_MODULES: 'text2vec-ollama'
       OLLAMA_API_ENDPOINT: 'http://ollama:11434'
+      MODULES_CLIENT_TIMEOUT: '600s'
     volumes:
       - ./weaviate_data:/var/lib/weaviate
     depends_on:
@@ -71,8 +73,8 @@ echo "Waiting for Ollama to be ready..."
 sleep 30
 
 # Pull embedding model
-echo "Pulling mxbai-embed-large model..."
-docker exec $(docker ps -qf "name=ollama") ollama pull mxbai-embed-large
+echo "Pulling bge-m3 model..."
+docker exec $(docker ps -qf "name=ollama") ollama pull bge-m3
 
 echo "=== GCE Startup Complete ==="
 echo "Weaviate available at: http://$(curl -s ifconfig.me):8080"
