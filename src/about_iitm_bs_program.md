@@ -31,3 +31,29 @@ The BS programme has multiple levels, which provide flexibility to students to e
 - **Office Address:** IITM BS Degree Office, 3rd Floor, ICSR Building, IIT Madras, Chennai - 600036
 - **Email:** support@study.iitm.ac.in
 - **Website:** https://study.iitm.ac.in/
+
+
+# FAQs
+
+**Question**: What is the IIT Madras BS degree?
+**Answer**: The BS in Data Science and Applications is a 4-year undergraduate degree offered by IIT Madras.
+
+
+
+**Question**: Is the degree awarded by IIT Madras valid?
+**Answer**: Yes.
+The degree awarded by IIT Madras is a valid 4-year undergraduate degree.
+
+
+
+**Question**: Is the BS degree equivalent to the BTech degree?
+**Answer**: No.
+The BS degree is not equivalent to the BTech degree.
+However, it is still a valid 4-year degree from IIT Madras.
+
+
+
+**Question**: Is the IIT Madras BS degree valid worldwide?
+**Answer**: Yes.
+The degree is awarded by IIT Madras, which is a nationally and internationally recognized institute, and the degree is valid for employment and higher studies worldwide.
+It is stated to be as valid as the BTech awarded by IIT Madras.

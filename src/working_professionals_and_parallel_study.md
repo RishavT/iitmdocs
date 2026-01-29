@@ -30,7 +30,7 @@ Yes, you can pursue the IITM BS program alongside another degree or job. The pro
 ## Coaching Not Required
 No coaching needed. Self-study with provided materials is sufficient. IITM confirms program is designed for self-study.
 
-## Past Question Papers
+## Past **Question** Papers
 Available through student communities:
 - gradedassignments.github.io/iit-madras-pyq
 - quizpractice.space
