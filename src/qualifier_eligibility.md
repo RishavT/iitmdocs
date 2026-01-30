@@ -159,3 +159,7 @@ Students from commerce or non-science streams can apply, provided they have stud
 **Question**: Class 12 eligibility confirmation
 **Answer**: Class 12 students are eligible to apply for the qualifier irrespective of stream or board.
 If they pass the qualifier, they can join the program after completing Class 12.
+
+---
+
+Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier

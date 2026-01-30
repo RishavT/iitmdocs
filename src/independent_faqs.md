@@ -109,3 +109,7 @@
 
 **Question**: What is Gen AI theory and project?
 **Answer**: Explanation of GenAI theory concepts and hands-on project work.
+
+---
+
+Tags: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts

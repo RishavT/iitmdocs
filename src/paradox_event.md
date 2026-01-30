@@ -28,3 +28,7 @@ Qualifier-cleared students who have a valid student ID are also eligible to atte
 
 **Question**: Where can I find more details about Paradox?
 **Answer**: More details about the Paradox event are available on the official Paradox website.
+
+---
+
+Tags: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration

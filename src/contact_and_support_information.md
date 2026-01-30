@@ -50,3 +50,7 @@ For PwD students requiring special seating or scribe, email support@study.iitm.a
 
 ## Response Time
 Support team typically responds within 1-2 business days. For urgent exam-related issues, call the phone number.
+
+---
+
+Tags: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time

@@ -194,3 +194,7 @@ A learner entering through the qualifier route cannot switch to JEE-based entry 
 
 **Question**: What are the JEE eligibility confirmations?
 **Answer**: Learners who cleared JEE Main and are eligible for JEE Advanced within the allowed years can apply for the BS program under JEE-based entry.
+
+---
+
+Tags: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE

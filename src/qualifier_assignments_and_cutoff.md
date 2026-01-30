@@ -181,3 +181,7 @@ Once a learner has successfully qualified, they are not permitted to reattempt t
 **Question**: Are qualifier assignments graded or pass/fail?
 **Answer**: Qualifier assignments are graded.
 Each week during the 4-week qualifier process, assignments are graded and contribute to
+
+---
+
+Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment

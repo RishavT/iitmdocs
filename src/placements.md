@@ -20,3 +20,7 @@ Specific CGPA-based guarantees are not stated in the FAQs.
 
 **Question**: Placements in Electronic Systems
 **Answer**: The BS Electronic Systems programme also offers placement and internship support through the same placement portal, subject to eligibility conditions.
+
+---
+
+Tags: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS

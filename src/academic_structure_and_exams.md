@@ -111,3 +111,7 @@ If they do not register for the Make-Up Exam in the next term:
 
 **Answer**: Certificate formats and samples are available on the official website.
 Learners are advised to refer to the website for the latest certificate templates.
+
+---
+
+Tags: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam

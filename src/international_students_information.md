@@ -40,3 +40,7 @@ ge@study.iitm.ac.in (Global Entry support)
 
 ## Exam City Information for International Students
 Check availability at: https://study.iitm.ac.in/ds/academics.html#AC9
+
+---
+
+Tags: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement

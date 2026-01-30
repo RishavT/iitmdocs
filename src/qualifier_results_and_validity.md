@@ -182,3 +182,7 @@ Clearing the qualifier for:
 * Electronic Systems locks eligibility for the Electronic Systems program
 
 The learner must join within the validity period.
+
+---
+
+Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score

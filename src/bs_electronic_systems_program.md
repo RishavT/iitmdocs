@@ -36,3 +36,7 @@ The Electronic Systems qualifier covers 4 subjects:
 ## Official Links
 - ES Admissions: https://study.iitm.ac.in/es/
 - ES Program Details: Available on the official website
+
+---
+
+Tags: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras

@@ -57,3 +57,7 @@ However, it is still a valid 4-year degree from IIT Madras.
 **Answer**: Yes.
 The degree is awarded by IIT Madras, which is a nationally and internationally recognized institute, and the degree is valid for employment and higher studies worldwide.
 It is stated to be as valid as the BTech awarded by IIT Madras.
+
+---
+
+Tags: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
