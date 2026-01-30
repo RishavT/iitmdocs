@@ -209,7 +209,7 @@ Uses Docker Compose with local Weaviate + Ollama containers.
 ```bash
 EMBEDDING_MODE=local
 LOCAL_WEAVIATE_URL=http://weaviate:8080
-OLLAMA_MODEL=mxbai-embed-large
+OLLAMA_MODEL=bge-m3
 
 # Chat API (required)
 OPENAI_API_KEY=sk-...
@@ -281,7 +281,7 @@ The embedding provider used during ingestion MUST match the worker configuration
 | `OPENAI_API_KEY` | All | - | OpenAI API key for chat |
 | `CHAT_API_ENDPOINT` | All | OpenAI URL | Custom chat endpoint |
 | `CHAT_MODEL` | All | `gpt-4o-mini` | Chat model |
-| `OLLAMA_MODEL` | Local/GCE | `mxbai-embed-large` | Ollama embedding model |
+| `OLLAMA_MODEL` | Local/GCE | `bge-m3` | Ollama embedding model |
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
@@ -345,7 +345,7 @@ The bot detects emotional distress signals and redirects to RAAHAT (Mental Healt
 
 The embedding system (`embed.py`) processes `src/*.md` files and stores them in Weaviate with vector embeddings.
 
-**Production uses GCE mode** with Ollama (`mxbai-embed-large`) running on a GCE VM - no external embedding APIs needed. See [Configuration](#configuration) for all modes.
+**Production uses GCE mode** with Ollama (`bge-m3`) running on a GCE VM - no external embedding APIs needed. See [Configuration](#configuration) for all modes.
 
 `embed.py` creates a `Document` collection with the following properties:
 

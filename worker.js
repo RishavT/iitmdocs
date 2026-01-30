@@ -382,19 +382,41 @@ const QUERY_SYNONYMS = [
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. ABOUT PROGRAM: IIT Madras, BS programme, Data Science, Electronic Systems, online learning, in-person exams, levels, exit points, Foundation, Diploma, BSc, BS, PGD, MTech
-2. ADMISSION PATHWAYS: regular entry, JEE-based entry, qualifier process, direct admission, foundation level
-3. QUALIFIER ELIGIBILITY: Class 10, Class 12, Mathematics, English, Physics, age, academic background, Class 11 students
-4. QUALIFIER FEES: application fee, four thousand rupees, two thousand rupees, one thousand rupees, SC, ST, OBC, PwD, disability, non-refundable
-5. QUALIFIER PREPARATION: 4-week process, week-wise content, videos, tutorials, assignments, English 1, Maths-1, Statistics-1, Computational Thinking, Physics-1, Basic Electronics
-6. ASSIGNMENT REQUIREMENTS: graded assignments, eligibility criteria, minimum score, 40%, 35%, 30%, cutoff, hall ticket
-7. QUALIFIER PASSING CRITERIA: exam cutoff, subject cutoff, average score, 50%, 45%, 40%, category-wise criteria
-8. SCORE VALIDITY: 3 terms validity, re-registration, Class XII students, expiry
-9. RESULTS COMMUNICATION: email, WhatsApp, portal, announcements, admission letter
-10. REATTEMPT: second attempt, re-attempt fee, absent, failed, two attempts per term
-11. JEE ENTRY: JEE Advanced, direct entry, proof validation, CCC, 3 terms validity
-12. COURSE REGISTRATION: registration steps, exam cities, prerequisites, level restrictions, credits, payment, BSc eligibility, 114 credits
-13. CONTACT: support@study.iitm.ac.in, IITM BS Degree Office, ICSR Building, Chennai`;
+1. About IIT Madras BS Program: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
+
+2. Academic Structure and Exams: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam
+
+3. Academic Level Progression and Rules: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
+
+4. Course Registration Process: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration
+
+5. Fees and Payments: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt
+
+6. JEE Based Entry: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE  
+
+7. Qualifier Exam Overview: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure
+
+8. Qualifier Eligibility: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
+
+9. Qualifier Assignments and Cutoff: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment
+
+10. Qualifier Results and Validity: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
+
+11. Qualifier Reattempts: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period
+12. Qualifier Exam Format and Centers: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam
+
+13. Working Professionals and Parallel Study: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals
+
+14. International Students Information: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement
+
+15. Placements: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS
+
+16. BS Electronic Systems Program: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras
+17. Contact and Support Information: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time
+
+18. Paradox Event: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
+
+19. Independent FAQs: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts`;
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.
@@ -770,7 +792,7 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('[DEBUG] answer() called');
-  const { q: question, ndocs = 5, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
@@ -972,7 +994,7 @@ async function answer(request, env) {
  * @param {string} model - The embedding model name
  * @returns {Promise<number[]>} - The embedding vector
  */
-async function getOllamaEmbedding(text, ollamaUrl, model = "mxbai-embed-large") {
+async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
   console.log('[DEBUG] Getting embedding from Ollama:', ollamaUrl);
   const response = await fetch(`${ollamaUrl}/api/embeddings`, {
     method: "POST",
@@ -1042,7 +1064,11 @@ async function searchWeaviate(query, limit, env) {
   if (embeddingMode === "gce") {
     // GCE mode: get embedding from Ollama first, then use hybrid search with vector
     const ollamaUrl = env.GCE_OLLAMA_URL;
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
+    const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
+
+    console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
+
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
