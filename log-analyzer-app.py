@@ -13,19 +13,22 @@ A single-file Flask app for analyzing chatbot logs with:
 - Real-time progress updates via Server-Sent Events (SSE)
 
 Usage:
-    uv run log-analyzer-app.py
+    LOG_ANALYZER_PASSWORD=secret uv run log-analyzer-app.py
 
     Then open http://localhost:5123 in your browser.
 
     With custom port:
-        uv run log-analyzer-app.py --port 8080
+        LOG_ANALYZER_PASSWORD=secret uv run log-analyzer-app.py --port 8080
 
     With debug mode:
-        uv run log-analyzer-app.py --debug
+        LOG_ANALYZER_PASSWORD=secret uv run log-analyzer-app.py --debug
+
+Environment Variables:
+    LOG_ANALYZER_PASSWORD  - Required. Password for accessing the analyzer.
 
 Alternative (with virtualenv):
     pip install flask
-    python3 log-analyzer-app.py
+    LOG_ANALYZER_PASSWORD=secret python3 log-analyzer-app.py
 
 API Endpoints:
     GET  /              - Main page with upload form
@@ -63,6 +66,9 @@ from flask import Flask, request, jsonify, Response, stream_with_context
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Password authentication
+APP_PASSWORD = os.environ.get('LOG_ANALYZER_PASSWORD', '')
 
 # ============================================================================
 # JOB STORE - In-memory storage for background jobs
@@ -349,6 +355,12 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def start_analysis():
     """Start a new analysis job."""
+    # Check password
+    if APP_PASSWORD:
+        password = request.form.get('password', '')
+        if password != APP_PASSWORD:
+            return jsonify({"error": "Invalid password"}), 401
+
     # Check for file
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -509,6 +521,20 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             border-radius: 6px;
             font-size: 14px;
             width: 200px;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
         .date-row {
@@ -703,6 +729,11 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter password" required>
+                </div>
+
                 <button type="submit" id="submitBtn">Analyze Logs</button>
             </form>
 
@@ -789,7 +820,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 
             try {
                 // Start analysis
-                const response = await fetch('/analyze', {
+                const response = await fetch('analyze', {
                     method: 'POST',
                     body: formData
                 });
@@ -803,7 +834,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                 const jobId = data.job_id;
 
                 // Connect to SSE stream for progress updates
-                const eventSource = new EventSource(`/stream/${jobId}`);
+                const eventSource = new EventSource(`stream/${jobId}`);
 
                 eventSource.onmessage = (event) => {
                     const job = JSON.parse(event.data);
@@ -840,7 +871,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
 
         async function pollStatus(jobId) {
             try {
-                const response = await fetch(`/status/${jobId}`);
+                const response = await fetch(`status/${jobId}`);
                 const job = await response.json();
 
                 progressFill.style.width = `${job.progress}%`;
@@ -970,6 +1001,13 @@ if __name__ == '__main__':
     print("=" * 50)
     print("Chatbot Log Analyzer")
     print("=" * 50)
-    print(f"\nStarting server at http://localhost:{args.port}")
+
+    if not APP_PASSWORD:
+        print("\nWARNING: No password set! Set LOG_ANALYZER_PASSWORD environment variable.")
+        print("Example: LOG_ANALYZER_PASSWORD=secret uv run log-analyzer-app.py\n")
+    else:
+        print("\nPassword authentication enabled.")
+
+    print(f"Starting server at http://localhost:{args.port}")
     print("Press Ctrl+C to stop\n")
     app.run(debug=args.debug, host='0.0.0.0', port=args.port, threaded=True)
