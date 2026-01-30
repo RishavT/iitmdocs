@@ -4,6 +4,7 @@ import { html, render } from "https://cdn.jsdelivr.net/npm/lit-html@3/+esm";
 import { unsafeHTML } from "https://cdn.jsdelivr.net/npm/lit-html@3/directives/unsafe-html.js";
 // Storage with fallback for private browsing: localStorage -> sessionStorage -> cookies -> memory
 import { storage } from "https://cdn.jsdelivr.net/npm/local-storage-fallback/+esm";
+import { docViewer } from "./doc-viewer.js";
 
 const chatArea = document.getElementById("chat-area");
 const chatForm = document.getElementById("chat-form");
@@ -116,6 +117,16 @@ function updateInputValidation() {
 // Add input listener for real-time validation
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
+
+// Configure marked to open links in new window
+marked.use({
+  renderer: {
+    link(href, title, text) {
+      const titleAttr = title ? ` title="${title}"` : "";
+      return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+    }
+  }
+});
 const HISTORY_KEY = "iitm-chatbot-history";
 
 /**
@@ -287,7 +298,7 @@ function redraw() {
               <ul class="list-unstyled ms-3 py-1">
                 ${tools?.map?.(({ args }) => {
                   const { name, link } = JSON.parse(args);
-                  return html`<li><a href="${link}" target="_blank">${name}</a></li>`;
+                  return html`<li><a href="${link}" class="ref-doc-link" data-name="${name}">${name}</a></li>`;
                 })}
               </ul>
             </details>`
@@ -595,3 +606,6 @@ consentButton.addEventListener("click", function () {
   storage.setItem(CONSENT_KEY, "true");
   hideConsentOverlay();
 });
+
+// Initialize document viewer for reference links
+docViewer.init();
