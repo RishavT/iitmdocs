@@ -1,4 +1,4 @@
-# Misc FAQs (Laptop/Device, VPN, Language, Campus Facilities, International/Logistics, Scholarships/Financial, Student ID/Email, Office/Campus Visit/Payments, System Compatibility/Misc, Learning/Support, GenAI/Misc Academic, Payments edge cases)
+# Misc FAQs
 
 
 
@@ -109,3 +109,7 @@
 
 **Question**: What is Gen AI theory and project?
 **Answer**: Explanation of GenAI theory concepts and hands-on project work.
+
+---
+
+Tags: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts

@@ -212,3 +212,6 @@ Learners should refer to the official website for:
 * Acceptance criteria
 
 If the father is the earning member, an income certificate in the father’s name is accepted, provided it is recent.
+---
+
+Tags: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt

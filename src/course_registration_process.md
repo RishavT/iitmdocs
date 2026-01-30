@@ -62,3 +62,7 @@ If you have U grade (failed) in a subject like Math 1, you must:
 - Complete all requirements again
 - Pay course fee again
 - Cannot take Math 2 if Math 1 has U grade
+
+---
+
+Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration

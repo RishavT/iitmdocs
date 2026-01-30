@@ -126,3 +126,7 @@ They must:
 
 * Pay the full applicable fees
 * Redo the 4 weeks of coursework and assignments.
+
+---
+
+Tags: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period

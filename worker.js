@@ -382,45 +382,41 @@ const QUERY_SYNONYMS = [
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. About IIT Madras BS Program: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information
+1. About IIT Madras BS Program: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
 
-2. IITM BS Degree Details: IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
+2. Academic Structure and Exams: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam
 
-3. Academic Structure and Exams: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam
+3. Academic Level Progression and Rules: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
 
-4. Academic Level Progression and Rules: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
+4. Course Registration Process: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration
 
-5. Course Registration Process: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration
+5. Fees and Payments: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt
 
-6. Fees and Payments: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt
+6. JEE Based Entry: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE  
 
-7. JEE Based Entry: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE
+7. Qualifier Exam Overview: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure
 
-8. Qualifier Exam Overview: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure
+8. Qualifier Eligibility: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
 
-9. Qualifier Eligibility: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
+9. Qualifier Assignments and Cutoff: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment
 
-10. Qualifier Assignments and Cutoff: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment
+10. Qualifier Results and Validity: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
 
-11. Qualifier Results and Validity: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
+11. Qualifier Reattempts: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period
+12. Qualifier Exam Format and Centers: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam
 
-12. Qualifier Reattempts: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period
+13. Working Professionals and Parallel Study: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals
 
-13. Qualifier Exam Format and Centers: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam
+14. International Students Information: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement
 
-14. Working Professionals and Parallel Study: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals
+15. Placements: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS
 
-15. International Students Information: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement
+16. BS Electronic Systems Program: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras
+17. Contact and Support Information: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time
 
-16. Placements: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS
+18. Paradox Event: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
 
-17. BS Electronic Systems Program: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras
-
-18. Contact and Support Information: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time
-
-19. Paradox Event: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
-
-20. Independent FAQs: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts`;
+19. Independent FAQs: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts`;
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.

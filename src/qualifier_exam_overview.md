@@ -104,3 +104,6 @@ Coaching is not required. Learners can clear the qualifier through self-study us
 **Question**: Can I clear the qualifier with self-study?
 **Answer**: Yes.
 The qualifier is fully based on the 4 weeks of provided content, and many students clear it through consistent self-study.
+---
+
+Tags: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure

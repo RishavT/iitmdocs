@@ -37,3 +37,7 @@ Available through student communities:
 
 ## Study Groups
 Student communities exist for peer support but program does not mandate group study.
+
+---
+
+Tags: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals

@@ -208,3 +208,7 @@ Remote-proctored exams for international students follow IST-based timings.
 **Answer**: No.
 The IIT Madras BS program is a non-campus program.
 Exams are conducted only at designated exam centres, not on the IIT Madras campus.
+
+---
+
+Tags: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam

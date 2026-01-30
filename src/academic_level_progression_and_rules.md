@@ -103,3 +103,7 @@ Must clear ALL 8 Foundation courses to progress to Diploma level. No U grades al
 
 ## CGPA Impact
 U grade affects your CGPA. Re-registering and passing will update your grade.
+
+---
+
+Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
