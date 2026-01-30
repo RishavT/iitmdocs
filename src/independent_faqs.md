@@ -1,4 +1,4 @@
-# Misc FAQs (Laptop/Device, VPN, Language, Campus Facilities, International/Logistics, Scholarships/Financial, Student ID/Email, Office/Campus Visit/Payments, System Compatibility/Misc, Learning/Support, GenAI/Misc Academic, Payments edge cases)
+# Misc FAQs
 
 
 
