@@ -19,8 +19,11 @@ Examples:
     # With LLM classification for ambiguous queries
     python3 analyze-logs-headless.py --use-llm
 
-    # With fact-checking (5 samples per file)
-    python3 analyze-logs-headless.py --fact-check 5
+    # With batch fact-checking (checks ALL valid answered responses)
+    python3 analyze-logs-headless.py --fact-check
+
+    # Analyze single file with fact-checking
+    python3 analyze-logs-headless.py --staging-file /tmp/staging-extract2.csv --production-file /dev/null --fact-check
 
 Requirements:
     - Python 3.10+
@@ -240,48 +243,180 @@ def is_cannot_answer(response: str) -> bool:
     return False
 
 
-def fact_check_with_claude(question: str, response: str) -> dict:
+def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
     """
-    Use Claude Code to fact-check a bot response against source documents.
+    Sanitize text for use in Claude prompts to prevent prompt injection.
+
+    - Truncates to max_length
+    - Removes/escapes potentially dangerous patterns
+    - Removes control characters
     """
-    prompt = f'''You are fact-checking a chatbot response for the IIT Madras BS Degree program.
+    if not text:
+        return ""
 
-The source documents are in the src/ folder. Read the relevant documents and verify the response.
+    # Truncate
+    text = text[:max_length]
 
-User Question: "{question}"
+    # Remove control characters (except newlines and tabs)
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
 
-Bot Response: "{response[:500]}"
+    # Escape patterns that could be used for prompt injection
+    injection_patterns = [
+        (r'<\|.*?\|>', '[REMOVED]'),  # Special tokens
+        (r'\bsystem\s*:', '[system]'),  # System prompt attempts
+        (r'\buser\s*:', '[user]'),  # Role injection
+        (r'\bassistant\s*:', '[assistant]'),  # Role injection
+        (r'\bhuman\s*:', '[human]'),  # Role injection
+        (r'ignore\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+        (r'forget\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+        (r'disregard\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+    ]
 
-Fact-check this response:
-1. Read relevant documents from src/ folder
-2. Check if the information in the response is accurate
-3. Identify any errors or inaccuracies
+    for pattern, replacement in injection_patterns:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
 
-Respond in this format:
-ACCURACY: [CORRECT/INCORRECT/PARTIALLY_CORRECT]
-ISSUES: [List any factual errors, or "None" if correct]
+    # Replace multiple newlines with single
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    return text.strip()
+
+
+def parse_batch_fact_check_result(result: str, expected_count: int) -> list[dict]:
+    """Parse the batch fact-check result from Claude."""
+    results = []
+
+    if "[TIMEOUT]" in result or "[ERROR" in result:
+        return [{"accuracy": "ERROR", "issues": result} for _ in range(expected_count)]
+
+    # Try to parse line by line
+    lines = result.strip().split('\n')
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Look for patterns like "RESPONSE 1:" or "1:" or "1."
+        if re.match(r'^(RESPONSE\s*)?\d+[\.:]\s*', line, re.IGNORECASE):
+            # Extract accuracy
+            accuracy = "UNKNOWN"
+            issues = ""
+
+            line_upper = line.upper()
+            if "INCORRECT" in line_upper and "PARTIALLY" not in line_upper:
+                accuracy = "INCORRECT"
+            elif "PARTIALLY" in line_upper:
+                accuracy = "PARTIALLY_CORRECT"
+            elif "CORRECT" in line_upper:
+                accuracy = "CORRECT"
+            elif "CANNOT" in line_upper or "VERIFY" in line_upper:
+                accuracy = "CANNOT_VERIFY"
+
+            # Extract issues (everything after the dash or accuracy word)
+            if " - " in line:
+                issues = line.split(" - ", 1)[-1].strip()
+                if issues.upper() == "OK" or issues.upper() == "NONE":
+                    issues = ""
+
+            results.append({"accuracy": accuracy, "issues": issues})
+
+    # Pad with unknowns if we didn't get enough results
+    while len(results) < expected_count:
+        results.append({"accuracy": "UNKNOWN", "issues": "Could not parse"})
+
+    return results[:expected_count]
+
+
+def process_single_batch(batch: list[dict], batch_num: int) -> tuple[int, list[dict]]:
+    """
+    Process a single batch of responses for fact-checking.
+    Returns (batch_num, results) tuple to maintain order.
+    """
+    # Create CSV-like content with just responses
+    response_lines = []
+    for i, item in enumerate(batch):
+        safe_response = sanitize_for_prompt(item['response'], max_length=400)
+        response_lines.append(f"[RESPONSE {i + 1}]\n{safe_response}\n[/RESPONSE {i + 1}]")
+
+    responses_text = "\n\n".join(response_lines)
+
+    prompt = f'''You are an expert fact checker for the IIT Madras BS Degree program.
+
+IMPORTANT: First, read the documents in the src/ folder to understand the facts about the program.
+
+Then, fact-check EACH of the following {len(batch)} chatbot responses against those documents.
+
+=== RESPONSES TO VERIFY ===
+{responses_text}
+=== END RESPONSES ===
+
+For EACH response, determine if it is factually accurate based on the src/ documents.
+
+Respond with EXACTLY {len(batch)} lines, one per response, in this format:
+RESPONSE 1: [CORRECT/INCORRECT/PARTIALLY_CORRECT] - [brief issue or "OK"]
+RESPONSE 2: [CORRECT/INCORRECT/PARTIALLY_CORRECT] - [brief issue or "OK"]
+...and so on for all {len(batch)} responses.
+
+Be concise. Only flag clear factual errors.
 '''
 
-    result = run_claude_code(prompt, timeout=90)
+    result = run_claude_code(prompt, timeout=180)
+    batch_results = parse_batch_fact_check_result(result, len(batch))
 
-    accuracy = "UNKNOWN"
-    issues = []
-
-    if "CORRECT" in result.upper():
-        if "PARTIALLY" in result.upper():
-            accuracy = "PARTIALLY_CORRECT"
-        elif "INCORRECT" in result.upper():
-            accuracy = "INCORRECT"
+    # Map results back to original responses
+    processed = []
+    for i, item in enumerate(batch):
+        if i < len(batch_results):
+            processed.append({
+                "question": item['question'][:150],
+                "response_snippet": item['response'][:100],
+                "accuracy": batch_results[i]['accuracy'],
+                "issues": batch_results[i]['issues'],
+            })
         else:
-            accuracy = "CORRECT"
+            processed.append({
+                "question": item['question'][:150],
+                "response_snippet": item['response'][:100],
+                "accuracy": "ERROR",
+                "issues": "Could not parse result",
+            })
 
-    # Extract issues
-    if "ISSUES:" in result:
-        issues_text = result.split("ISSUES:")[-1].strip()
-        if issues_text.lower() != "none":
-            issues = [issues_text]
+    return (batch_num, processed)
 
-    return {"accuracy": accuracy, "issues": issues, "raw_response": result}
+
+def fact_check_batch_with_claude(responses: list[dict], batch_size: int = 25) -> list[dict]:
+    """
+    Batch fact-check multiple responses using Claude CLI.
+
+    This is much faster than checking one at a time because Claude reads
+    source documents once per batch (not per response).
+
+    Args:
+        responses: List of dicts with 'question' and 'response' keys
+        batch_size: Number of responses per Claude CLI call (default 25)
+
+    Returns:
+        List of fact-check results in original order
+    """
+    if not responses:
+        return []
+
+    # Split into batches
+    batches = []
+    for i in range(0, len(responses), batch_size):
+        batches.append(responses[i:i + batch_size])
+
+    total_batches = len(batches)
+    print(f"  Processing {total_batches} batch(es) of up to {batch_size} responses each...")
+
+    all_results = []
+
+    for batch_num, batch in enumerate(batches):
+        print(f"    Batch {batch_num + 1}/{total_batches} ({len(batch)} responses)...")
+        _, batch_results = process_single_batch(batch, batch_num)
+        all_results.extend(batch_results)
+
+    return all_results
 
 
 # ============================================================================
@@ -290,6 +425,7 @@ ISSUES: [List any factual errors, or "None" if correct]
 
 def analyze_file(filename: str, use_llm_classification: bool = False,
                  fact_check_sample: int = 0,
+                 enable_fact_check: bool = False,
                  after_date: Optional[datetime] = None,
                  before_date: Optional[datetime] = None) -> dict:
     """
@@ -298,7 +434,8 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
     Args:
         filename: Path to CSV file
         use_llm_classification: Use Claude for ambiguous queries
-        fact_check_sample: Number of responses to fact-check (0 = skip)
+        fact_check_sample: Number of responses to fact-check (0 = skip, ignored if enable_fact_check=True)
+        enable_fact_check: Fact-check ALL valid answered responses using batch processing
         after_date: Only include records after this date
         before_date: Only include records before this date
     """
@@ -319,6 +456,7 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
         "valid_cannot_answer_queries": [],
         "invalid_queries": [],
         "fact_checks": [],
+        "fact_check_summary": {"correct": 0, "incorrect": 0, "partial": 0, "error": 0},
         "llm_classifications": 0,
     }
 
@@ -381,21 +519,28 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
                     })
                 else:
                     results["valid_answered"] += 1
-                    # Collect for potential fact-checking
-                    if len(rows_to_fact_check) < fact_check_sample:
+                    # Collect for fact-checking
+                    if enable_fact_check:
+                        rows_to_fact_check.append({"question": question, "response": response})
+                    elif fact_check_sample > 0 and len(rows_to_fact_check) < fact_check_sample:
                         rows_to_fact_check.append({"question": question, "response": response})
 
-    # Fact-check sampled responses
-    if fact_check_sample > 0 and rows_to_fact_check:
-        print(f"\n  Fact-checking {len(rows_to_fact_check)} responses...")
-        for i, row in enumerate(rows_to_fact_check):
-            print(f"    [{i+1}/{len(rows_to_fact_check)}] {row['question'][:40]}...")
-            fact_result = fact_check_with_claude(row['question'], row['response'])
-            results["fact_checks"].append({
-                "question": row['question'][:100],
-                "accuracy": fact_result["accuracy"],
-                "issues": fact_result["issues"],
-            })
+    # Batch fact-check responses
+    if rows_to_fact_check:
+        print(f"\n  Fact-checking {len(rows_to_fact_check)} responses (batch mode)...")
+        fact_check_results = fact_check_batch_with_claude(rows_to_fact_check, batch_size=25)
+        results["fact_checks"] = fact_check_results
+
+        # Calculate summary
+        for fc in fact_check_results:
+            if fc["accuracy"] == "CORRECT":
+                results["fact_check_summary"]["correct"] += 1
+            elif fc["accuracy"] == "INCORRECT":
+                results["fact_check_summary"]["incorrect"] += 1
+            elif fc["accuracy"] == "PARTIALLY_CORRECT":
+                results["fact_check_summary"]["partial"] += 1
+            else:
+                results["fact_check_summary"]["error"] += 1
 
     return results
 
@@ -500,15 +645,19 @@ Examples:
   # Filter by date range (inclusive)
   python3 analyze-logs-headless.py --on-or-after 2025-12-01 --on-or-before 2026-01-01
 
-  # With LLM classification and fact-checking
-  python3 analyze-logs-headless.py --use-llm --fact-check 5 --on-or-after 2026-01-01
+  # With batch fact-checking (checks all valid answered responses)
+  python3 analyze-logs-headless.py --fact-check
+
+  # Analyze single file with fact-checking
+  python3 analyze-logs-headless.py --staging-file /tmp/logs.csv --production-file /dev/null --fact-check
         """
     )
     parser.add_argument("--staging-file", default="staging-logs.csv", help="Path to staging logs CSV")
     parser.add_argument("--production-file", default="production-logs.csv", help="Path to production logs CSV")
     parser.add_argument("--output", default="chatbot-analysis-report-headless.md", help="Output report file")
     parser.add_argument("--use-llm", action="store_true", help="Use Claude for ambiguous query classification")
-    parser.add_argument("--fact-check", type=int, default=0, help="Number of responses to fact-check per file")
+    parser.add_argument("--fact-check", action="store_true",
+                        help="Fact-check ALL valid answered responses using Claude CLI (batch mode)")
     parser.add_argument("--on-or-after", type=str, metavar="DATE",
                         help="Only analyze records on or after this date (format: YYYY-MM-DD)")
     parser.add_argument("--on-or-before", type=str, metavar="DATE",
@@ -557,7 +706,7 @@ Examples:
     staging_results = analyze_file(
         args.staging_file,
         use_llm_classification=args.use_llm,
-        fact_check_sample=args.fact_check,
+        enable_fact_check=args.fact_check,
         after_date=after_date,
         before_date=before_date
     )
@@ -565,13 +714,16 @@ Examples:
         print(f"   Filtered: {staging_results['total']}/{staging_results['total_before_filter']} records (excluded {staging_results['filtered_out']} by date)")
     print(f"   Total: {staging_results['total']}, Valid: {staging_results['valid']}, Invalid: {staging_results['invalid']}")
     print(f"   Answered: {staging_results['valid_answered']}, Cannot answer: {staging_results['valid_cannot_answer']}")
+    if staging_results['fact_checks']:
+        summary = staging_results['fact_check_summary']
+        print(f"   Fact-check: {summary['correct']} correct, {summary['incorrect']} incorrect, {summary['partial']} partial")
 
     # Analyze production
     print(f"\n📊 Analyzing {args.production_file}...")
     production_results = analyze_file(
         args.production_file,
         use_llm_classification=args.use_llm,
-        fact_check_sample=args.fact_check,
+        enable_fact_check=args.fact_check,
         after_date=after_date,
         before_date=before_date
     )
@@ -579,6 +731,9 @@ Examples:
         print(f"   Filtered: {production_results['total']}/{production_results['total_before_filter']} records (excluded {production_results['filtered_out']} by date)")
     print(f"   Total: {production_results['total']}, Valid: {production_results['valid']}, Invalid: {production_results['invalid']}")
     print(f"   Answered: {production_results['valid_answered']}, Cannot answer: {production_results['valid_cannot_answer']}")
+    if production_results['fact_checks']:
+        summary = production_results['fact_check_summary']
+        print(f"   Fact-check: {summary['correct']} correct, {summary['incorrect']} incorrect, {summary['partial']} partial")
 
     # Generate report
     print(f"\n📝 Generating report...")
