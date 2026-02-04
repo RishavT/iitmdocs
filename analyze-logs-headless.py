@@ -419,12 +419,148 @@ def fact_check_batch_with_claude(responses: list[dict], batch_size: int = 25) ->
     return all_results
 
 
+def parse_answer_search_result(result: str, expected_count: int) -> list[dict]:
+    """Parse the answer search result from Claude."""
+    results = []
+
+    if "[TIMEOUT]" in result or "[ERROR" in result:
+        return [{"ai_correct_answer": f"ERROR: {result}"} for _ in range(expected_count)]
+
+    # Try to parse line by line
+    lines = result.strip().split('\n')
+
+    current_question = None
+    current_answer = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Look for patterns like "QUESTION 1:" or "1:"
+        match = re.match(r'^(QUESTION\s*)?(\d+)[\.:]\s*(.*)$', line, re.IGNORECASE)
+        if match:
+            # Save previous question's answer
+            if current_question is not None:
+                answer_text = ' '.join(current_answer).strip()
+                if not answer_text or answer_text.upper() == "NOT FOUND":
+                    results.append({"ai_correct_answer": "NOT FOUND"})
+                else:
+                    results.append({"ai_correct_answer": answer_text})
+
+            current_question = int(match.group(2))
+            current_answer = [match.group(3)] if match.group(3) else []
+        elif current_question is not None:
+            current_answer.append(line)
+
+    # Don't forget the last one
+    if current_question is not None:
+        answer_text = ' '.join(current_answer).strip()
+        if not answer_text or answer_text.upper() == "NOT FOUND":
+            results.append({"ai_correct_answer": "NOT FOUND"})
+        else:
+            results.append({"ai_correct_answer": answer_text})
+
+    # Pad with NOT FOUND if we didn't get enough results
+    while len(results) < expected_count:
+        results.append({"ai_correct_answer": "NOT FOUND"})
+
+    return results[:expected_count]
+
+
+def process_answer_search_batch(batch: list[dict], batch_num: int) -> tuple[int, list[dict]]:
+    """
+    Process a single batch of unanswered questions to find answers in src/ docs.
+    Returns (batch_num, results) tuple to maintain order.
+    """
+    # Create question list
+    question_lines = []
+    for i, item in enumerate(batch):
+        safe_question = sanitize_for_prompt(item['question'], max_length=300)
+        question_lines.append(f"[QUESTION {i + 1}]\n{safe_question}\n[/QUESTION {i + 1}]")
+
+    questions_text = "\n\n".join(question_lines)
+
+    prompt = f'''You are a helpful assistant for the IIT Madras BS Degree program.
+
+IMPORTANT: First, read ALL documents in the src/ folder to understand the program details.
+
+Then, for EACH of the following {len(batch)} questions, search the src/ documents and provide the correct answer if available.
+
+=== QUESTIONS ===
+{questions_text}
+=== END QUESTIONS ===
+
+For EACH question, respond with the answer from the src/ documents, or "NOT FOUND" if the information is not available.
+
+Respond with EXACTLY {len(batch)} answers, one per question, in this format:
+QUESTION 1: [Answer from src/ docs or "NOT FOUND"]
+QUESTION 2: [Answer from src/ docs or "NOT FOUND"]
+...and so on for all {len(batch)} questions.
+
+Keep answers concise (1-3 sentences). Only provide information that is explicitly in the src/ documents.
+'''
+
+    result = run_claude_code(prompt, timeout=180)
+    batch_results = parse_answer_search_result(result, len(batch))
+
+    # Map results back to original questions
+    processed = []
+    for i, item in enumerate(batch):
+        if i < len(batch_results):
+            processed.append({
+                "question": item['question'],
+                "row_index": item.get('row_index'),
+                "ai_correct_answer": batch_results[i]['ai_correct_answer'],
+            })
+        else:
+            processed.append({
+                "question": item['question'],
+                "row_index": item.get('row_index'),
+                "ai_correct_answer": "NOT FOUND",
+            })
+
+    return (batch_num, processed)
+
+
+def search_answers_batch_with_claude(questions: list[dict], batch_size: int = 25) -> list[dict]:
+    """
+    Batch search for answers to unanswered questions using Claude CLI.
+
+    Args:
+        questions: List of dicts with 'question' and 'row_index' keys
+        batch_size: Number of questions per Claude CLI call (default 25)
+
+    Returns:
+        List of answer search results in original order
+    """
+    if not questions:
+        return []
+
+    # Split into batches
+    batches = []
+    for i in range(0, len(questions), batch_size):
+        batches.append(questions[i:i + batch_size])
+
+    total_batches = len(batches)
+    print(f"  Searching answers in {total_batches} batch(es) of up to {batch_size} questions each...")
+
+    all_results = []
+
+    for batch_num, batch in enumerate(batches):
+        print(f"    Batch {batch_num + 1}/{total_batches} ({len(batch)} questions)...")
+        _, batch_results = process_answer_search_batch(batch, batch_num)
+        all_results.extend(batch_results)
+
+    return all_results
+
+
 # ============================================================================
 # MAIN ANALYSIS
 # ============================================================================
 
-def analyze_file(filename: str, use_llm_classification: bool = False,
-                 fact_check_sample: int = 0,
+def analyze_file(filename: str,
+                 llm_usage_types: list[str] = None,
                  enable_fact_check: bool = False,
                  after_date: Optional[datetime] = None,
                  before_date: Optional[datetime] = None) -> dict:
@@ -433,12 +569,14 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
 
     Args:
         filename: Path to CSV file
-        use_llm_classification: Use Claude for ambiguous queries
-        fact_check_sample: Number of responses to fact-check (0 = skip, ignored if enable_fact_check=True)
-        enable_fact_check: Fact-check ALL valid answered responses using batch processing
+        llm_usage_types: List of query types for Claude processing ('valid-answered', 'valid-cannot-answer')
+        enable_fact_check: Fact-check valid-answered responses (requires 'valid-answered' in llm_usage_types)
         after_date: Only include records after this date
         before_date: Only include records before this date
     """
+    if llm_usage_types is None:
+        llm_usage_types = []
+
     results = {
         "filename": filename,
         "total": 0,
@@ -457,13 +595,20 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
         "invalid_queries": [],
         "fact_checks": [],
         "fact_check_summary": {"correct": 0, "incorrect": 0, "partial": 0, "error": 0},
-        "llm_classifications": 0,
+        "answer_searches": [],
+        "answer_search_summary": {"found": 0, "not_found": 0},
+        "analyzed_rows": [],  # Per-row analysis data for CSV output
+        "original_fieldnames": [],  # Original CSV column names
     }
 
     rows_to_fact_check = []
+    rows_to_search_answer = []
+    row_index = 0
 
     with open(filename, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
+        results["original_fieldnames"] = reader.fieldnames or []
+
         for row in reader:
             question = row.get('question', '').strip()
             response = row.get('response', '').strip()
@@ -488,19 +633,24 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
 
             results["total"] += 1
 
-            # Try auto-classification first
+            # Classification using regex
             classification_result = auto_classify_query(question)
-
-            if classification_result is None and use_llm_classification:
-                # Use Claude for ambiguous queries
-                print(f"  [LLM] Classifying: {question[:50]}...")
-                classification_result = classify_with_claude(question)
-                results["llm_classifications"] += 1
-            elif classification_result is None:
-                # Default to valid if not using LLM
+            if classification_result is None:
                 classification_result = ("valid", "default_valid")
 
             classification, reason = classification_result
+
+            # Prepare row analysis data
+            row_analysis = {
+                "original_row": row,
+                "row_index": row_index,
+                "classification": classification,
+                "classification_reason": reason,
+                "cannot_answer": False,
+                "fact_check_accuracy": "",
+                "fact_check_issues": "",
+                "ai_correct_answer": "",
+            }
 
             if classification == "invalid":
                 results["invalid"] += 1
@@ -513,17 +663,29 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
                 results["valid"] += 1
                 if is_cannot_answer(response):
                     results["valid_cannot_answer"] += 1
+                    row_analysis["cannot_answer"] = True
                     results["valid_cannot_answer_queries"].append({
                         "question": question[:150],
                         "response_snippet": response[:100],
                     })
+                    # Collect for answer search if enabled
+                    if "valid-cannot-answer" in llm_usage_types:
+                        rows_to_search_answer.append({
+                            "question": question,
+                            "row_index": row_index,
+                        })
                 else:
                     results["valid_answered"] += 1
-                    # Collect for fact-checking
-                    if enable_fact_check:
-                        rows_to_fact_check.append({"question": question, "response": response})
-                    elif fact_check_sample > 0 and len(rows_to_fact_check) < fact_check_sample:
-                        rows_to_fact_check.append({"question": question, "response": response})
+                    # Collect for fact-checking if enabled
+                    if "valid-answered" in llm_usage_types and enable_fact_check:
+                        rows_to_fact_check.append({
+                            "question": question,
+                            "response": response,
+                            "row_index": row_index,
+                        })
+
+            results["analyzed_rows"].append(row_analysis)
+            row_index += 1
 
     # Batch fact-check responses
     if rows_to_fact_check:
@@ -531,18 +693,82 @@ def analyze_file(filename: str, use_llm_classification: bool = False,
         fact_check_results = fact_check_batch_with_claude(rows_to_fact_check, batch_size=25)
         results["fact_checks"] = fact_check_results
 
-        # Calculate summary
-        for fc in fact_check_results:
-            if fc["accuracy"] == "CORRECT":
+        # Map results back to analyzed_rows
+        for i, fc in enumerate(fact_check_results):
+            if i < len(rows_to_fact_check):
+                target_row_index = rows_to_fact_check[i]["row_index"]
+                results["analyzed_rows"][target_row_index]["fact_check_accuracy"] = fc.get("accuracy", "")
+                results["analyzed_rows"][target_row_index]["fact_check_issues"] = fc.get("issues", "")
+
+            if fc.get("accuracy") == "CORRECT":
                 results["fact_check_summary"]["correct"] += 1
-            elif fc["accuracy"] == "INCORRECT":
+            elif fc.get("accuracy") == "INCORRECT":
                 results["fact_check_summary"]["incorrect"] += 1
-            elif fc["accuracy"] == "PARTIALLY_CORRECT":
+            elif fc.get("accuracy") == "PARTIALLY_CORRECT":
                 results["fact_check_summary"]["partial"] += 1
             else:
                 results["fact_check_summary"]["error"] += 1
 
+    # Batch search for answers to unanswered questions
+    if rows_to_search_answer:
+        print(f"\n  Searching answers for {len(rows_to_search_answer)} unanswered questions (batch mode)...")
+        answer_search_results = search_answers_batch_with_claude(rows_to_search_answer, batch_size=25)
+        results["answer_searches"] = answer_search_results
+
+        # Map results back to analyzed_rows
+        for i, ans in enumerate(answer_search_results):
+            if i < len(rows_to_search_answer):
+                target_row_index = rows_to_search_answer[i]["row_index"]
+                results["analyzed_rows"][target_row_index]["ai_correct_answer"] = ans.get("ai_correct_answer", "")
+
+            if ans.get("ai_correct_answer", "").upper() != "NOT FOUND" and not ans.get("ai_correct_answer", "").startswith("ERROR"):
+                results["answer_search_summary"]["found"] += 1
+            else:
+                results["answer_search_summary"]["not_found"] += 1
+
     return results
+
+
+def write_analyzed_csv(results: dict, output_filename: str):
+    """
+    Write analyzed results to a new CSV file with additional columns.
+
+    Args:
+        results: Analysis results from analyze_file
+        output_filename: Path for the output CSV
+    """
+    if not results["analyzed_rows"]:
+        print(f"  No rows to write to {output_filename}")
+        return
+
+    # Build fieldnames: original + new analysis columns
+    new_columns = [
+        "classification",
+        "classification_reason",
+        "cannot_answer",
+        "fact_check_accuracy",
+        "fact_check_issues",
+        "ai_correct_answer",
+    ]
+
+    fieldnames = list(results["original_fieldnames"]) + new_columns
+
+    with open(output_filename, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for row_analysis in results["analyzed_rows"]:
+            # Combine original row with analysis data
+            output_row = dict(row_analysis["original_row"])
+            output_row["classification"] = row_analysis["classification"]
+            output_row["classification_reason"] = row_analysis["classification_reason"]
+            output_row["cannot_answer"] = str(row_analysis["cannot_answer"]).lower()
+            output_row["fact_check_accuracy"] = row_analysis["fact_check_accuracy"]
+            output_row["fact_check_issues"] = row_analysis["fact_check_issues"]
+            output_row["ai_correct_answer"] = row_analysis["ai_correct_answer"]
+            writer.writerow(output_row)
+
+    print(f"  Analyzed CSV saved to: {output_filename}")
 
 
 def generate_report(staging_results: dict, production_results: dict, output_file: str):
@@ -645,19 +871,26 @@ Examples:
   # Filter by date range (inclusive)
   python3 analyze-logs-headless.py --on-or-after 2025-12-01 --on-or-before 2026-01-01
 
-  # With batch fact-checking (checks all valid answered responses)
-  python3 analyze-logs-headless.py --fact-check
+  # Search for answers to unanswered questions using Claude
+  python3 analyze-logs-headless.py --llm-usage-type=valid-cannot-answer
 
-  # Analyze single file with fact-checking
-  python3 analyze-logs-headless.py --staging-file /tmp/logs.csv --production-file /dev/null --fact-check
+  # Fact-check answered responses using Claude
+  python3 analyze-logs-headless.py --llm-usage-type=valid-answered --fact-check
+
+  # Both: fact-check answered + search answers for unanswered
+  python3 analyze-logs-headless.py --llm-usage-type=valid-answered,valid-cannot-answer --fact-check
+
+  # Analyze single file with answer search
+  python3 analyze-logs-headless.py --staging-file /tmp/logs.csv --production-file /dev/null --llm-usage-type=valid-cannot-answer
         """
     )
     parser.add_argument("--staging-file", default="staging-logs.csv", help="Path to staging logs CSV")
     parser.add_argument("--production-file", default="production-logs.csv", help="Path to production logs CSV")
     parser.add_argument("--output", default="chatbot-analysis-report-headless.md", help="Output report file")
-    parser.add_argument("--use-llm", action="store_true", help="Use Claude for ambiguous query classification")
+    parser.add_argument("--llm-usage-type", type=str, metavar="TYPES",
+                        help="Comma-separated query types for Claude processing: valid-answered, valid-cannot-answer")
     parser.add_argument("--fact-check", action="store_true",
-                        help="Fact-check ALL valid answered responses using Claude CLI (batch mode)")
+                        help="Fact-check valid-answered responses using Claude CLI (requires --llm-usage-type=valid-answered)")
     parser.add_argument("--on-or-after", type=str, metavar="DATE",
                         help="Only analyze records on or after this date (format: YYYY-MM-DD)")
     parser.add_argument("--on-or-before", type=str, metavar="DATE",
@@ -683,6 +916,16 @@ Examples:
             print(f"❌ Error: {e}")
             sys.exit(1)
 
+    # Parse LLM usage types
+    llm_usage_types = []
+    if args.llm_usage_type:
+        llm_usage_types = [t.strip() for t in args.llm_usage_type.split(',')]
+        valid_types = {'valid-answered', 'valid-cannot-answer'}
+        for t in llm_usage_types:
+            if t not in valid_types:
+                print(f"❌ Error: Invalid --llm-usage-type '{t}'. Valid options: {', '.join(valid_types)}")
+                sys.exit(1)
+
     print("=" * 60)
     print("CHATBOT LOG ANALYSIS (with Claude Code Headless)")
     print("=" * 60)
@@ -695,6 +938,12 @@ Examples:
         if before_date:
             print(f"   On or before: {before_date.strftime('%Y-%m-%d')}")
 
+    # Show LLM usage info
+    if llm_usage_types:
+        print(f"\n🤖 LLM Processing: {', '.join(llm_usage_types)}")
+        if args.fact_check and 'valid-answered' in llm_usage_types:
+            print("   Fact-checking: enabled")
+
     # Check if files exist
     for f in [args.staging_file, args.production_file]:
         if not Path(f).exists():
@@ -705,7 +954,7 @@ Examples:
     print(f"\n📊 Analyzing {args.staging_file}...")
     staging_results = analyze_file(
         args.staging_file,
-        use_llm_classification=args.use_llm,
+        llm_usage_types=llm_usage_types,
         enable_fact_check=args.fact_check,
         after_date=after_date,
         before_date=before_date
@@ -717,12 +966,20 @@ Examples:
     if staging_results['fact_checks']:
         summary = staging_results['fact_check_summary']
         print(f"   Fact-check: {summary['correct']} correct, {summary['incorrect']} incorrect, {summary['partial']} partial")
+    if staging_results['answer_searches']:
+        summary = staging_results['answer_search_summary']
+        print(f"   Answer search: {summary['found']} found, {summary['not_found']} not found")
+
+    # Write analyzed CSV for staging
+    if staging_results['analyzed_rows'] and args.staging_file != '/dev/null':
+        staging_csv_output = args.staging_file.replace('.csv', '-analyzed.csv')
+        write_analyzed_csv(staging_results, staging_csv_output)
 
     # Analyze production
     print(f"\n📊 Analyzing {args.production_file}...")
     production_results = analyze_file(
         args.production_file,
-        use_llm_classification=args.use_llm,
+        llm_usage_types=llm_usage_types,
         enable_fact_check=args.fact_check,
         after_date=after_date,
         before_date=before_date
@@ -734,17 +991,34 @@ Examples:
     if production_results['fact_checks']:
         summary = production_results['fact_check_summary']
         print(f"   Fact-check: {summary['correct']} correct, {summary['incorrect']} incorrect, {summary['partial']} partial")
+    if production_results['answer_searches']:
+        summary = production_results['answer_search_summary']
+        print(f"   Answer search: {summary['found']} found, {summary['not_found']} not found")
+
+    # Write analyzed CSV for production
+    if production_results['analyzed_rows'] and args.production_file != '/dev/null':
+        production_csv_output = args.production_file.replace('.csv', '-analyzed.csv')
+        write_analyzed_csv(production_results, production_csv_output)
 
     # Generate report
     print(f"\n📝 Generating report...")
     generate_report(staging_results, production_results, args.output)
 
-    # Save detailed JSON
+    # Save detailed JSON (exclude large data)
     json_output = args.output.replace('.md', '.json')
+
+    def prepare_for_json(results):
+        """Prepare results for JSON serialization, excluding large row data."""
+        return {
+            k: (dict(v) if isinstance(v, defaultdict) else v)
+            for k, v in results.items()
+            if k not in ('analyzed_rows', 'original_fieldnames')  # Exclude large data
+        }
+
     with open(json_output, 'w') as f:
         json.dump({
-            "staging": {k: v if not isinstance(v, defaultdict) else dict(v) for k, v in staging_results.items()},
-            "production": {k: v if not isinstance(v, defaultdict) else dict(v) for k, v in production_results.items()},
+            "staging": prepare_for_json(staging_results),
+            "production": prepare_for_json(production_results),
         }, f, indent=2)
     print(f"✅ Detailed JSON saved to: {json_output}")
 
