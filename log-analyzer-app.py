@@ -51,10 +51,12 @@ Testing:
 """
 
 import csv
+import concurrent.futures
 import io
 import json
 import os
 import re
+import subprocess
 import threading
 import time
 import uuid
@@ -208,10 +210,252 @@ def is_cannot_answer(response: str) -> bool:
     return False
 
 
+def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
+    """
+    Sanitize text for use in Claude prompts to prevent prompt injection.
+
+    - Truncates to max_length
+    - Removes/escapes potentially dangerous patterns
+    - Removes control characters
+    """
+    if not text:
+        return ""
+
+    # Truncate
+    text = text[:max_length]
+
+    # Remove control characters (except newlines and tabs)
+    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+
+    # Escape patterns that could be used for prompt injection
+    injection_patterns = [
+        (r'<\|.*?\|>', '[REMOVED]'),  # Special tokens
+        (r'\bsystem\s*:', '[system]'),  # System prompt attempts
+        (r'\buser\s*:', '[user]'),  # Role injection
+        (r'\bassistant\s*:', '[assistant]'),  # Role injection
+        (r'\bhuman\s*:', '[human]'),  # Role injection
+        (r'ignore\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+        (r'forget\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+        (r'disregard\s+(all\s+)?(previous|above|prior)\s+instructions', '[REMOVED]'),
+    ]
+
+    for pattern, replacement in injection_patterns:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+
+    # Replace multiple newlines with single
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    return text.strip()
+
+
+def run_claude_cli(prompt: str, timeout: int = 90) -> str:
+    """
+    Run Claude CLI in non-interactive mode.
+    Returns the output text.
+    """
+    try:
+        result = subprocess.run(
+            ["claude", "-p", prompt, "--output-format", "text"],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=os.getcwd()
+        )
+        return result.stdout.strip()
+    except subprocess.TimeoutExpired:
+        return "[TIMEOUT]"
+    except FileNotFoundError:
+        return "[ERROR: Claude CLI not found]"
+    except Exception as e:
+        return f"[ERROR: {str(e)}]"
+
+
+def process_single_batch(batch: list[dict], batch_num: int) -> tuple[int, list[dict]]:
+    """
+    Process a single batch of responses for fact-checking.
+    Returns (batch_num, results) tuple to maintain order.
+    """
+    # Create CSV-like content with just responses
+    response_lines = []
+    for i, item in enumerate(batch):
+        safe_response = sanitize_for_prompt(item['response'], max_length=400)
+        response_lines.append(f"[RESPONSE {i + 1}]\n{safe_response}\n[/RESPONSE {i + 1}]")
+
+    responses_text = "\n\n".join(response_lines)
+
+    prompt = f'''You are an expert fact checker for the IIT Madras BS Degree program.
+
+IMPORTANT: First, read the documents in the src/ folder to understand the facts about the program.
+
+Then, fact-check EACH of the following {len(batch)} chatbot responses against those documents.
+
+=== RESPONSES TO VERIFY ===
+{responses_text}
+=== END RESPONSES ===
+
+For EACH response, determine if it is factually accurate based on the src/ documents.
+
+Respond with EXACTLY {len(batch)} lines, one per response, in this format:
+RESPONSE 1: [CORRECT/INCORRECT/PARTIALLY_CORRECT] - [brief issue or "OK"]
+RESPONSE 2: [CORRECT/INCORRECT/PARTIALLY_CORRECT] - [brief issue or "OK"]
+...and so on for all {len(batch)} responses.
+
+Be concise. Only flag clear factual errors.
+'''
+
+    result = run_claude_cli(prompt, timeout=180)
+    batch_results = parse_batch_fact_check_result(result, len(batch))
+
+    # Map results back to original responses
+    processed = []
+    for i, item in enumerate(batch):
+        if i < len(batch_results):
+            processed.append({
+                "question": item['question'][:150],
+                "response_snippet": item['response'][:100],
+                "accuracy": batch_results[i]['accuracy'],
+                "issues": batch_results[i]['issues'],
+            })
+        else:
+            processed.append({
+                "question": item['question'][:150],
+                "response_snippet": item['response'][:100],
+                "accuracy": "ERROR",
+                "issues": "Could not parse result",
+            })
+
+    return (batch_num, processed)
+
+
+def fact_check_batch_with_claude(responses: list[dict], job_id: str,
+                                  batch_size: int = 25, max_workers: int = 4) -> list[dict]:
+    """
+    Batch fact-check multiple responses using Claude CLI with parallel workers.
+
+    This is much faster than checking one at a time because:
+    1. Claude reads source documents once per batch (not per response)
+    2. Multiple batches run in parallel (default 4 workers)
+
+    Args:
+        responses: List of dicts with 'question', 'response', and 'index' keys
+        job_id: Job ID for progress updates
+        batch_size: Number of responses per Claude CLI call (default 25)
+        max_workers: Number of parallel Claude CLI processes (default 4)
+
+    Returns:
+        List of fact-check results in original order
+    """
+    if not responses:
+        return []
+
+    # Split into batches
+    batches = []
+    for i in range(0, len(responses), batch_size):
+        batches.append(responses[i:i + batch_size])
+
+    total_batches = len(batches)
+    update_job(job_id,
+               message=f"Starting {total_batches} batches with {max_workers} parallel workers...",
+               progress=82)
+
+    # Track completed batches for progress
+    completed = [0]  # Use list to allow modification in nested function
+    results_lock = threading.Lock()
+
+    def track_progress(future):
+        with results_lock:
+            completed[0] += 1
+            progress = 82 + int(13 * completed[0] / total_batches)
+            update_job(job_id,
+                       message=f"Fact-checking: {completed[0]}/{total_batches} batches complete...",
+                       progress=progress)
+
+    # Run batches in parallel
+    all_results = [None] * total_batches  # Pre-allocate to maintain order
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        for batch_num, batch in enumerate(batches):
+            future = executor.submit(process_single_batch, batch, batch_num)
+            future.add_done_callback(track_progress)
+            futures.append(future)
+
+        # Collect results
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                batch_num, batch_results = future.result()
+                all_results[batch_num] = batch_results
+            except Exception as e:
+                # Handle any errors
+                pass
+
+    # Flatten results in order
+    final_results = []
+    for batch_results in all_results:
+        if batch_results:
+            final_results.extend(batch_results)
+
+    return final_results
+
+
+def parse_batch_fact_check_result(result: str, expected_count: int) -> list[dict]:
+    """Parse the batch fact-check result from Claude."""
+    results = []
+
+    if "[TIMEOUT]" in result or "[ERROR" in result:
+        return [{"accuracy": "ERROR", "issues": result} for _ in range(expected_count)]
+
+    # Try to parse line by line
+    lines = result.strip().split('\n')
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Look for patterns like "RESPONSE 1:" or "1:" or "1."
+        if re.match(r'^(RESPONSE\s*)?\d+[\.:]\s*', line, re.IGNORECASE):
+            # Extract accuracy
+            accuracy = "UNKNOWN"
+            issues = ""
+
+            line_upper = line.upper()
+            if "INCORRECT" in line_upper and "PARTIALLY" not in line_upper:
+                accuracy = "INCORRECT"
+            elif "PARTIALLY" in line_upper:
+                accuracy = "PARTIALLY_CORRECT"
+            elif "CORRECT" in line_upper:
+                accuracy = "CORRECT"
+            elif "CANNOT" in line_upper or "VERIFY" in line_upper:
+                accuracy = "CANNOT_VERIFY"
+
+            # Extract issues (everything after the dash or accuracy word)
+            if " - " in line:
+                issues = line.split(" - ", 1)[-1].strip()
+                if issues.upper() == "OK" or issues.upper() == "NONE":
+                    issues = ""
+
+            results.append({"accuracy": accuracy, "issues": issues})
+
+    # Pad with unknowns if we didn't get enough results
+    while len(results) < expected_count:
+        results.append({"accuracy": "UNKNOWN", "issues": "Could not parse"})
+
+    return results[:expected_count]
+
+
 def analyze_csv_content(csv_content: str, after_date: Optional[datetime],
-                        before_date: Optional[datetime], job_id: str) -> dict:
+                        before_date: Optional[datetime], job_id: str,
+                        enable_fact_check: bool = False) -> dict:
     """
     Analyze CSV content with progress reporting.
+
+    Args:
+        csv_content: CSV file content as string
+        after_date: Filter records on or after this date
+        before_date: Filter records on or before this date
+        job_id: Job ID for progress updates
+        enable_fact_check: If True, fact-check answered queries using Claude CLI
     """
     results = {
         "total": 0,
@@ -228,7 +472,12 @@ def analyze_csv_content(csv_content: str, after_date: Optional[datetime],
         "valid_cannot_answer": 0,
         "valid_cannot_answer_queries": [],
         "invalid_queries": [],
+        "fact_checks": [],
+        "fact_check_summary": {"correct": 0, "incorrect": 0, "partial": 0, "error": 0},
     }
+
+    # Collect responses for batch fact-checking
+    responses_to_check = []
 
     # Parse CSV
     update_job(job_id, message="Parsing CSV file...", progress=5)
@@ -292,13 +541,40 @@ def analyze_csv_content(csv_content: str, after_date: Optional[datetime],
                 })
             else:
                 results["valid_answered"] += 1
+                # Collect for batch fact-checking later
+                if enable_fact_check:
+                    responses_to_check.append({
+                        "question": question,
+                        "response": response,
+                        "index": results["valid_answered"] - 1,
+                    })
 
-        # Update progress (10-90% range for processing)
-        progress = 10 + int(80 * (i + 1) / total_rows)
+        # Update progress (0-80% for classification)
+        progress = 10 + int(70 * (i + 1) / total_rows)
         if i % max(1, total_rows // 20) == 0:  # Update every 5%
             update_job(job_id,
                        message=f"Analyzed {i + 1}/{total_rows} rows...",
                        progress=progress)
+
+    # Batch fact-checking (80-95% progress)
+    if enable_fact_check and responses_to_check:
+        update_job(job_id,
+                   message=f"Starting batch fact-check of {len(responses_to_check)} responses...",
+                   progress=80)
+
+        fact_check_results = fact_check_batch_with_claude(responses_to_check, job_id, batch_size=25)
+        results["fact_checks"] = fact_check_results
+
+        # Calculate summary
+        for fc in fact_check_results:
+            if fc["accuracy"] == "CORRECT":
+                results["fact_check_summary"]["correct"] += 1
+            elif fc["accuracy"] == "INCORRECT":
+                results["fact_check_summary"]["incorrect"] += 1
+            elif fc["accuracy"] == "PARTIALLY_CORRECT":
+                results["fact_check_summary"]["partial"] += 1
+            else:
+                results["fact_check_summary"]["error"] += 1
 
     # Finalize
     update_job(job_id, message="Generating summary...", progress=95)
@@ -310,12 +586,14 @@ def analyze_csv_content(csv_content: str, after_date: Optional[datetime],
 
 
 def run_analysis_job(job_id: str, csv_content: str,
-                     after_date: Optional[datetime], before_date: Optional[datetime]):
+                     after_date: Optional[datetime], before_date: Optional[datetime],
+                     enable_fact_check: bool = False):
     """Background job function."""
     try:
         update_job(job_id, status="running", message="Starting analysis...", progress=0)
 
-        result = analyze_csv_content(csv_content, after_date, before_date, job_id)
+        result = analyze_csv_content(csv_content, after_date, before_date, job_id,
+                                     enable_fact_check=enable_fact_check)
 
         # Calculate summary stats
         if result["valid"] > 0:
@@ -395,11 +673,14 @@ def start_analysis():
         if not before_date:
             return jsonify({"error": f"Invalid end date: {end_date_str}"}), 400
 
+    # Check if fact-checking is enabled
+    enable_fact_check = request.form.get('fact_check', '').lower() in ('true', '1', 'on', 'yes')
+
     # Create job and start background thread
     job_id = create_job()
     thread = threading.Thread(
         target=run_analysis_job,
-        args=(job_id, csv_content, after_date, before_date),
+        args=(job_id, csv_content, after_date, before_date, enable_fact_check),
         daemon=True
     )
     thread.start()
@@ -535,6 +816,37 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .checkbox-group {
+            margin-top: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .checkbox-label span {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .checkbox-label small {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-top: 2px;
         }
 
         .date-row {
@@ -685,6 +997,82 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             color: #e74c3c;
         }
 
+        .fact-check-summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .fact-check-summary .stat {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .fact-check-summary .correct {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .fact-check-summary .incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .fact-check-summary .partial {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .fact-check-item {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .fact-check-item:last-child {
+            border-bottom: none;
+        }
+
+        .fact-check-item .accuracy {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .fact-check-item .accuracy.correct {
+            background: #27ae60;
+            color: white;
+        }
+
+        .fact-check-item .accuracy.incorrect {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .fact-check-item .accuracy.partial {
+            background: #f39c12;
+            color: white;
+        }
+
+        .fact-check-item .accuracy.unknown {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .fact-check-item .issues {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+
         .error-message {
             background: #fee;
             color: #c0392b;
@@ -732,6 +1120,14 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                 <div class="form-group">
                     <label for="password">Password</label>
                     <input type="password" id="password" name="password" placeholder="Enter password" required>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="fact_check" name="fact_check" value="true">
+                        <span>Enable AI Fact-Checking</span>
+                        <small>(Uses Claude CLI to verify each response - slower but more thorough)</small>
+                    </label>
                 </div>
 
                 <button type="submit" id="submitBtn">Analyze Logs</button>
@@ -792,6 +1188,12 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
             <div id="invalidSection">
                 <h3 class="section-title">Sample Invalid Queries</h3>
                 <div class="query-list" id="invalidList"></div>
+            </div>
+
+            <div id="factCheckSection" style="display: none;">
+                <h3 class="section-title">Fact-Check Results</h3>
+                <div class="fact-check-summary" id="factCheckSummary"></div>
+                <div class="query-list" id="factCheckList"></div>
             </div>
         </div>
     </div>
@@ -970,6 +1372,38 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                 document.getElementById('invalidSection').style.display = 'block';
             } else {
                 document.getElementById('invalidSection').style.display = 'none';
+            }
+
+            // Fact-check results
+            const factCheckSection = document.getElementById('factCheckSection');
+            const factCheckSummary = document.getElementById('factCheckSummary');
+            const factCheckList = document.getElementById('factCheckList');
+
+            if (data.fact_checks && data.fact_checks.length > 0) {
+                // Show summary
+                const summary = data.fact_check_summary || {};
+                factCheckSummary.innerHTML = `
+                    <div class="stat correct">Correct: ${summary.correct || 0}</div>
+                    <div class="stat incorrect">Incorrect: ${summary.incorrect || 0}</div>
+                    <div class="stat partial">Partial: ${summary.partial || 0}</div>
+                `;
+
+                // Show individual results
+                factCheckList.innerHTML = '';
+                data.fact_checks.slice(0, 30).forEach(fc => {
+                    const accuracyClass = fc.accuracy.toLowerCase().replace('_', '');
+                    factCheckList.innerHTML += `
+                        <div class="fact-check-item">
+                            <span class="accuracy ${accuracyClass}">${fc.accuracy.replace(/_/g, ' ')}</span>
+                            ${escapeHtml(fc.question)}
+                            ${fc.issues && fc.accuracy !== 'CORRECT' ? `<div class="issues">${escapeHtml(fc.issues)}</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                factCheckSection.style.display = 'block';
+            } else {
+                factCheckSection.style.display = 'none';
             }
 
             results.style.display = 'block';
