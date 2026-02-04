@@ -416,7 +416,7 @@ const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
 
 18. Paradox Event: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
 
-19. Independent FAQs: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts`;
+19. Independent FAQs: Laptop, VPN, language, English, hostel, accommodation, library, facilities, campus access, sports, clinic, international students, abroad, exam timing, scholarships, student ID, email, application, payment, SCT, System Compatibility Test, handbook, lectures, doubts, Gen AI`;
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.
