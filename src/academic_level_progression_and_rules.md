@@ -55,6 +55,8 @@ The BS program has multiple exit points:
 ## Programs Offered
 1. BS in Data Science and Applications
 2. BS in Electronic Systems
+3. BS in Management and Data Science
+4. BS in Aeronautics and Space Technology
 
 ## Learning Mode
 - Content delivered online

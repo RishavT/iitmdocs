@@ -4,9 +4,11 @@ IIT Madras offers four-year BS programmes that aim to provide quality education 
 
 ## Programs Offered
 
-Currently, IIT Madras is offering two BS programmes:
+Currently, IIT Madras is offering four BS programmes:
 1. BS in Data Science and Applications
 2. BS in Electronic Systems
+3. BS in Management and Data Science
+4. BS in Aeronautics and Space Technology
 
 ## Learning Mode
 
@@ -18,13 +20,31 @@ Currently, IIT Madras is offering two BS programmes:
 
 ## Programme Levels and Exit Points
 
-The BS programme has multiple levels, which provide flexibility to students to exit at any of these levels. Depending on the courses completed and credits earned, the learner can receive:
+The BS programme has multiple levels, which provide flexibility to students to exit at any of these levels. Depending on the courses completed and credits earned, the learner can receive various certificates and degrees:
+
+### BS in Data Science and Applications
 - Foundation Certificate from IITM CODE
 - Diploma(s) from IIT Madras
-- BSc Degree from IIT Madras
+- BSc, BS, PGD, M.Tech Degrees from IIT Madras
+- Website: https://study.iitm.ac.in/ds
+
+### BS in Electronic Systems
+- Foundation Certificate from IITM CODE
+- Diploma(s) from IIT Madras
 - BS Degree from IIT Madras
-- PGD from IIT Madras
-- M.Tech Degree from IIT Madras
+- Website: https://study.iitm.ac.in/es
+
+### BS in Management and Data Science
+- Foundation Certificate from IITM CODE
+- Diploma(s) from IIT Madras
+- BS Degree from IIT Madras
+- Website: https://study.iitm.ac.in/mg
+
+### BS in Aeronautics and Space Technology
+- Foundation Certificate from IITM CODE
+- Diploma(s) from IIT Madras
+- BS Degree from IIT Madras
+- Website: https://study.iitm.ac.in/ae
 
 ## Contact Information
 

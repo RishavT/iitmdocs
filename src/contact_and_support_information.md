@@ -20,6 +20,8 @@ IIT Madras, Chennai - 600036
 ## Official Website
 https://study.iitm.ac.in/ds/ (Data Science)
 https://study.iitm.ac.in/es/ (Electronic Systems)
+https://study.iitm.ac.in/mg/ (Management and Data Science)
+https://study.iitm.ac.in/ae/ (Aeronautics and Space Technology)
 
 ## When to Contact Support
 - Payment issues or errors

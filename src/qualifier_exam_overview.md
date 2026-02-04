@@ -4,19 +4,19 @@ All regular entry applicants must go through the 4-week Qualifier process to ear
 
 ## Course Content by Program
 
-### BS in Data Science and Applications (DS)
+### BS in Data Science and Applications (DS) and BS in Management and Data Science (MG)
 On the start date of the Qualifier process Week-1, access to the content for the four Foundation level courses will be provided:
 1. English 1
 2. Maths-1
 3. Statistics-1
 4. Computational Thinking
 
-### BS in Electronic Systems (ES)
+### BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
 On the start date of the Qualifier process Week-1, access to the content for the four Foundation level courses will be provided:
 1. English 1
 2. Mathematics-1
-3. Physics-1
-4. Basic Electronics
+3. Electronic Systems Thinking and Circuits
+4. Introduction to C Programming
 
 ## How Content is Released
 
@@ -34,7 +34,7 @@ On the start date of the Qualifier process Week-1, access to the content for the
 
 - All applicants registering for the Qualifier Exam will receive access to Week-1 sample course content
 - This allows candidates to explore the learning material and understand the structure of the program before attempting the exam
-- To receive access, learners must complete the Qualifier Exam registration form available on the official website: https://study.iitm.ac.in/ds/
+- To receive access, learners must complete the Qualifier Exam registration form available on the official website: https://study.iitm.ac.in/
 - Access to the Week-1 content will be provided after successful submission of the form
 
 # FAQs
@@ -56,8 +56,8 @@ It ensures that learners meet the minimum academic readiness required to enter t
 **Answer**: No.
 The syllabus differs by program:
 
-* BS in Data Science and Applications: English 1, Maths-1, Statistics-1, Computational Thinking
-* BS in Electronic Systems: English I, Math for Electronics I, Electronic Systems Thinking and Circuits, Introduction to C Programming
+* BS in Data Science and Applications and BS in Management and Data Science: English 1, Maths-1, Statistics-1, Computational Thinking
+* BS in Electronic Systems and BS in Aeronautics and Space Technology: English 1, Mathematics-1, Electronic Systems Thinking and Circuits, Introduction to C Programming
 
 
 
