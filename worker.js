@@ -443,6 +443,7 @@ function findSynonymMatch(query) {
  * @returns {Promise<{query: string, source: string}>} - The rewritten query and its source
  */
 async function rewriteQueryWithSource(query, env) {
+  // STEP 1
   // Sanitize query to prevent prompt injection before any processing
   const originalQuery = query;
   query = sanitizeQuery(query);
@@ -1311,6 +1312,7 @@ async function getFAQSuggestions(query, env, language = 'english') {
 }
 
 async function generateAnswer(question, documents, history, env, logContext = null, language = 'english') {
+  // STEP 2
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
   const relevantDocs = documents.filter(doc => doc.relevance > RELEVANCE_THRESHOLD);
@@ -1640,6 +1642,7 @@ function createSSEResponse(text, options = {}) {
  * @returns {Promise<boolean>} - true if response is factually grounded, false otherwise
  */
 async function checkResponse({ response, context, history = [], env }) {
+  // STEP 3
   // Build history context string from conversation history
   const historyContext = history.length > 0
     ? "\n\nPREVIOUS CONVERSATION:\n" + history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join("\n\n")
