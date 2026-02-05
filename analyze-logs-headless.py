@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["requests"]
+# dependencies = ["requests", "tqdm"]
 # ///
 """
 Chatbot Log Analysis with Claude Code Headless Mode
@@ -66,6 +66,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
+from tqdm import tqdm
 
 
 # ============================================================================
@@ -422,12 +423,11 @@ def fact_check_batch_with_claude(responses: list[dict], batch_size: int = 25) ->
         batches.append(responses[i:i + batch_size])
 
     total_batches = len(batches)
-    print(f"  Processing {total_batches} batch(es) of up to {batch_size} responses each...")
+    print(f"  Fact-checking {len(responses)} responses in {total_batches} batch(es)...")
 
     all_results = []
 
-    for batch_num, batch in enumerate(batches):
-        print(f"    Batch {batch_num + 1}/{total_batches} ({len(batch)} responses)...")
+    for batch_num, batch in enumerate(tqdm(batches, desc="    Fact-check batches", unit="batch")):
         _, batch_results = process_single_batch(batch, batch_num)
         all_results.extend(batch_results)
 
@@ -558,12 +558,11 @@ def search_answers_batch_with_claude(questions: list[dict], batch_size: int = 25
         batches.append(questions[i:i + batch_size])
 
     total_batches = len(batches)
-    print(f"  Searching answers in {total_batches} batch(es) of up to {batch_size} questions each...")
+    print(f"  Searching answers for {len(questions)} questions in {total_batches} batch(es)...")
 
     all_results = []
 
-    for batch_num, batch in enumerate(batches):
-        print(f"    Batch {batch_num + 1}/{total_batches} ({len(batch)} questions)...")
+    for batch_num, batch in enumerate(tqdm(batches, desc="    Answer search batches", unit="batch")):
         _, batch_results = process_answer_search_batch(batch, batch_num)
         all_results.extend(batch_results)
 
@@ -650,8 +649,7 @@ def compare_responses_with_claude(comparisons: list[dict], batch_size: int = 10)
 
     print(f"  Comparing {len(comparisons)} responses in {len(batches)} batch(es)...")
 
-    for batch_num, batch in enumerate(batches):
-        print(f"    Batch {batch_num + 1}/{len(batches)} ({len(batch)} comparisons)...")
+    for batch_num, batch in enumerate(tqdm(batches, desc="    Comparison batches", unit="batch")):
 
         comparison_text = []
         for i, item in enumerate(batch):
@@ -761,11 +759,9 @@ def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: in
 
     print(f"  Querying new bot for {len(questions)} previously unanswered questions...")
 
-    # First, query the new bot for all questions
+    # First, query the new bot for all questions with progress bar
     results = []
-    for i, item in enumerate(questions):
-        if (i + 1) % 10 == 0:
-            print(f"    Queried {i + 1}/{len(questions)}...")
+    for item in tqdm(questions, desc="    Querying new bot", unit="query"):
         new_response = query_new_bot(item['question'], bot_url)
         results.append({
             "question": item['question'],
@@ -773,8 +769,6 @@ def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: in
             "new_response": new_response,
             "new_bot_can_answer": not is_cannot_answer(new_response) and not new_response.startswith("[ERROR"),
         })
-
-    print(f"    Queried all {len(questions)} questions.")
 
     # Now batch analyze responses that appear to be answers
     answerable = [r for r in results if r['new_bot_can_answer']]
@@ -930,7 +924,11 @@ def analyze_file(filename: str,
         reader = csv.DictReader(f)
         results["original_fieldnames"] = reader.fieldnames or []
 
-        for row in reader:
+        # Read all rows first for progress bar
+        all_rows = list(reader)
+        print(f"  Reading {len(all_rows)} rows from {filename}...")
+
+        for row in tqdm(all_rows, desc="  Classifying rows", unit="row"):
             question = row.get('question', '').strip()
             response = row.get('response', '').strip()
 
@@ -1387,7 +1385,7 @@ Examples:
             print(f"  Comparing {len(could_answer_rows)} could-answer queries...")
 
             # Query new bot for all could-answer questions
-            for item in could_answer_rows:
+            for item in tqdm(could_answer_rows, desc="    Querying new bot", unit="query"):
                 item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
 
             # Compare with Claude
@@ -1481,7 +1479,7 @@ Examples:
             print(f"  Comparing {len(could_answer_rows)} could-answer queries...")
 
             # Query new bot for all could-answer questions
-            for item in could_answer_rows:
+            for item in tqdm(could_answer_rows, desc="    Querying new bot", unit="query"):
                 item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
 
             # Compare with Claude
