@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["requests"]
+# ///
 """
 Chatbot Log Analysis with Claude Code Headless Mode
 
@@ -24,6 +28,15 @@ Examples:
 
     # Analyze single file with fact-checking
     python3 analyze-logs-headless.py --staging-file /tmp/staging-extract2.csv --production-file /dev/null --fact-check
+
+    # Compare old logs with new bot (could-answer queries only)
+    python3 analyze-logs-headless.py --compare-with-new-bot=could-answer --new-bot-url=http://localhost:8787/answer
+
+    # Compare old logs with new bot (could-not-answer queries only)
+    python3 analyze-logs-headless.py --compare-with-new-bot=could-not-answer
+
+    # Compare both could-answer and could-not-answer queries with new bot
+    python3 analyze-logs-headless.py --compare-with-new-bot=could-answer,could-not-answer
 
 Requirements:
     - Python 3.10+
@@ -51,6 +64,8 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+import requests
 
 
 # ============================================================================
@@ -556,6 +571,312 @@ def search_answers_batch_with_claude(questions: list[dict], batch_size: int = 25
 
 
 # ============================================================================
+# NEW BOT COMPARISON FUNCTIONS
+# ============================================================================
+
+def query_new_bot(question: str, bot_url: str, timeout: int = 60) -> str:
+    """
+    Query the new chatbot and return its response.
+
+    The chatbot uses SSE (Server-Sent Events) format, returning lines like:
+    data: {"choices": [{"delta": {"content": "..."}}]}
+    data: [DONE]
+
+    Args:
+        question: The question to ask
+        bot_url: URL of the new chatbot API endpoint
+        timeout: Request timeout in seconds
+
+    Returns:
+        The chatbot's response text, or an error message
+    """
+    try:
+        response = requests.post(
+            bot_url,
+            json={"q": question},  # Worker expects 'q' not 'question'
+            timeout=timeout,
+            headers={"Content-Type": "application/json"},
+            stream=True  # Handle SSE streaming response
+        )
+        response.raise_for_status()
+
+        # Parse SSE response - collect all content chunks
+        full_response = []
+        for line in response.iter_lines(decode_unicode=True):
+            if not line:
+                continue
+            if line.startswith("data: "):
+                data_str = line[6:]  # Remove "data: " prefix
+                if data_str == "[DONE]":
+                    break
+                try:
+                    data = json.loads(data_str)
+                    # Extract content from SSE chunk
+                    content = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                    if content:
+                        full_response.append(content)
+                    # Check for error in response
+                    if "error" in data:
+                        return f"[ERROR: {data['error'].get('message', 'Unknown error')}]"
+                except json.JSONDecodeError:
+                    continue
+
+        return "".join(full_response) if full_response else "[ERROR: Empty response]"
+
+    except requests.exceptions.Timeout:
+        return "[ERROR: Request timeout]"
+    except requests.exceptions.ConnectionError:
+        return "[ERROR: Could not connect to new bot]"
+    except requests.exceptions.RequestException as e:
+        return f"[ERROR: {str(e)}]"
+
+
+def compare_responses_with_claude(comparisons: list[dict], batch_size: int = 10) -> list[dict]:
+    """
+    Use Claude to compare old bot responses with new bot responses.
+
+    Args:
+        comparisons: List of dicts with 'question', 'old_response', 'new_response'
+        batch_size: Number of comparisons per Claude call
+
+    Returns:
+        List of comparison results with accuracy assessments
+    """
+    if not comparisons:
+        return []
+
+    all_results = []
+    batches = [comparisons[i:i + batch_size] for i in range(0, len(comparisons), batch_size)]
+
+    print(f"  Comparing {len(comparisons)} responses in {len(batches)} batch(es)...")
+
+    for batch_num, batch in enumerate(batches):
+        print(f"    Batch {batch_num + 1}/{len(batches)} ({len(batch)} comparisons)...")
+
+        comparison_text = []
+        for i, item in enumerate(batch):
+            safe_q = sanitize_for_prompt(item['question'], max_length=200)
+            safe_old = sanitize_for_prompt(item['old_response'], max_length=300)
+            safe_new = sanitize_for_prompt(item['new_response'], max_length=300)
+            comparison_text.append(f"""[COMPARISON {i + 1}]
+Question: {safe_q}
+Old Bot Response: {safe_old}
+New Bot Response: {safe_new}
+[/COMPARISON {i + 1}]""")
+
+        prompt = f'''You are an expert evaluator for the IIT Madras BS Degree chatbot.
+
+IMPORTANT: First, read the documents in the src/ folder to understand the facts about the program.
+
+Compare the OLD and NEW chatbot responses for each question below. Determine if the NEW bot's response is:
+- BETTER: More accurate, complete, or helpful than the old response
+- SAME: Equally good (or equally bad) as the old response
+- WORSE: Less accurate, less complete, or less helpful than the old response
+
+=== COMPARISONS ===
+{chr(10).join(comparison_text)}
+=== END COMPARISONS ===
+
+For EACH comparison, respond with EXACTLY one line in this format:
+COMPARISON 1: [BETTER/SAME/WORSE] - [brief reason]
+COMPARISON 2: [BETTER/SAME/WORSE] - [brief reason]
+...and so on for all {len(batch)} comparisons.
+'''
+
+        result = run_claude_code(prompt, timeout=180)
+        batch_results = parse_comparison_result(result, len(batch))
+
+        for i, item in enumerate(batch):
+            if i < len(batch_results):
+                all_results.append({
+                    "question": item['question'][:150],
+                    "old_response": item['old_response'][:100],
+                    "new_response": item['new_response'][:100],
+                    "verdict": batch_results[i]['verdict'],
+                    "reason": batch_results[i]['reason'],
+                })
+            else:
+                all_results.append({
+                    "question": item['question'][:150],
+                    "old_response": item['old_response'][:100],
+                    "new_response": item['new_response'][:100],
+                    "verdict": "UNKNOWN",
+                    "reason": "Could not parse result",
+                })
+
+    return all_results
+
+
+def parse_comparison_result(result: str, expected_count: int) -> list[dict]:
+    """Parse the comparison result from Claude."""
+    results = []
+
+    if "[TIMEOUT]" in result or "[ERROR" in result:
+        return [{"verdict": "ERROR", "reason": result} for _ in range(expected_count)]
+
+    lines = result.strip().split('\n')
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        if re.match(r'^(COMPARISON\s*)?\d+[\.:]\s*', line, re.IGNORECASE):
+            verdict = "UNKNOWN"
+            reason = ""
+
+            line_upper = line.upper()
+            if "WORSE" in line_upper:
+                verdict = "WORSE"
+            elif "BETTER" in line_upper:
+                verdict = "BETTER"
+            elif "SAME" in line_upper:
+                verdict = "SAME"
+
+            if " - " in line:
+                reason = line.split(" - ", 1)[-1].strip()
+
+            results.append({"verdict": verdict, "reason": reason})
+
+    while len(results) < expected_count:
+        results.append({"verdict": "UNKNOWN", "reason": "Could not parse"})
+
+    return results[:expected_count]
+
+
+def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: int = 10) -> list[dict]:
+    """
+    Check if the new bot can answer questions that the old bot couldn't.
+
+    Args:
+        questions: List of dicts with 'question' key
+        bot_url: URL of the new chatbot
+        batch_size: Number of questions per Claude analysis batch
+
+    Returns:
+        List of results with new_response and can_answer assessment
+    """
+    if not questions:
+        return []
+
+    print(f"  Querying new bot for {len(questions)} previously unanswered questions...")
+
+    # First, query the new bot for all questions
+    results = []
+    for i, item in enumerate(questions):
+        if (i + 1) % 10 == 0:
+            print(f"    Queried {i + 1}/{len(questions)}...")
+        new_response = query_new_bot(item['question'], bot_url)
+        results.append({
+            "question": item['question'],
+            "row_index": item.get('row_index'),
+            "new_response": new_response,
+            "new_bot_can_answer": not is_cannot_answer(new_response) and not new_response.startswith("[ERROR"),
+        })
+
+    print(f"    Queried all {len(questions)} questions.")
+
+    # Now batch analyze responses that appear to be answers
+    answerable = [r for r in results if r['new_bot_can_answer']]
+    if answerable:
+        print(f"  Fact-checking {len(answerable)} new responses...")
+        fact_checks = fact_check_batch_with_claude(
+            [{"question": r['question'], "response": r['new_response']} for r in answerable],
+            batch_size=batch_size
+        )
+        for i, fc in enumerate(fact_checks):
+            if i < len(answerable):
+                answerable[i]['new_bot_accuracy'] = fc.get('accuracy', 'UNKNOWN')
+                answerable[i]['new_bot_issues'] = fc.get('issues', '')
+
+    return results
+
+
+def generate_comparison_verdict(comparison_results: list[dict],
+                                 could_not_answer_results: list[dict]) -> dict:
+    """
+    Generate an overall verdict comparing old vs new bot performance.
+
+    Returns dict with verdict (BETTER/SAME/WORSE) and detailed stats.
+    """
+    stats = {
+        "could_answer_comparisons": {
+            "total": 0,
+            "better": 0,
+            "same": 0,
+            "worse": 0,
+            "unknown": 0,
+        },
+        "could_not_answer_checks": {
+            "total": 0,
+            "new_bot_can_answer": 0,
+            "new_bot_cannot_answer": 0,
+            "new_bot_correct": 0,
+            "new_bot_incorrect": 0,
+        },
+        "overall_verdict": "SAME",
+        "verdict_reason": "",
+    }
+
+    # Analyze could-answer comparisons
+    for r in comparison_results:
+        stats["could_answer_comparisons"]["total"] += 1
+        verdict = r.get('verdict', 'UNKNOWN').upper()
+        if verdict == "BETTER":
+            stats["could_answer_comparisons"]["better"] += 1
+        elif verdict == "WORSE":
+            stats["could_answer_comparisons"]["worse"] += 1
+        elif verdict == "SAME":
+            stats["could_answer_comparisons"]["same"] += 1
+        else:
+            stats["could_answer_comparisons"]["unknown"] += 1
+
+    # Analyze could-not-answer checks
+    for r in could_not_answer_results:
+        stats["could_not_answer_checks"]["total"] += 1
+        if r.get('new_bot_can_answer'):
+            stats["could_not_answer_checks"]["new_bot_can_answer"] += 1
+            if r.get('new_bot_accuracy') == 'CORRECT':
+                stats["could_not_answer_checks"]["new_bot_correct"] += 1
+            elif r.get('new_bot_accuracy') in ('INCORRECT', 'PARTIALLY_CORRECT'):
+                stats["could_not_answer_checks"]["new_bot_incorrect"] += 1
+        else:
+            stats["could_not_answer_checks"]["new_bot_cannot_answer"] += 1
+
+    # Calculate overall verdict
+    ca = stats["could_answer_comparisons"]
+    cna = stats["could_not_answer_checks"]
+
+    # Score: +1 for better, -1 for worse, +0.5 for new answers that are correct
+    score = 0
+    reasons = []
+
+    if ca["total"] > 0:
+        score += ca["better"] - ca["worse"]
+        if ca["better"] > ca["worse"]:
+            reasons.append(f"{ca['better']} responses improved vs {ca['worse']} degraded")
+        elif ca["worse"] > ca["better"]:
+            reasons.append(f"{ca['worse']} responses degraded vs {ca['better']} improved")
+
+    if cna["total"] > 0:
+        newly_answerable = cna["new_bot_can_answer"]
+        if newly_answerable > 0:
+            score += newly_answerable * 0.5
+            reasons.append(f"Can now answer {newly_answerable} previously unanswerable questions")
+
+    if score > 1:
+        stats["overall_verdict"] = "BETTER"
+    elif score < -1:
+        stats["overall_verdict"] = "WORSE"
+    else:
+        stats["overall_verdict"] = "SAME"
+
+    stats["verdict_reason"] = "; ".join(reasons) if reasons else "No significant differences detected"
+
+    return stats
+
+
+# ============================================================================
 # MAIN ANALYSIS
 # ============================================================================
 
@@ -729,19 +1050,22 @@ def analyze_file(filename: str,
     return results
 
 
-def write_analyzed_csv(results: dict, output_filename: str):
+def write_analyzed_csv(results: dict, output_filename: str, comparison_data: dict = None):
     """
     Write analyzed results to a new CSV file with additional columns.
 
     Args:
         results: Analysis results from analyze_file
         output_filename: Path for the output CSV
+        comparison_data: Optional dict with comparison results keyed by row_index
     """
     if not results["analyzed_rows"]:
         print(f"  No rows to write to {output_filename}")
         return
 
-    # Build fieldnames: original + new analysis columns
+    comparison_data = comparison_data or {}
+
+    # Build fieldnames: original + new analysis columns + comparison columns
     new_columns = [
         "classification",
         "classification_reason",
@@ -751,6 +1075,16 @@ def write_analyzed_csv(results: dict, output_filename: str):
         "ai_correct_answer",
     ]
 
+    # Add comparison columns if we have comparison data
+    if comparison_data:
+        new_columns.extend([
+            "new_bot_response",
+            "new_bot_comparison_verdict",
+            "new_bot_comparison_reason",
+            "new_bot_can_answer",
+            "new_bot_accuracy",
+        ])
+
     fieldnames = list(results["original_fieldnames"]) + new_columns
 
     with open(output_filename, 'w', newline='', encoding='utf-8') as f:
@@ -758,6 +1092,8 @@ def write_analyzed_csv(results: dict, output_filename: str):
         writer.writeheader()
 
         for row_analysis in results["analyzed_rows"]:
+            row_idx = row_analysis["row_index"]
+
             # Combine original row with analysis data
             output_row = dict(row_analysis["original_row"])
             output_row["classification"] = row_analysis["classification"]
@@ -766,6 +1102,23 @@ def write_analyzed_csv(results: dict, output_filename: str):
             output_row["fact_check_accuracy"] = row_analysis["fact_check_accuracy"]
             output_row["fact_check_issues"] = row_analysis["fact_check_issues"]
             output_row["ai_correct_answer"] = row_analysis["ai_correct_answer"]
+
+            # Add comparison data if available
+            if row_idx in comparison_data:
+                comp = comparison_data[row_idx]
+                output_row["new_bot_response"] = comp.get("new_response", "")
+                output_row["new_bot_comparison_verdict"] = comp.get("verdict", "")
+                output_row["new_bot_comparison_reason"] = comp.get("reason", "")
+                output_row["new_bot_can_answer"] = str(comp.get("new_bot_can_answer", "")).lower()
+                output_row["new_bot_accuracy"] = comp.get("new_bot_accuracy", "")
+            elif comparison_data:
+                # Fill empty values for rows without comparison
+                output_row["new_bot_response"] = ""
+                output_row["new_bot_comparison_verdict"] = ""
+                output_row["new_bot_comparison_reason"] = ""
+                output_row["new_bot_can_answer"] = ""
+                output_row["new_bot_accuracy"] = ""
+
             writer.writerow(output_row)
 
     print(f"  Analyzed CSV saved to: {output_filename}")
@@ -882,6 +1235,15 @@ Examples:
 
   # Analyze single file with answer search
   python3 analyze-logs-headless.py --staging-file /tmp/logs.csv --production-file /dev/null --llm-usage-type=valid-cannot-answer
+
+  # Compare old logs with new bot (could-answer queries)
+  python3 analyze-logs-headless.py --compare-with-new-bot=could-answer --new-bot-url=http://localhost:8787/answer
+
+  # Compare old logs with new bot (could-not-answer queries)
+  python3 analyze-logs-headless.py --compare-with-new-bot=could-not-answer
+
+  # Compare both types with new bot
+  python3 analyze-logs-headless.py --compare-with-new-bot=could-answer,could-not-answer
         """
     )
     parser.add_argument("--staging-file", default="staging-logs.csv", help="Path to staging logs CSV")
@@ -895,6 +1257,10 @@ Examples:
                         help="Only analyze records on or after this date (format: YYYY-MM-DD)")
     parser.add_argument("--on-or-before", type=str, metavar="DATE",
                         help="Only analyze records on or before this date (format: YYYY-MM-DD)")
+    parser.add_argument("--compare-with-new-bot", type=str, metavar="TYPES",
+                        help="Compare old logs with new bot. Comma-separated: could-answer, could-not-answer, or both")
+    parser.add_argument("--new-bot-url", type=str, default="http://localhost:8787/answer",
+                        help="URL of the new chatbot API endpoint (default: http://localhost:8787/answer)")
 
     args = parser.parse_args()
 
@@ -926,6 +1292,16 @@ Examples:
                 print(f"❌ Error: Invalid --llm-usage-type '{t}'. Valid options: {', '.join(valid_types)}")
                 sys.exit(1)
 
+    # Parse comparison types
+    compare_types = []
+    if args.compare_with_new_bot:
+        compare_types = [t.strip() for t in args.compare_with_new_bot.split(',')]
+        valid_compare_types = {'could-answer', 'could-not-answer'}
+        for t in compare_types:
+            if t not in valid_compare_types:
+                print(f"❌ Error: Invalid --compare-with-new-bot '{t}'. Valid options: {', '.join(valid_compare_types)}")
+                sys.exit(1)
+
     print("=" * 60)
     print("CHATBOT LOG ANALYSIS (with Claude Code Headless)")
     print("=" * 60)
@@ -943,6 +1319,11 @@ Examples:
         print(f"\n🤖 LLM Processing: {', '.join(llm_usage_types)}")
         if args.fact_check and 'valid-answered' in llm_usage_types:
             print("   Fact-checking: enabled")
+
+    # Show comparison info
+    if compare_types:
+        print(f"\n🔄 New Bot Comparison: {', '.join(compare_types)}")
+        print(f"   New bot URL: {args.new_bot_url}")
 
     # Check if files exist
     for f in [args.staging_file, args.production_file]:
@@ -970,10 +1351,79 @@ Examples:
         summary = staging_results['answer_search_summary']
         print(f"   Answer search: {summary['found']} found, {summary['not_found']} not found")
 
+    # Compare with new bot for staging if requested
+    staging_comparison_data = {}
+    staging_comparison_results = []
+    staging_could_not_answer_results = []
+
+    if compare_types and staging_results['analyzed_rows'] and args.staging_file != '/dev/null':
+        print(f"\n🔄 Comparing staging logs with new bot...")
+
+        # Collect rows for comparison
+        could_answer_rows = []
+        could_not_answer_rows = []
+
+        for row_analysis in staging_results['analyzed_rows']:
+            if row_analysis['classification'] == 'valid':
+                original_row = row_analysis['original_row']
+                question = original_row.get('question', '')
+                response = original_row.get('response', '')
+                row_idx = row_analysis['row_index']
+
+                if row_analysis['cannot_answer']:
+                    could_not_answer_rows.append({
+                        'question': question,
+                        'row_index': row_idx,
+                    })
+                else:
+                    could_answer_rows.append({
+                        'question': question,
+                        'old_response': response,
+                        'row_index': row_idx,
+                    })
+
+        # Compare could-answer queries
+        if 'could-answer' in compare_types and could_answer_rows:
+            print(f"  Comparing {len(could_answer_rows)} could-answer queries...")
+
+            # Query new bot for all could-answer questions
+            for item in could_answer_rows:
+                item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
+
+            # Compare with Claude
+            staging_comparison_results = compare_responses_with_claude(could_answer_rows)
+
+            # Map to comparison_data by row_index
+            for i, item in enumerate(could_answer_rows):
+                if i < len(staging_comparison_results):
+                    staging_comparison_data[item['row_index']] = {
+                        'new_response': item['new_response'],
+                        'verdict': staging_comparison_results[i].get('verdict', ''),
+                        'reason': staging_comparison_results[i].get('reason', ''),
+                    }
+
+        # Check could-not-answer queries
+        if 'could-not-answer' in compare_types and could_not_answer_rows:
+            print(f"  Checking {len(could_not_answer_rows)} could-not-answer queries...")
+            staging_could_not_answer_results = check_new_bot_can_answer(
+                could_not_answer_rows,
+                args.new_bot_url
+            )
+
+            # Map to comparison_data by row_index
+            for result in staging_could_not_answer_results:
+                row_idx = result.get('row_index')
+                if row_idx is not None:
+                    staging_comparison_data[row_idx] = {
+                        'new_response': result.get('new_response', ''),
+                        'new_bot_can_answer': result.get('new_bot_can_answer', False),
+                        'new_bot_accuracy': result.get('new_bot_accuracy', ''),
+                    }
+
     # Write analyzed CSV for staging
     if staging_results['analyzed_rows'] and args.staging_file != '/dev/null':
         staging_csv_output = args.staging_file.replace('.csv', '-analyzed.csv')
-        write_analyzed_csv(staging_results, staging_csv_output)
+        write_analyzed_csv(staging_results, staging_csv_output, staging_comparison_data)
 
     # Analyze production
     print(f"\n📊 Analyzing {args.production_file}...")
@@ -995,10 +1445,117 @@ Examples:
         summary = production_results['answer_search_summary']
         print(f"   Answer search: {summary['found']} found, {summary['not_found']} not found")
 
+    # Compare with new bot for production if requested
+    production_comparison_data = {}
+    production_comparison_results = []
+    production_could_not_answer_results = []
+
+    if compare_types and production_results['analyzed_rows'] and args.production_file != '/dev/null':
+        print(f"\n🔄 Comparing production logs with new bot...")
+
+        # Collect rows for comparison
+        could_answer_rows = []
+        could_not_answer_rows = []
+
+        for row_analysis in production_results['analyzed_rows']:
+            if row_analysis['classification'] == 'valid':
+                original_row = row_analysis['original_row']
+                question = original_row.get('question', '')
+                response = original_row.get('response', '')
+                row_idx = row_analysis['row_index']
+
+                if row_analysis['cannot_answer']:
+                    could_not_answer_rows.append({
+                        'question': question,
+                        'row_index': row_idx,
+                    })
+                else:
+                    could_answer_rows.append({
+                        'question': question,
+                        'old_response': response,
+                        'row_index': row_idx,
+                    })
+
+        # Compare could-answer queries
+        if 'could-answer' in compare_types and could_answer_rows:
+            print(f"  Comparing {len(could_answer_rows)} could-answer queries...")
+
+            # Query new bot for all could-answer questions
+            for item in could_answer_rows:
+                item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
+
+            # Compare with Claude
+            production_comparison_results = compare_responses_with_claude(could_answer_rows)
+
+            # Map to comparison_data by row_index
+            for i, item in enumerate(could_answer_rows):
+                if i < len(production_comparison_results):
+                    production_comparison_data[item['row_index']] = {
+                        'new_response': item['new_response'],
+                        'verdict': production_comparison_results[i].get('verdict', ''),
+                        'reason': production_comparison_results[i].get('reason', ''),
+                    }
+
+        # Check could-not-answer queries
+        if 'could-not-answer' in compare_types and could_not_answer_rows:
+            print(f"  Checking {len(could_not_answer_rows)} could-not-answer queries...")
+            production_could_not_answer_results = check_new_bot_can_answer(
+                could_not_answer_rows,
+                args.new_bot_url
+            )
+
+            # Map to comparison_data by row_index
+            for result in production_could_not_answer_results:
+                row_idx = result.get('row_index')
+                if row_idx is not None:
+                    production_comparison_data[row_idx] = {
+                        'new_response': result.get('new_response', ''),
+                        'new_bot_can_answer': result.get('new_bot_can_answer', False),
+                        'new_bot_accuracy': result.get('new_bot_accuracy', ''),
+                    }
+
     # Write analyzed CSV for production
     if production_results['analyzed_rows'] and args.production_file != '/dev/null':
         production_csv_output = args.production_file.replace('.csv', '-analyzed.csv')
-        write_analyzed_csv(production_results, production_csv_output)
+        write_analyzed_csv(production_results, production_csv_output, production_comparison_data)
+
+    # Generate and display comparison verdict if comparison was done
+    if compare_types:
+        all_comparison_results = staging_comparison_results + production_comparison_results
+        all_could_not_answer_results = staging_could_not_answer_results + production_could_not_answer_results
+
+        verdict_stats = generate_comparison_verdict(all_comparison_results, all_could_not_answer_results)
+
+        print("\n" + "=" * 60)
+        print("NEW BOT COMPARISON VERDICT")
+        print("=" * 60)
+
+        ca = verdict_stats['could_answer_comparisons']
+        if ca['total'] > 0:
+            print(f"\n📊 Could-Answer Comparisons ({ca['total']} total):")
+            print(f"   Better: {ca['better']}")
+            print(f"   Same: {ca['same']}")
+            print(f"   Worse: {ca['worse']}")
+            if ca['unknown'] > 0:
+                print(f"   Unknown: {ca['unknown']}")
+
+        cna = verdict_stats['could_not_answer_checks']
+        if cna['total'] > 0:
+            print(f"\n📊 Could-Not-Answer Checks ({cna['total']} total):")
+            print(f"   New bot CAN answer: {cna['new_bot_can_answer']}")
+            print(f"   New bot still cannot: {cna['new_bot_cannot_answer']}")
+            if cna['new_bot_correct'] > 0:
+                print(f"   New answers correct: {cna['new_bot_correct']}")
+            if cna['new_bot_incorrect'] > 0:
+                print(f"   New answers incorrect: {cna['new_bot_incorrect']}")
+
+        verdict = verdict_stats['overall_verdict']
+        verdict_emoji = {"BETTER": "✅", "SAME": "➡️", "WORSE": "❌"}.get(verdict, "❓")
+
+        print(f"\n{'=' * 60}")
+        print(f"🏆 OVERALL VERDICT: {verdict_emoji} {verdict}")
+        print(f"   {verdict_stats['verdict_reason']}")
+        print("=" * 60)
 
     # Generate report
     print(f"\n📝 Generating report...")
