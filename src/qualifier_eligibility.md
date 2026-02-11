@@ -12,7 +12,7 @@
 - Irrespective of their group, stream, or board
 - Those who pass the Qualifier Exam can join the program after subsequently completing Class 12
 
-### Additional Requirements for BS in Electronic Systems (ES)
+### Additional Requirements for BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
 - Applicants must have studied Physics and Mathematics in Class 12 or equivalent
 - This is in addition to the general eligibility conditions mentioned above
 
@@ -26,6 +26,8 @@
 
 - BS in Data Science and Applications: https://study.iitm.ac.in/ds/
 - BS in Electronic Systems admissions page: https://study.iitm.ac.in/es/
+- BS in Management and Data Science: https://study.iitm.ac.in/mg/
+- BS in Aeronautics and Space Technology: https://study.iitm.ac.in/ae/
 
 # Class 12 Eligibility and Requirements
 
@@ -84,8 +86,8 @@ Separately, basic program eligibility requires:
 * Completion of Class 12 (or equivalent)
 * Required subjects:
 
-  * Data Science: Mathematics and English
-  * Electronic Systems: Mathematics and Physics
+  * Data Science and Management: Mathematics and English in Class 10
+  * Electronic Systems and Aeronautics: Mathematics and Physics in Class 12
 
 
 
