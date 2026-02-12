@@ -189,6 +189,8 @@ Clearing the qualifier for:
 
 * Data Science locks eligibility for the Data Science program
 * Electronic Systems locks eligibility for the Electronic Systems program
+* Management and Data Science locks eligibility for the Management and Data Science program
+* Aeronautics and Space Technology locks eligibility for the Aeronautics and Space Technology program
 
 The learner must join within the validity period.
 

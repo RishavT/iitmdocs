@@ -86,19 +86,22 @@ Yes, non-science and commerce stream students can apply for BS in Data Science, 
 # FAQs
 
 **Question**: What is the general eligibility for the qualifier?
-**Answer**: To be eligible to write the qualifier exam (regular entry), a learner must:
+**Answer**: Eligibility has two stages:
 
+**Stage A — To apply for the qualifier exam:**
+* DS/MG: Must have studied Mathematics and English in Class 10. Class 11 students who passed their finals can also apply.
+* ES/AE: Must have passed Class 12 with Physics and Mathematics. If Class 12 was passed without Physics/Mathematics, students who cleared these subjects through NIOS or equivalent can apply after committee approval.
+
+**Stage B — To proceed from qualifier to Foundation level:**
+* DS/MG: Studied Maths and English in Class 10 AND passed Class 12 or equivalent.
+* ES/AE: Physics and Mathematics in Class 12 (or via NIOS/equivalent) AND passed Class 12 or equivalent.
+
+To be eligible to write the qualifier exam, a learner must also:
 * Complete the 4-week qualifier coursework
 * Achieve the minimum required average assignment score in all four courses
   Only then will a hall ticket be issued.
 
-Separately, basic program eligibility requires:
-
-* Completion of Class 12 (or equivalent)
-* Required subjects:
-
-  * Data Science and Management: Mathematics and English in Class 10
-  * Electronic Systems and Aeronautics: Mathematics and Physics in Class 12
+Note: A student cannot apply for multiple programs simultaneously.
 
 
 
