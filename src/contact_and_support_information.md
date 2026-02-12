@@ -1,7 +1,10 @@
 # Contact Information and Support
 
-## Primary Support Email
-support@study.iitm.ac.in
+## Program-Specific Support Emails
+- DS (Data Science): support@study.iitm.ac.in
+- ES (Electronic Systems): support-es@study.iitm.ac.in
+- AE (Aeronautics and Space Technology): support-ae@study.iitm.ac.in
+- MG (Management and Data Science): support-mg@study.iitm.ac.in
 
 ## Qualifier-Related Issues
 support-qualifier@study.iitm.ac.in
@@ -55,4 +58,4 @@ Support team typically responds within 1-2 business days. For urgent exam-relate
 
 ---
 
-Tags: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time
+Tags: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time, program-specific email, support-es, support-ae, support-mg, qualifier support email, global entry email, phone number, ICSR building office address, payment issues, document upload problems, category change, hall ticket issues, special accommodation, PwD scribe request

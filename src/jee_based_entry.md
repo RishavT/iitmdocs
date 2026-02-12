@@ -42,7 +42,6 @@ The validity of JEE-based entry is for the 3 terms following the release of the 
 - Candidates who qualified for JEE Advanced 2024 can directly join the program in:
   - Sep 2025 Term
   - Jan 2026 Term
-  - May 2026 Term (valid until this term)
 
 - Candidates who qualified for JEE Advanced 2025 / 2026 can directly join the program in the respective upcoming terms as per the programme schedule
 
@@ -74,15 +73,14 @@ Students who qualified for JEE Advanced can skip the qualifier exam and directly
 JEE scores are valid for 3 terms following JEE Advanced qualification.
 
 ### Examples:
-- JEE Advanced 2024 qualified: Valid until Sep 2026 term
+- JEE Advanced 2024 qualified: Valid until Jan 2026 term
 - JEE Advanced 2025 qualified: Valid until Sep 2027 term
 - JEE Advanced 2023 qualified: Scores expired, must take qualifier
 
 ## 2024 JEE Mains Students
 If you cleared JEE Mains 2024 and qualified for JEE Advanced 2024, you can apply as JEE-based entrant until:
 - Sep 2025 Term
-- Jan 2026 Term
-- May 2026 Term (last valid term)
+- Jan 2026 Term (last valid term)
 
 ## Application Process for JEE Entry
 1. Apply during regular application window
@@ -120,7 +118,7 @@ Once you apply as a qualifier applicant, you cannot change to JEE-based entry fo
 Eligible JEE years depend on the admission term:
 
 * Jan 2026: JEE 2024, 2025
-* May 2026: JEE 2024, 2025, 2026
+* May 2026: JEE 2025, 2026
 * Sep 2026: JEE 2025, 2026
 
 
@@ -197,4 +195,4 @@ A learner entering through the qualifier route cannot switch to JEE-based entry 
 
 ---
 
-Tags: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE
+Tags: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE, regular entry vs JEE entry, two entry pathways, CCC credit clearing capability of 4, skip qualifier, direct foundation admission, JEE proof upload, JEE Main scorecard, JEE Advanced admit card, cannot switch entry type, international exams not accepted, SAT AP IB A-Levels not accepted, JEE 2024 2025 2026 eligibility, admission cycles, 3 terms validity

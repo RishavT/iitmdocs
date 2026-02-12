@@ -184,4 +184,4 @@ Each week during the 4-week qualifier process, assignments are graded and contri
 
 ---
 
-Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment
+Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment, graded out of 100, not attempted zero, general 40 percent, OBC-NCL EWS 35 percent, SC ST PwD 30 percent, first 2 weeks average, best 2 out of 3 weeks, hall ticket eligibility, relaxations only qualifier, category documents, OBC-NCL certificate, cannot change category, assignments compulsory

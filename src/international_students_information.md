@@ -43,4 +43,4 @@ Check availability at: https://study.iitm.ac.in/ds/academics.html#AC9
 
 ---
 
-Tags: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement
+Tags: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement, remote proctored exam, no travel to India, exam timing IST, Rs 2000 facilitation fee per subject, residence proof, ID proof, residence card, driving license, bank statement, utility bill, visa page, citizenship document, global entry email, ge@study.iitm.ac.in, exam city availability abroad

@@ -5,7 +5,8 @@ Students can take any course within a particular level of study but are not allo
 ### Progression Between Levels:
 - Students who successfully complete all courses in the Foundation level will be eligible for admission to the Diploma level program
 - Learners who successfully complete all courses in the Foundation and Diploma programme will be eligible for admission to the degree level, if they satisfy the prescribed/regulatory criteria
-- Students who complete 114 credits as per the norms will be eligible for the BSc degree and can continue onto the BS level
+- Students who complete 114 credits and satisfy the minimum credits completion requirement as per the norms will be eligible for the BSc degree and can continue onto the BS level for the Data Science and Applications program
+- For BS in AE/MG/ES — Students who successfully complete all the courses and labs in Foundation level and Diploma can proceed to the BS Degree Level
 
 ## Important Note
 
@@ -108,4 +109,4 @@ U grade affects your CGPA. Re-registering and passing will update your grade.
 
 ---
 
-Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
+Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules, U grade, unsatisfactory grade, course re-registration, prerequisites, CGPA impact, credit requirements, 114 credits BSc, 142 credits BS, foundation 32 credits, cannot take courses across levels, course access revocation, re-registration fee, 3 terms per year, minimum 4 years, AE MG ES progression, diploma to degree

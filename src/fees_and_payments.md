@@ -214,4 +214,4 @@ Learners should refer to the official website for:
 If the father is the earning member, an income certificate in the father’s name is accepted, provided it is recent.
 ---
 
-Tags: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt
+Tags: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt, qualifier application fee, reattempt fee, non-refundable, category wise fees, SC ST PwD fee, OBC fee, international exam facilitation fee, fee waiver, income based fee waiver, income certificate, no EMI option, no cheque payment, online payment portal, credit based pricing

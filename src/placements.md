@@ -23,4 +23,4 @@ Specific CGPA-based guarantees are not stated in the FAQs.
 
 ---
 
-Tags: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS
+Tags: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS, placement portal, minimum diploma level required, CGPA not guaranteed for placements, BS electronic systems placement, same placement portal all programs

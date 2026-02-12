@@ -112,4 +112,4 @@
 
 ---
 
-Tags: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts
+Tags: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts, laptop not provided, no VPN access, English language, no hostel, no library, no campus facilities, campus visit, IST exam timings, student ID card, student email, application online only, payment online only, SCT system compatibility test, recorded lectures, clearing doubts, discussion forums, Gen AI theory project

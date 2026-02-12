@@ -29,17 +29,27 @@ All official communication related to the Qualifier Process including assignment
 
 ## Validity Period
 
-The qualifier marks will be valid for the 3 terms that come subsequent to the qualifier exam date for the learner to register to the Foundation level.
+The qualifier exam score can be used to apply for 3 terms after the qualifier exam date. The qualifier score will become invalid for the 4th term onwards after the qualifier exam date.
+
+### Examples — Jan 2026 Term Qualifier Exams:
+- Qualifier exam dated Mar 15th 2026 — Can use this score to apply for the Jan2026, May2026, Sep2026 terms
+- Qualifier exam dated April 12th 2026 — Can use this score to apply for the May2026, Sep2026, Jan2027 terms
+- Qualifier exam dated May 10th 2026 — Can use this score to apply for the May2026, Sep2026, Jan2027 terms
+
+### Examples — May 2026 Term Qualifier Exams:
+- Qualifier exam dated Jul 19th 2026 — Can use this score to apply for the Sep2026, Jan2027, May2027 terms
+- Qualifier exam dated Aug 16th 2026 — Can use this score to apply for the Jan2027, May2027, Sep2027 terms
+- Qualifier exam dated Sep 13th 2026 — Can use this score to apply for the Jan2027, May2027, Sep2027 terms
 
 ## What Happens After Validity Expires?
 
-- The score will be invalid after this period
-- The learner will have to go through the entire qualifier process again (the 1 month of weekly assignments)
+- The qualifier score becomes invalid
+- The learner will have to go through the entire qualifier process again (the 4 weeks of weekly assignments)
 - They must retake the qualifier exam if they wish to join the programme
 
 ## Special Case: Class 12 Students
 
-For students in Class XII who take the qualifier exam, the validity is for 3 terms from when they pass Class XII.
+For students who have not yet passed Class 12 (and are currently studying for Class 12), the validity is 3 terms after passing their Class 12 exam, OR 6 terms after the qualifier exam date — whichever is earlier.
 
 ## Reattempting After Qualification
 
@@ -78,10 +88,9 @@ Learners are notified on their registered email ID when results are released.
 
 
 **Question**: How long is the qualifier result valid?
-**Answer**: The qualifier marks are valid for the next 3 terms following the qualifier exam date.
+**Answer**: The qualifier exam score can be used to apply for 3 terms after the qualifier exam date. The score becomes invalid from the 4th term onwards.
 
-For students who are in Class 12 at the time of writing the qualifier:
-The validity is 3 terms from the term in which they pass Class 12.
+For students who have not yet passed Class 12: the validity is 3 terms after passing Class 12, OR 6 terms after the qualifier exam date — whichever is earlier.
 
 
 
@@ -185,4 +194,4 @@ The learner must join within the validity period.
 
 ---
 
-Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
+Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score, email WhatsApp portal notification, admission letter, marks on portal, 3 terms validity, invalid 4th term onwards, class 12 validity 3 terms or 6 terms whichever earlier, cannot reattempt during validity, first attempt same term registration, qualifier score as Quiz 1, second attempt subsequent term, results on dashboard, validity expires automatically, cannot extend validity, program choice locked after clearing, registration not automatic, delay registration within validity

@@ -31,4 +31,4 @@ Qualifier-cleared students who have a valid student ID are also eligible to atte
 
 ---
 
-Tags: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
+Tags: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration, annual offline event, May June event, valid student ID required, qualifier cleared students eligible, paradox dates

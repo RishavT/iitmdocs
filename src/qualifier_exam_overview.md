@@ -106,4 +106,4 @@ Coaching is not required. Learners can clear the qualifier through self-study us
 The qualifier is fully based on the 4 weeks of provided content, and many students clear it through consistent self-study.
 ---
 
-Tags: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure
+Tags: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure, 4 week process, week wise content release, videos tutorials assignments transcripts, weekly graded assignment, week 1 sample content, qualifier subjects DS MG, English 1 Maths-1 Statistics-1 Computational Thinking, qualifier subjects ES AE, Electronic Systems Thinking and Circuits Introduction to C Programming, qualifying exam not competitive, subject wise cutoff, 10 hours per week per course, self study sufficient, no coaching required, moderately difficult, easier than regular term exams

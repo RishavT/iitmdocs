@@ -211,4 +211,4 @@ Exams are conducted only at designated exam centres, not on the IIT Madras campu
 
 ---
 
-Tags: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam
+Tags: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam, select 2 cities per term, 4 hours 240 minutes duration, in-person India, remote proctored international, all 4 subjects same day, MCQ MSQ numerical short answer, no negative marking, calculator enabled, closed book exam, hall ticket mandatory, valid ID proof Aadhaar PAN passport, 9 AM IST 2 PM IST slots, cannot write from home India, exam city edit window, special accommodation PwD scribe, not conducted at IIT Madras campus

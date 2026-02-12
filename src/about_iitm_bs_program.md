@@ -10,6 +10,8 @@ Currently, IIT Madras is offering four BS programmes:
 3. BS in Management and Data Science
 4. BS in Aeronautics and Space Technology
 
+**Note: A student cannot apply for multiple programs simultaneously.**
+
 ## Learning Mode
 
 - The content in BS programmes is delivered online
@@ -24,7 +26,8 @@ The BS programme has multiple levels, which provide flexibility to students to e
 
 ### BS in Data Science and Applications
 - Foundation Certificate from IITM CODE
-- Diploma(s) from IIT Madras
+- Diploma in Data Science from IIT Madras
+- Diploma in Programming from IIT Madras
 - BSc, BS, PGD, M.Tech Degrees from IIT Madras
 - Website: https://study.iitm.ac.in/ds
 
@@ -80,4 +83,4 @@ It is stated to be as valid as the BTech awarded by IIT Madras.
 
 ---
 
-Tags: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
+Tags: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad, BS electronic systems, BS management and data science, BS aeronautics and space technology, multiple exit points, foundation certificate, IITM CODE, diploma from IIT Madras, BSc degree, PGD, MTech, Diploma in Data Science, Diploma in Programming, cannot apply multiple programs, BTech vs BS, hybrid online in-person exams, four year programme, programs offered

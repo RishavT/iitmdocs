@@ -21,7 +21,26 @@
 
 # Foundation Course Registration Process
 
-## After Passing Qualifier
+## Registering for Foundation Level in Same Qualifier Passed Term
+
+- You can continue to study 1/2/3/4 courses from week 5 onwards while waiting for the result. Once the qualifier result is declared, you can register for foundational courses and continue with the program. (Please check the eligibility for foundation level registration in the qualifier eligibility section)
+- Qualifier score will be considered as Quiz 1 score for the courses you register in the same term
+- Students pick 2 cities among the choices provided for their quizzes and exams for that term
+  - They have the freedom to choose a different set of cities than the ones they opted for in the previous terms
+  - They can choose a different set of cities for every quiz/final exam while registering for the courses
+- Students can register to courses for which the prerequisite is completed (e.g. in order to sign up for Math-2, the learner must have cleared Math-1)
+- Students can take any course within a particular level of study but are not allowed to sign up for courses across levels
+- Learners pay only for the number of credits they are signing up for (online payment only)
+
+## Registering for Foundation Level in Subsequent Term
+
+- Students who wish to register for the Foundation Level in subsequent terms after passing the Qualifier must verify the validity of their Qualifier score in the Admission Letter, which is available on the Student Dashboard, and proceed with the Foundation Level registration accordingly. (Please check the eligibility for foundation level registration in the qualifier eligibility section)
+- The subsequent terms registration dates are mentioned in the academic calendar given in the website under admissions tab
+- Students can register for a maximum of 4 courses per term
+- Students must mandatorily submit assignments from week-1 onwards for the courses registered
+- Students are required to mandatorily appear for the Quiz 1 examination for all courses registered in the respective term. **Qualifier score will NOT be considered as Quiz 1 score** for subsequent term registration.
+
+## After Passing Qualifier — General Steps
 Course registration is NOT automatic. You must:
 1. Log in to student portal
 2. Access Course Registration Form
@@ -65,4 +84,4 @@ If you have U grade (failed) in a subject like Math 1, you must:
 
 ---
 
-Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration
+Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration, select exam cities, maximum 4 courses per term, online payment only, qualifier score as Quiz 1, same term registration, subsequent term registration, week 5 continuation, defer joining, CCC credit clearing capability, foundation courses, Rs 6000 per course, class 12 documentation upload, U grade re-registration, cannot register across levels, exam city list, Quiz 1 mandatory subsequent term

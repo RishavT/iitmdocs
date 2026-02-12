@@ -1,24 +1,37 @@
 # Qualifier Exam Eligibility
 
-## Who Can Apply for the Qualifier Exam?
+## A) Eligibility to Apply for the Qualifier Exam
 
-### Basic Requirements (For Both DS and ES Programs)
+### For BS in Data Science and Applications (DS) and BS in Management and Data Science (MG)
 - Must have studied Mathematics and English in Class 10
-- Anyone who has passed Class 12 or an equivalent examination is eligible to apply
-- No restrictions on age or academic background
+- School students who have appeared for and passed their Class 11 final exams can apply, irrespective of age/group/stream/board. Those who pass the qualifier exams will be allowed to proceed to the Foundation level only after passing their Class 12 exams.
 
-### For Class 11 Students
-- School students who have completed their Class 11 final examinations are also eligible to apply
-- Irrespective of their group, stream, or board
-- Those who pass the Qualifier Exam can join the program after subsequently completing Class 12
+### For BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
+- Must have passed Class 12 or equivalent with Physics and Mathematics, irrespective of age/group/stream/board
+- School students who have appeared for and passed their Class 11 final exams can apply, irrespective of age/group/stream/board. Those who pass the qualifier exams will be allowed to proceed to the Foundation level only after passing their Class 12 exams.
+- If students have passed Class 12 without Physics and Mathematics, but have passed Physics and Mathematics separately through NIOS or any other equivalent organization, they will be permitted to apply to ES/AE after committee approval.
 
-### Additional Requirements for BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
-- Applicants must have studied Physics and Mathematics in Class 12 or equivalent
-- This is in addition to the general eligibility conditions mentioned above
+## B) Eligibility to Proceed from Qualifier Level to Foundation Level
+
+After passing the qualifier examinations, students may choose to apply for the Foundation Level of their program.
+
+### For BS in Data Science and Applications (DS) and BS in Management and Data Science (MG)
+1. Studied Maths and English in Class 10
+AND
+2. Passed Class 12 or an equivalent examination regardless of age or academic background
+
+For further details: DS admissions page: https://study.iitm.ac.in/ds/ | MG admission page: https://study.iitm.ac.in/mg
+
+### For BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
+1. Applicants must have studied Physics and Mathematics in Class 12 or equivalent, OR passed Physics and Mathematics through NIOS or any other equivalent organization
+AND
+2. Passed Class 12 or an equivalent examination regardless of age or academic background
+
+For further details: ES admissions page: https://study.iitm.ac.in/es/ | AE admission page: https://study.iitm.ac.in/ae
 
 ## Important Notes
 
-- There are no additional eligibility criteria to apply for the Qualifier Exam or to join the Foundation Level after clearing it
+- A student cannot apply for multiple programs simultaneously
 - List of accepted Class 12 equivalents: https://study.iitm.ac.in/ds/accepted-class-12-equivalents.html
 - No limit on the number of times a candidate can attempt the qualifier process
 
@@ -52,9 +65,7 @@ You CANNOT:
 - Register for Foundation courses without Class 12
 
 ## Qualifier Validity for Class 12 Students
-- For those who cleared qualifier before passing Class 12
-- Validity starts from when they pass Class 12
-- Valid for 3 terms from Class 12 completion
+- For students who have not yet passed Class 12 (and are currently studying for Class 12), the validity is 3 terms after passing their Class 12 exam, OR 6 terms after the qualifier exam date — whichever is earlier
 
 ## Without Class 12 Completion
 If you did not complete 10th and 12th grade, you are NOT eligible for the qualifier exam. Class 12 or equivalent is mandatory.
@@ -164,4 +175,4 @@ If they pass the qualifier, they can join the program after completing Class 12.
 
 ---
 
-Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
+Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier, NIOS pathway, committee approval ES AE, apply for qualifier, proceed to foundation level, class 10 maths english, class 12 physics mathematics, cannot apply multiple programs, class 11 students eligible, DS MG eligibility, ES AE eligibility, accepted class 12 equivalents, commerce arts students, diploma holders eligibility, no age restriction, foundation level registration eligibility

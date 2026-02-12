@@ -114,4 +114,4 @@ Learners are advised to refer to the website for the latest certificate template
 
 ---
 
-Tags: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam
+Tags: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam, OPPE, online proctored programming exam, 16 week term, incomplete grade, I grade, make-up examination, academic calendar, refund policy, non-refundable fees, quiz dates, term structure, certificates, marksheets
