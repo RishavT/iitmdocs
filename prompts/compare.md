@@ -2,7 +2,7 @@ You are an expert document reader and technical writer.
 
 We are in the repository "iitmdocs" - which is a RAG chatbot for the IITM BS Degree program.
 
-In order for the chatbot to work, we build a knowledge base - which is basically as set of markdown documents that are embedded into a vector database. The initial knowledge base has been built. Now we need to update the knowledge base as per new information provided to us by the operations team. The process to updating this knowledge bas is as follows:
+In order for the chatbot to work, we build a knowledge base - which is basically a set of markdown documents that are embedded into a vector database. The initial knowledge base has been built. Now we need to update the knowledge base as per new information provided to us by the operations team. The process to updating this knowledge base is as follows:
 
 
 ## Process of updating the knowledge base
@@ -29,6 +29,6 @@ We currently have:
     - Adding information in existing documents
     - Updating information in existing documents
     - Removing information from existing documents
-    You are not allowed to add or remove any documents in the src/ folder for now.
-    Try to keep the changes as minimal as possible. Do not change the structure of the information in the documents or the structure of the documents itself. Just focus on updating the information as per the new raw document. Most of the changes will be date changes or changes in small facts.
+You are not allowed to add or remove any documents in the src/ folder for now.
+Try to keep the changes as minimal as possible. Do not change the structure of the information in the documents or the structure of the documents itself. Just focus on updating the information as per the new raw document. Most of the changes will be date changes or changes in small facts.
 3. Once done - git add and commit the src/ folder. Also git add and commit the zipped HTML files. Do not commit the extracted html files.
