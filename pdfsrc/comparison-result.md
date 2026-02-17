@@ -38,8 +38,8 @@ Single support email only:
 ```
 (1) BS in Data Science and Applications and
 (2) BS in Electronic Systems.
-(3) BS in Management and Data science
-(4) BS in Aeronautics and space technology
+(3) BS in Management and Data Science
+(4) BS in Aeronautics and Space Technology
 ```
 
 **Change Type**: Minor modification - Order changed (MG moved from #4 to #3, AE moved from #3 to #4). Text says "four" explicitly.
