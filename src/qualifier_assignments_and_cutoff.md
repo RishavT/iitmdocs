@@ -182,6 +182,25 @@ Once a learner has successfully qualified, they are not permitted to reattempt t
 **Answer**: Qualifier assignments are graded.
 Each week during the 4-week qualifier process, assignments are graded and contribute to
 
+
+
+**Question**: Are assignments proctored during qualifier preparation?
+**Answer**: No.
+Weekly assignments are not proctored and can be completed from home.
+However, if a learner meets the assignment score eligibility, the final Qualifier Exam is strictly proctored and conducted in person at an exam centre.
+
+
+
+**Question**: Will everyone who goes through the qualifier process be allowed to write the qualifier exam? What is the passing criteria?
+**Answer**: No. Only the learners who get the minimum required marks in the online assignments during the qualifier process of 4 weeks will be allowed to attend the qualifier exam. Only those learners allowed to write the qualifier exam shall be provided with hall tickets.
+
+Refer to the Qualifier Process and the section below it to learn about the minimum required marks in the qualifier assignments and minimum required marks to pass / clear the qualifier exam.
+
+
+
+**Question**: Is there any concession for SC / ST / OBC-NCL / EWS / PwD candidates in terms of scores?
+**Answer**: SC / ST / OBC-NCL / EWS / PwD candidates will have concession in minimum scores required during the qualifier process to enter the program. Note that there will be no such concessions after entering the program. (OBC candidates not belonging to the OBC-NCL category cannot avail any concession)
+
 ---
 
-Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment, graded out of 100, not attempted zero, general 40 percent, OBC-NCL EWS 35 percent, SC ST PwD 30 percent, first 2 weeks average, best 2 out of 3 weeks, hall ticket eligibility, relaxations only qualifier, category documents, OBC-NCL certificate, cannot change category, assignments compulsory
+Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment, graded out of 100, not attempted zero, general 40 percent, OBC-NCL EWS 35 percent, SC ST PwD 30 percent, first 2 weeks average, best 2 out of 3 weeks, hall ticket eligibility, relaxations only qualifier, category documents, OBC-NCL certificate, cannot change category, assignments compulsory, assignments not proctored, complete from home

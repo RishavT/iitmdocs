@@ -74,6 +74,7 @@ For students who have not yet passed Class 12 (and are currently studying for Cl
 **Question**: When are qualifier results announced?
 **Answer**: Qualifier results are announced on the student dashboard.
 Learners are notified on their registered email ID when results are released.
+For specific result dates, check the academic calendar: https://study.iitm.ac.in/ds/admissions.html#AD0
 
 
 
@@ -193,6 +194,16 @@ Clearing the qualifier for:
 * Aeronautics and Space Technology locks eligibility for the Aeronautics and Space Technology program
 
 The learner must join within the validity period.
+
+
+
+**Question**: How long is the qualifier exam result valid for? Can I join the program at a later term if I clear the qualifier exam now?
+**Answer**: The Qualifier Exam result is valid for a period of 3 terms (or 1 year). So, a learner may choose to not register for Foundational Level immediately after clearing the Qualifier Exam and register for the Foundational level in the second or third term following the Qualifier Exam.
+
+
+
+**Question**: Will my Qualifier Exam Score be considered in the subsequent term?
+**Answer**: The Qualifier Exam Score will be counted as Quiz 1 Score for the courses registered in the Foundation level in the same term of the qualifier exam only. It will not be considered as Quiz 1 score for courses registered in subsequent terms.
 
 ---
 

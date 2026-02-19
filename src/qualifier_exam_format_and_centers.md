@@ -71,6 +71,8 @@ No, Aadhaar is not mandatory. Any valid ID proof accepted: Aadhaar, PAN card, Pa
 * For students within India: the qualifier exam is conducted offline (in person).
 * For students outside India: the exam is conducted as a remote proctored exam, subject to availability.
 
+For exam centre details: https://study.iitm.ac.in/ds/academics.html#AC9
+
 
 
 **Question**: Where is the qualifier exam conducted?
@@ -202,12 +204,30 @@ Remote-proctored exams for international students follow IST-based timings.
 * Learners in India must write the exam in person.
 * Learners outside India may write a remote-proctored exam, depending on centre availability.
 
+For exam centre details: https://study.iitm.ac.in/ds/academics.html#AC9
+
 
 
 **Question**: Can I come to the IIT Madras campus for exams?
 **Answer**: No.
 The IIT Madras BS program is a non-campus program.
 Exams are conducted only at designated exam centres, not on the IIT Madras campus.
+For exam centre details: https://study.iitm.ac.in/ds/academics.html#AC9
+
+
+
+**Question**: Can I select only one city as my Exam City instead of selecting two preferences?
+**Answer**: No. You will need to pick two different preferences for exam cities in the order of your preference. Your exam centre shall be allotted in any one of the two exam cities picked depending on availability. We recommend that you familiarise with the current available Exam City options to be able to pick your preferred exam cities.
+
+
+
+**Question**: Can I change my exam cities for the qualifier exam after having paid and submitted my application?
+**Answer**: Yes, you will be allowed to change your exam city for any exam during the edit exam city window. The edit exam city tab will be open from the term start till 4 weeks before the exam date.
+
+
+
+**Question**: Will the Exam City preferences I select for the Qualifier Exam in the application form be fixed for all the later exams?
+**Answer**: No. The Exam city preferences selected in the application form is for the Qualifier Exam only. You will have the option of picking different Exam City options for the Quiz and End term exams if you wish, after qualifying into foundation level.
 
 ---
 

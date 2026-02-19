@@ -41,6 +41,18 @@ ge@study.iitm.ac.in (Global Entry support)
 ## Exam City Information for International Students
 Check availability at: https://study.iitm.ac.in/ds/academics.html#AC9
 
+# FAQs
+
+**Question**: What is the procedure to change exam city from Outside India to India / India to outside India?
+**Answer**: Yes, a student can change their exam city from India to outside India and vice versa. To do this you can follow the below steps:
+
+* Log in to the candidate portal or exam dashboard.
+* Go to the Exam Registration or Application Details section.
+* Select the option to edit or modify the exam center/city.
+* Change the location from an Indian city to the preferred international city (or vice versa).
+* Check if there is any additional fee applicable for an international center.
+* Submit the request and complete the payment (if required).
+
 ---
 
 Tags: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement, remote proctored exam, no travel to India, exam timing IST, Rs 2000 facilitation fee per subject, residence proof, ID proof, residence card, driving license, bank statement, utility bill, visa page, citizenship document, global entry email, ge@study.iitm.ac.in, exam city availability abroad

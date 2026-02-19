@@ -127,6 +127,18 @@ They must:
 * Pay the full applicable fees
 * Redo the 4 weeks of coursework and assignments.
 
+For upcoming term dates: https://study.iitm.ac.in/ds/admissions.html#AD0
+
+
+
+**Question**: I am unable to attend the Qualifier Exam but received hall ticket / I didn't clear the Qualifier Exam. What will be the procedure to re-apply? Do I need to pay application fee again?
+**Answer**: You can re-apply again for the immediate next Qualifier Process with partial application fee payment. Your previous assignment scores will be considered and you will be directly eligible to write the Qualifier Exam without having to submit assignments again.
+
+
+
+**Question**: I applied for the Qualifier Exam but I didn't obtain the minimum required average assignment scores to take Qualifier Exam, and hence didn't receive any hall ticket for the same. What will be the procedure to re-apply?
+**Answer**: You have to re-apply as a new applicant with payment of full application fee.
+
 ---
 
 Tags: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period, two attempts per term, end of 4 weeks first attempt, end of 8 weeks second attempt, absent candidates reattempt, failed candidates reattempt, no repeat assignments same term, reattempt fee Rs 2000 1000 500, unlimited attempts across terms, fresh application new term, redo coursework new term, cannot improve marks if passed, same difficulty reattempt, failing does not affect future admissions

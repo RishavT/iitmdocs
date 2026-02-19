@@ -82,6 +82,38 @@ If you have U grade (failed) in a subject like Math 1, you must:
 - Pay course fee again
 - Cannot take Math 2 if Math 1 has U grade
 
+# FAQs
+
+**Question**: How many courses can I complete in a year?
+**Answer**: There are 3 terms in a year. Learner may be allowed to register for a maximum of 4 courses in a term depending on their preferred pace of learning.
+
+If a student is taking a maximum of 4 courses, a student can complete 12 theory courses in a year plus projects which they register.
+
+
+
+**Question**: What is the registration process for the Foundational Level?
+**Answer**: Once you clear the Qualifier Exam, you will be allowed to access the Course Registration Form from your dashboard upon logging in. In the Course Registration Form, you will need to fill the required details, upload necessary documents and pay the course fee to register for the first term of your Foundational Level. You may choose to register for maximum of 4 Foundational Level courses.
+Note that there will be an added Exam Fee applicable for learners opting to write their quizzes and end term exams outside India.
+
+
+
+**Question**: What are the documents / files that are required to be uploaded while registering for the Foundational Level?
+**Answer**: It is mandatory to upload any one of these documents while registering for Foundational Level:
+* 12th or equivalent mark sheet OR
+* Degree Certificate OR
+* Certificate of the highest level of education
+* Aadhaar Card / PAN Card (identification document)
+
+
+
+**Question**: I have already submitted my category certificate while applying for the Qualifier Process. Do I need to submit them again while registering for the Foundational Level?
+**Answer**: No, not required to submit again. However, the EWS / OBC-NCL certificate need to be submitted again if the previously submitted certificate is not valid until the end of the current financial year.
+
+
+
+**Question**: What is the procedure to add / drop a course?
+**Answer**: Once the registration window closes in any term, adding courses will not be allowed. Dropping a course will be allowed within 4 weeks of the term start.
+
 ---
 
 Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration, select exam cities, maximum 4 courses per term, online payment only, qualifier score as Quiz 1, same term registration, subsequent term registration, week 5 continuation, defer joining, CCC credit clearing capability, foundation courses, Rs 6000 per course, class 12 documentation upload, U grade re-registration, cannot register across levels, exam city list, Quiz 1 mandatory subsequent term

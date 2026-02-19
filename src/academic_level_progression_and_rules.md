@@ -107,6 +107,34 @@ Must clear ALL 8 Foundation courses to progress to Diploma level. No U grades al
 ## CGPA Impact
 U grade affects your CGPA. Re-registering and passing will update your grade.
 
+# FAQs
+
+**Question**: What is the procedure to quit or exit the program?
+**Answer**: The BS programme has multiple exit points. Depending on the courses completed and credits earned, learners can exit at any level with the corresponding certificate or degree.
+For the complete flowchart showing exit paths, please refer to: https://study.iitm.ac.in/ds/academics.html#AC1
+
+
+
+**Question**: Can I take a break of 1 or 2 year(s) after completing the Foundational Level?
+**Answer**: Yes, learners may take a break of one or more terms after starting the Foundational Level. However, learners must meet the intermediate milestone requirements, which is the maximum duration permitted for each level of the program.
+
+Please note that break terms are included while calculating these intermediate milestones. Learners who do not complete a level within the specified maximum duration will be removed from the program.
+
+
+
+**Question**: I'm eligible to apply 4 courses in the upcoming term, but I have only 2 Foundational Level courses left to complete. Will I be allowed to register for Diploma Level courses along with the Foundational Level courses?
+**Answer**: No, you have to complete all the 8 courses in Foundation Level before enrolling to the Diploma Level courses.
+
+
+
+**Question**: Is it possible to repeat a course for improving grades?
+**Answer**: You can choose to repeat courses to improve the grade in the course within the same level and not progressed to next level.
+
+For example: if a student completes the 8 courses of the foundation level and wishes to improve any course grade, they have to do it in the terms that are available within the maximum permissible terms. The student will not be allowed to take any foundation level improvement course once they start the Diploma Level.
+
+The highest grade will be recorded in the transcript.
+The highest score among all attempts of a course will be used for calculating the CGPA. Course fee for Repeat for Improvement courses will be double the normal fee.
+
 ---
 
-Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules, U grade, unsatisfactory grade, course re-registration, prerequisites, CGPA impact, credit requirements, 114 credits BSc, 142 credits BS, foundation 32 credits, cannot take courses across levels, course access revocation, re-registration fee, 3 terms per year, minimum 4 years, AE MG ES progression, diploma to degree
+Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules, U grade, unsatisfactory grade, course re-registration, prerequisites, CGPA impact, credit requirements, 114 credits BSc, 142 credits BS, foundation 32 credits, cannot take courses across levels, course access revocation, re-registration fee, 3 terms per year, minimum 4 years, AE MG ES progression, diploma to degree, exit program, quit program, exit points flowchart

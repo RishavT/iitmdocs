@@ -110,6 +110,8 @@ Once you apply as a qualifier applicant, you cannot change to JEE-based entry fo
 * Qualifier Exam Route
 * Direct Entry via JEE Advanced (eligible years only)
 
+For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
+
 
 
 **Question**: Who is exempted from the qualifier exam?
@@ -187,6 +189,7 @@ A learner entering through the qualifier route cannot switch to JEE-based entry 
 
 **Question**: What is the JEE-based entry application fee?
 **Answer**: The application fee for JEE-based entry is ₹4000.
+For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
 
 
 

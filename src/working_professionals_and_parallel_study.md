@@ -38,6 +38,18 @@ Available through student communities:
 ## Study Groups
 Student communities exist for peer support but program does not mandate group study.
 
+# FAQs
+
+**Question**: How long will it take to complete the online degree program if I am working?
+**Answer**: We expect full time students (students who are pursuing BS Degree as Sole Degree) to complete the BS degree within 4 years while those pursuing the BS degree in parallel with another physical college degree program or while working can comfortably complete the BS degree in 5-6 years.
+
+While this is the estimated time till BS degree, a diploma can potentially be obtained around 2 years. Check the Academics page to better understand the program structure.
+
+
+
+**Question**: How much time do I need to spend on a course per day?
+**Answer**: The expected effort to do well in one course is about 10 hours per week.
+
 ---
 
 Tags: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals, no special approval needed, 10 hours per week per course, pre-recorded video lectures, YouTube accessible, learn at own pace, in-person exam mandatory, select convenient exam cities, can defer 3 terms, can pursue alongside another degree, self study materials, no coaching needed, student communities peer support
