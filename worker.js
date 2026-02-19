@@ -775,7 +775,7 @@ async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
-  console.log('[DEBUG] answer() called');
+  console.log('\n[DEBUG] answer() called');
   const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
