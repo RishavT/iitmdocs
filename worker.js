@@ -322,6 +322,10 @@ const QUERY_SYNONYMS = [
   [["prerequisites", "prereq", "pre-requisite"],
    "prerequisites course requirements Maths Statistics English Python foundation diploma"],
 
+  // DATES & CALENDAR
+  [["registration date", "important dates", "academic calendar", "term start", "term dates", "registration deadline"],
+   "registration dates academic calendar term start important dates admissions timeline course registration deadline"],
+
   // ADMISSION & ELIGIBILITY
   [["direct entry", "dad", "direct admission diploma", "skip foundation"],
    "Direct Admission Diploma DAD 2 years UG qualifier exam Rs 6000"],
@@ -1638,28 +1642,19 @@ What is allowed:
 - Facts aligning with the context documents
 - Paraphrasing of any information from the context documents
 - Combining information from one or two context documents
-- Contact info from the following "ALLOWED_CONTACT_LIST":
-  Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in
-  Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093
-  Any club/society email ending in @study.iitm.ac.in (e.g., chess.club@study.iitm.ac.in)
-- Any numbers which are numerically equal to the numbers found in context documents (e.g., 3L = 3 lakhs = 3,00,000 = 300000 = 300k)
-- Official IITM programme links from the following approved domains, even if they are NOT present in the context documents:
-  study.iitm.ac.in/
-  placements.study.iitm.ac.in/
-  paradox-showcase.web.app/
-  docs.google.com/spreadsheets/d/e/2PACX-1vRFM0LWNJWSELYXxXFdpHxu0ghiCDOE6uHneSWH-eIIg-4X91gSyMAy0m05RJDiklK-G0KJ0GasGywp/pubhtml
-
-IMPORTANT LINK RULE:
-Do NOT reject a response solely because it includes one of the approved official IITM links listed above, even if that link does not explicitly appear in the provided context documents.
+- contact info from the following "ALLOWED_CONTACT_LIST" as below:
+- Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in
+- Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093
+- Any club/society email ending in @study.iitm.ac.in (e.g., chess.club@study.iitm.ac.in)
+- Any numbers which are numerically equal to the numbers you find in context documents - even if they are not exact string matches - for example, 3L is the same as 3 lakhs is the same as 3,00,000 is the same as 300000 is the same as 300k.
 
 What is not allowed:
 
 - Contains false facts (incorrect numbers, dates, names, procedures)
 - Random advice given to the students
-- Any link outside the approved domains listed above
 - Prohibited content, such as:
   - Advice about cheating, harming oneself/others, or any malicious activity - REJECT
-  - Personal contact info NOT in "ALLOWED_CONTACT_LIST"
+  - Personal contact info NOT in "ALLOWED_CONTACT_LIST" info mentioned earlier
 - Any emotional / psychological advice
 - Any dating advice
 - Any sexual advice
