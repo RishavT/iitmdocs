@@ -522,7 +522,7 @@ Examples:
     const langTagMatch = llmRewrite.match(/\[LANG:\w+\]/i);
     const langTag = langTagMatch ? langTagMatch[0] : '[LANG:english]';
     const keywordsOnly = llmRewrite.replace(/\[LANG:\w+\]/i, '').trim();
-    const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
+    const augmentedQuery = `${query} | ${keywordsOnly} ${langTag}`;
 
     console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
     return { query: augmentedQuery, source: "llm" };
