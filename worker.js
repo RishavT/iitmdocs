@@ -406,6 +406,52 @@ const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
 18. Paradox Event: annual offline event, May-June dates, valid student ID required, qualifier-cleared students eligible
 19. Independent FAQs: laptop/hostel/VPN not provided, campus visit rules, student ID and email issuance, SCT compatibility test, recorded lectures, English language, online-only application and payment`;
 
+// Words that look like stopwords but must NEVER be removed (domain-specific or ambiguous)
+const STOPWORDS_TO_IGNORE = new Set([
+  'may',    // month name (May 2026 term)
+  'not',    // changes meaning entirely ("can I not transfer" vs "can I transfer")
+  'no',     // same as above
+  'only',   // "only diploma" vs "diploma" — different meaning
+  'free',   // "is it free?" — content word here
+  'all',    // "all courses" — content word
+]);
+
+// Safe grammatical stopwords — carry no domain-specific meaning for this chatbot
+const STOPWORDS = new Set([
+  'a', 'an', 'the',
+  'i', 'me', 'my', 'we', 'our', 'you', 'your', 'it', 'its',
+  'is', 'are', 'was', 'were', 'am', 'be', 'been', 'being',
+  'do', 'does', 'did', 'done',
+  'will', 'would', 'could', 'should', 'shall',
+  'have', 'has', 'had',
+  'what', 'where', 'when', 'how', 'which', 'who', 'whom', 'why',
+  'this', 'that', 'these', 'those',
+  'and', 'but', 'or', 'so',
+  'to', 'of', 'in', 'on', 'at', 'by', 'with', 'from', 'as', 'into', 'for',
+  'please', 'tell', 'give', 'let', 'know', 'want', 'need', 'get', 'got',
+  'there', 'here', 'just', 'also', 'very', 'if', 'then', 'any', 'some',
+]);
+
+/**
+ * Removes common grammatical stopwords from a query to normalize it before LLM rewriting.
+ * Words in STOPWORDS_TO_IGNORE are always preserved even if they appear in STOPWORDS.
+ * The original query is still used for augmentation — this cleaned version is only sent to the LLM.
+ * @param {string} query - The user query
+ * @returns {string} - Query with stopwords removed, or original if result would be empty
+ */
+function removeStopWords(query) {
+  const words = query.trim().split(/\s+/);
+  const filtered = words.filter(word => {
+    const lower = word.toLowerCase().replace(/[?!.,]$/, ''); // strip trailing punctuation for comparison
+    if (STOPWORDS_TO_IGNORE.has(lower)) return true;
+    if (STOPWORDS.has(lower)) return false;
+    return true;
+  });
+  const result = filtered.join(' ').trim();
+  // If stopword removal wiped everything (e.g. query was "what is the"), return original
+  return result.length > 0 ? result : query;
+}
+
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.
  * @param {string} query - The user query to check
