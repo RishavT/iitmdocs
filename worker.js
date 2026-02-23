@@ -786,7 +786,7 @@ function formatFAQContent(content, question) {
       // Check if this question matches (fuzzy match)
       const questionText = line.replace(/^Q\d+:\s*/, '').trim();
       if (questionText.toLowerCase().includes(question.toLowerCase().slice(0, 20)) ||
-          question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
+        question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
         capturing = true;
         foundMatch = true;
         result.push(`### ${questionText}`);
