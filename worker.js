@@ -1417,22 +1417,22 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   const validatedHistory = Array.isArray(history)
     ? history
-        .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
-        .filter((msg) => {
-          // Validate message structure
-          if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
-            return false;
-          }
-          // Validate role is either 'user' or 'assistant'
-          if (msg.role !== "user" && msg.role !== "assistant") {
-            return false;
-          }
-          // Validate message length to prevent DoS
-          if (msg.content.length > MAX_MESSAGE_LENGTH) {
-            return false;
-          }
-          return true;
-        })
+      .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
+      .filter((msg) => {
+        // Validate message structure
+        if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
+          return false;
+        }
+        // Validate role is either 'user' or 'assistant'
+        if (msg.role !== "user" && msg.role !== "assistant") {
+          return false;
+        }
+        // Validate message length to prevent DoS
+        if (msg.content.length > MAX_MESSAGE_LENGTH) {
+          return false;
+        }
+        return true;
+      })
     : [];
 
   // Build messages array with conversation history
@@ -1564,9 +1564,9 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 function containsRaahat(text) {
   const lowerText = text.toLowerCase();
   return lowerText.includes('raahat') ||
-         lowerText.includes('wellness.society@study.iitm.ac.in') ||
-         lowerText.includes('@wellness.society_iitmbs') ||
-         lowerText.includes('mental health & wellness society');
+    lowerText.includes('wellness.society@study.iitm.ac.in') ||
+    lowerText.includes('@wellness.society_iitmbs') ||
+    lowerText.includes('mental health & wellness society');
 }
 
 /**
