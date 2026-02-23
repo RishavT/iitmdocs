@@ -461,7 +461,8 @@ function findSynonymMatch(query) {
   const queryLower = query.toLowerCase();
   for (const [patterns, canonicalQuery] of QUERY_SYNONYMS) {
     for (const pattern of patterns) {
-      if (queryLower.includes(pattern.toLowerCase())) {
+      const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'); // word boundary regex, case-insensitive
+      if (regex.test(query)) {
         return canonicalQuery;
       }
     }
