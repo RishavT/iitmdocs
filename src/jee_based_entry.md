@@ -196,6 +196,8 @@ For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
 **Question**: What are the JEE eligibility confirmations?
 **Answer**: Learners who cleared JEE Main and are eligible for JEE Advanced within the allowed years can apply for the BS program under JEE-based entry.
 
+<end-of-faqs> 
+
 ---
 
 Tags: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE, regular entry vs JEE entry, two entry pathways, CCC credit clearing capability of 4, skip qualifier, direct foundation admission, JEE proof upload, JEE Main scorecard, JEE Advanced admit card, cannot switch entry type, international exams not accepted, SAT AP IB A-Levels not accepted, JEE 2024 2025 2026 eligibility, admission cycles, 3 terms validity

@@ -36,6 +36,8 @@ Specific CGPA-based guarantees are not stated in the FAQs.
 **Question**: Do I get placement opportunities after I complete the BS Degree?
 **Answer**: The demand for data analysts / scientists and full stack developers is very high. Through our program, we do our best to equip our learners with required subject expertise. We are also planning to give soft skills training as part of the program. IIT Madras will actively reach out to the recruiters in the context of placement opportunities for the graduates of the non-campus BS Degree Program.
 
+<end-of-faqs> 
+
 ---
 
 Tags: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS, placement portal, placement portal URL, minimum diploma level required, CGPA not guaranteed for placements, BS electronic systems placement, same placement portal all programs

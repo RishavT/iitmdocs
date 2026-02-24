@@ -135,6 +135,8 @@ For example: if a student completes the 8 courses of the foundation level and wi
 The highest grade will be recorded in the transcript.
 The highest score among all attempts of a course will be used for calculating the CGPA. Course fee for Repeat for Improvement courses will be double the normal fee.
 
+<end-of-faqs> 
+
 ---
 
 Tags: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules, U grade, unsatisfactory grade, course re-registration, prerequisites, CGPA impact, credit requirements, 114 credits BSc, 142 credits BS, foundation 32 credits, cannot take courses across levels, course access revocation, re-registration fee, 3 terms per year, minimum 4 years, AE MG ES progression, diploma to degree, exit program, quit program, exit points flowchart

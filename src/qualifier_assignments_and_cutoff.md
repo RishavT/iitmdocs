@@ -201,6 +201,8 @@ Refer to the Qualifier Process and the section below it to learn about the minim
 **Question**: Is there any concession for SC / ST / OBC-NCL / EWS / PwD candidates in terms of scores?
 **Answer**: SC / ST / OBC-NCL / EWS / PwD candidates will have concession in minimum scores required during the qualifier process to enter the program. Note that there will be no such concessions after entering the program. (OBC candidates not belonging to the OBC-NCL category cannot avail any concession)
 
+<end-of-faqs> 
+
 ---
 
 Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment, graded out of 100, not attempted zero, general 40 percent, OBC-NCL EWS 35 percent, SC ST PwD 30 percent, first 2 weeks average, best 2 out of 3 weeks, hall ticket eligibility, relaxations only qualifier, category documents, OBC-NCL certificate, cannot change category, assignments compulsory, assignments not proctored, complete from home

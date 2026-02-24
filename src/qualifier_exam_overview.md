@@ -186,6 +186,8 @@ In case your uploaded document(s) gets "returned / rejected" during verification
 
 Being honest and careful while filling the application form and uploading correct documents in the correct formats will help get your application "accepted". Check the Application Process for required documents, document formats and sizes.
 
+<end-of-faqs> 
+
 ---
 
 Tags: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure, 4 week process, week wise content release, videos tutorials assignments transcripts, weekly graded assignment, week 1 sample content, qualifier subjects DS MG, English 1 Maths-1 Statistics-1 Computational Thinking, qualifier subjects ES AE, Electronic Systems Thinking and Circuits Introduction to C Programming, qualifying exam not competitive, subject wise cutoff, 10 hours per week per course, self study sufficient, no coaching required, moderately difficult, easier than regular term exams, no coding skills tested, computational thinking pseudocode flowcharts, English compulsory, common failure reasons, prior coding knowledge not required, qualifier exam dates academic calendar

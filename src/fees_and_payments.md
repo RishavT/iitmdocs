@@ -155,6 +155,8 @@ Learners are advised to refer to the official website for the latest fee details
 
 The application fee is non-refundable.
 
+<end-of-faqs> 
+
 # FAQs-2
 
 **Question**: Is there a refund if I don’t write the qualifier exam?
@@ -299,6 +301,8 @@ After clearing the Qualifier Exam, all learners who wish to avail fee waivers ba
 **Answer**: For courses dropped within the first four weeks of the term, admin charges will be retained and the balance course fee, if any, will be refunded. Admin charges for a Foundational Level course is Rs 2000 and the admin charges for a Diploma / Degree Level course is Rs 4000.
 
 For learners who registered to take exams outside India, 50% of End Term Exam Fee for the dropped course will be refunded. If such a learner chooses to drop all courses in a term, 50% fee for Quiz 2 (only) will get refunded.
+
+<end-of-faqs> 
 ---
 
 Tags: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt, qualifier application fee, reattempt fee, non-refundable, category wise fees, SC ST PwD fee, OBC fee, international exam facilitation fee, fee waiver, income based fee waiver, income certificate, no EMI option, no cheque payment, online payment portal, credit based pricing

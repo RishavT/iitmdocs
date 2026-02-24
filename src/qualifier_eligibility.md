@@ -202,6 +202,8 @@ For admission dates, please refer to the academic calendar on the official websi
 **Question**: I had dropped out of degree over two decades ago. Would I be eligible to apply?
 **Answer**: Yes. If you have completed Class 12 or equivalent, you are eligible to apply for the program. There is no requirement to have completed a degree program. For further details you may check the eligibility to apply tab under the admissions section on the BS in Data Science and Applications website: https://study.iitm.ac.in/ds/admissions.html#AD4
 
+<end-of-faqs> 
+
 ---
 
 Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier, NIOS pathway, committee approval ES AE, apply for qualifier, proceed to foundation level, class 10 maths english, class 12 physics mathematics, cannot apply multiple programs, class 11 students eligible, DS MG eligibility, ES AE eligibility, accepted class 12 equivalents, commerce arts students, diploma holders eligibility, AICTE diploma equivalent, no age restriction, foundation level registration eligibility, provisional admission, awaiting class 12 marksheet

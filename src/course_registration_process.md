@@ -114,6 +114,8 @@ Note that there will be an added Exam Fee applicable for learners opting to writ
 **Question**: What is the procedure to add / drop a course?
 **Answer**: Once the registration window closes in any term, adding courses will not be allowed. Dropping a course will be allowed within 4 weeks of the term start.
 
+<end-of-faqs> 
+
 ---
 
 Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration, select exam cities, maximum 4 courses per term, online payment only, qualifier score as Quiz 1, same term registration, subsequent term registration, week 5 continuation, defer joining, CCC credit clearing capability, foundation courses, Rs 6000 per course, class 12 documentation upload, U grade re-registration, cannot register across levels, exam city list, Quiz 1 mandatory subsequent term

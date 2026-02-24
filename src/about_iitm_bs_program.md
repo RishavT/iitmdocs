@@ -120,6 +120,8 @@ Learners who wish to exclusively pursue a Diploma in Programming OR Data Science
 * BS Degree in Electronic Systems — Email: support-es@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/es/
 * BS Degree in Aeronautics and Space Technology — Email: support-ae@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/ae/
 
+<end-of-faqs> 
+
 ---
 
 Tags: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad, BS electronic systems, BS management and data science, BS aeronautics and space technology, multiple exit points, foundation certificate, IITM CODE, diploma from IIT Madras, BSc degree, PGD, MTech, Diploma in Data Science, Diploma in Programming, cannot apply multiple programs, BTech vs BS, hybrid online in-person exams, four year programme, programs offered

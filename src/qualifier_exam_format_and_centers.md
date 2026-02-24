@@ -229,6 +229,8 @@ For exam centre details: https://study.iitm.ac.in/ds/academics.html#AC9
 **Question**: Will the Exam City preferences I select for the Qualifier Exam in the application form be fixed for all the later exams?
 **Answer**: No. The Exam city preferences selected in the application form is for the Qualifier Exam only. You will have the option of picking different Exam City options for the Quiz and End term exams if you wish, after qualifying into foundation level.
 
+<end-of-faqs> 
+
 ---
 
 Tags: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam, select 2 cities per term, 4 hours 240 minutes duration, in-person India, remote proctored international, all 4 subjects same day, MCQ MSQ numerical short answer, no negative marking, calculator enabled, closed book exam, hall ticket mandatory, valid ID proof Aadhaar PAN passport, 9 AM IST 2 PM IST slots, cannot write from home India, exam city edit window, special accommodation PwD scribe, not conducted at IIT Madras campus

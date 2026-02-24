@@ -69,6 +69,8 @@ We will use WhatsApp from our side for communication or reminder purpose only.
 
 If the error is after payment has been made, please forward the confirmation email from Razorpay along with email ID, application number and screenshot with description.
 
+<end-of-faqs> 
+
 ---
 
 Tags: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time, program-specific email, support-es, support-ae, support-mg, qualifier support email, global entry email, phone number, ICSR building office address, payment issues, document upload problems, category change, hall ticket issues, special accommodation, PwD scribe request

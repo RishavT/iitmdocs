@@ -205,6 +205,8 @@ The learner must join within the validity period.
 **Question**: Will my Qualifier Exam Score be considered in the subsequent term?
 **Answer**: The Qualifier Exam Score will be counted as Quiz 1 Score for the courses registered in the Foundation level in the same term of the qualifier exam only. It will not be considered as Quiz 1 score for courses registered in subsequent terms.
 
+<end-of-faqs> 
+
 ---
 
 Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score, email WhatsApp portal notification, admission letter, marks on portal, 3 terms validity, invalid 4th term onwards, class 12 validity 3 terms or 6 terms whichever earlier, cannot reattempt during validity, first attempt same term registration, qualifier score as Quiz 1, second attempt subsequent term, results on dashboard, validity expires automatically, cannot extend validity, program choice locked after clearing, registration not automatic, delay registration within validity

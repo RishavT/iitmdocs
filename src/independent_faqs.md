@@ -188,6 +188,8 @@ Once all the documents uploaded in the foundation level course registration form
 **Question**: Will I be issued an ID card?
 **Answer**: An ID card in electronic format will be provided, subject to conditions on use of ID card.
 
+<end-of-faqs> 
+
 ---
 
 Tags: FAQs, common questions, general doubts, miscellaneous queries, frequently asked questions, clarifications, student doubts, laptop not provided, no VPN access, English language, no hostel, no library, no campus facilities, campus visit, IST exam timings, student ID card, student email, application online only, payment online only, SCT system compatibility test, recorded lectures, clearing doubts, discussion forums, Gen AI theory project, topper CGPA academic distinction, no physical labs, fully online programme
