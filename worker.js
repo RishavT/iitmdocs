@@ -589,7 +589,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions, rewriteQueryWithSource };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource };
 
 export default {
   async fetch(request, env) {
@@ -769,62 +769,23 @@ async function fetchFAQDocument(filename, env) {
 function formatFAQContent(content, question) {
   if (!content) return "FAQ content not available.";
 
-  // The FAQ content contains multiple Q&A pairs
-  // Try to find the matching question and return that section
-  const lines = content.split('\n');
-  let result = [];
-  let capturing = false;
-  let foundMatch = false;
+  const faqs = extractFAQs(content);
+  if (!faqs.length) return "FAQ content not available.";
 
-  for (const line of lines) {
-    // Check if this is a question line
-    if (line.match(/^Q\d+:/)) {
-      if (capturing && result.length > 0) {
-        // We were capturing the previous Q&A, stop now
-        break;
-      }
-      // Check if this question matches (fuzzy match)
-      const questionText = line.replace(/^Q\d+:\s*/, '').trim();
-      if (questionText.toLowerCase().includes(question.toLowerCase().slice(0, 20)) ||
-        question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
-        capturing = true;
-        foundMatch = true;
-        result.push(`### ${questionText}`);
-      }
-    } else if (capturing) {
-      // Capture answer lines
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('Answer:')) {
-        result.push(trimmedLine.replace('Answer:', '').trim());
-      } else if (trimmedLine) {
-        result.push(trimmedLine);
-      }
+  // Find the best matching FAQ by comparing question text
+  const questionLower = question.toLowerCase();
+  let bestMatch = faqs[0];
+  let bestScore = -1;
+
+  for (const faq of faqs) {
+    const score = scoreFAQMatch(questionLower, faq.question.toLowerCase());
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = faq;
     }
   }
 
-  // If no match found, return the full content formatted
-  if (!foundMatch || result.length === 0) {
-    // Just return the first Q&A from the document
-    result = [];
-    capturing = false;
-    for (const line of lines) {
-      if (line.match(/^Q\d+:/)) {
-        if (capturing) break;
-        capturing = true;
-        const questionText = line.replace(/^Q\d+:\s*/, '').trim();
-        result.push(`### ${questionText}`);
-      } else if (capturing) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('Answer:')) {
-          result.push(trimmedLine.replace('Answer:', '').trim());
-        } else if (trimmedLine) {
-          result.push(trimmedLine);
-        }
-      }
-    }
-  }
-
-  return result.join('\n\n') || content;
+  return `### ${bestMatch.question}\n\n${bestMatch.answer}`;
 }
 
 async function answer(request, env) {
@@ -1182,26 +1143,49 @@ async function searchWeaviate(query, limit, env) {
  * @param {string} content - The FAQ document content
  * @returns {string|null} - The first question text, or null if not found
  */
-function extractFirstQuestion(content) {
-  if (!content) return null;
+function extractFAQs(content) {
+  if (!content) return [];
 
-  // Find all Q#: lines
-  const matches = content.matchAll(/^Q\d+:\s*(.+?)(?:\n|$)/gm);
+  // Only look at content before the last <end-of-faqs> marker
+  const endMarkerIndex = content.lastIndexOf('<end-of-faqs>');
+  const searchContent = endMarkerIndex !== -1 ? content.substring(0, endMarkerIndex) : content;
 
-  let firstQuestion = null;
-  for (const match of matches) {
-    const question = match[1].trim();
-    // Prefer questions that end with "?"
-    if (question.endsWith('?')) {
-      return question;
-    }
-    // Keep the first match as fallback
-    if (!firstQuestion) {
-      firstQuestion = question;
+  const faqs = [];
+  // Split on **Question**: to get each FAQ block
+  const parts = searchContent.split(/\*\*Question\*\*:\s*/);
+
+  // First part is content before the first FAQ — skip it
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    // Split on **Answer**: to separate question from answer
+    const answerSplit = part.split(/\*\*Answer\*\*:\s*/);
+    if (answerSplit.length >= 2) {
+      const question = answerSplit[0].trim();
+      // Answer runs until the next **Question**: or end of this part
+      const answer = answerSplit[1].trim();
+      if (question) {
+        faqs.push({ question, answer });
+      }
     }
   }
 
-  return firstQuestion;
+  return faqs;
+}
+
+/**
+ * Scores how well a FAQ question matches the user's query using word overlap.
+ * @param {string} query - The user's query (lowercased)
+ * @param {string} faqQuestion - The FAQ question text (lowercased)
+ * @returns {number} - Overlap score (higher = better match)
+ */
+function scoreFAQMatch(query, faqQuestion) {
+  const queryWords = new Set(query.split(/\s+/).filter(w => w.length > 2));
+  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => w.length > 2));
+  let overlap = 0;
+  for (const word of queryWords) {
+    if (faqWords.has(word)) overlap++;
+  }
+  return overlap;
 }
 
 /**
