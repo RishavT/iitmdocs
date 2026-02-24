@@ -1627,8 +1627,8 @@ function countStatements(text) {
     const trimmed = line.trim();
     // Skip empty lines, headers (starting with #), and very short lines
     return trimmed.length > 0 &&
-           !trimmed.startsWith('#') &&
-           trimmed.length > 5;
+      !trimmed.startsWith('#') &&
+      trimmed.length > 5;
   });
 
   return lines.length;
