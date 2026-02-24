@@ -1769,6 +1769,7 @@ Output your fact-check result as JSON:`;
     console.log('[DEBUG] checkResponse() - Full API response:', JSON.stringify(result));
     const rawAnswer = result.choices?.[0]?.message?.content?.trim();
     console.log('[DEBUG] checkResponse() - Raw fact-check response:', rawAnswer);
+    // console.log('\n========== [DEBUG] FACT-CHECKER FULL RESPONSE ==========\n' + rawAnswer + '\n=========================================================\n');
 
     // Parse JSON response
     try {
