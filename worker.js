@@ -764,7 +764,8 @@ async function fetchFAQDocument(filename, env) {
 
 /**
  * Formats FAQ content for display.
- * Extracts the relevant Q&A section and formats it nicely.
+ * Extracts the matching Q&A pair from the document using the new
+ * **Question**:/**Answer**: format and returns it formatted.
  */
 function formatFAQContent(content, question) {
   if (!content) return "FAQ content not available.";
@@ -1137,11 +1138,11 @@ async function searchWeaviate(query, limit, env) {
 }
 
 /**
- * Extracts the first question from FAQ document content.
- * FAQ format: "Q#: <question text>\nAnswer: ..."
- * Prefers questions ending with "?" over section headers.
- * @param {string} content - The FAQ document content
- * @returns {string|null} - The first question text, or null if not found
+ * Extracts all FAQ Q&A pairs from document content.
+ * FAQ format: "**Question**: <text>\n**Answer**: <text>"
+ * Only extracts from content before the last <end-of-faqs> marker.
+ * @param {string} content - The document content
+ * @returns {Array<{question: string, answer: string}>} - Array of FAQ pairs
  */
 function extractFAQs(content) {
   if (!content) return [];
@@ -1189,114 +1190,43 @@ function scoreFAQMatch(query, faqQuestion) {
 }
 
 /**
- * Searches Weaviate for FAQ documents only.
+ * Searches Weaviate for documents and extracts relevant FAQ suggestions.
+ * Uses the existing searchWeaviate() for retrieval, then extracts and ranks
+ * individual FAQ Q&A pairs from the returned documents.
  * @param {string} query - The search query
- * @param {number} limit - Maximum number of results
+ * @param {number} limit - Maximum number of FAQ suggestions to return
  * @param {Object} env - Environment variables
- * @returns {Promise<Array>} - Array of FAQ documents with questions extracted
+ * @returns {Promise<Array>} - Array of {filename, question} objects
  */
 async function searchFAQs(query, limit, env) {
   console.log('[DEBUG] searchFAQs() called, query:', query);
 
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
-  let weaviateUrl;
-  const embeddingHeaders = { "Content-Type": "application/json" };
-
-  if (embeddingMode === "local") {
-    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
-  } else if (embeddingMode === "gce") {
-    weaviateUrl = env.GCE_WEAVIATE_URL;
-  } else {
-    weaviateUrl = env.WEAVIATE_URL;
-    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
-    if (embeddingProvider === "cohere") {
-      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
-    } else {
-      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
-    }
-  }
-
-  const sanitizedQuery = query
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, " ")
-    .replace(/\r/g, " ")
-    .replace(/\t/g, " ");
-
-  // Filter for FAQ files only using 'where' clause with Like operator
-  let graphqlQuery;
-  if (embeddingMode === "gce") {
-    const ollamaUrl = env.GCE_OLLAMA_URL;
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
-    const vectorStr = `[${queryVector.join(",")}]`;
-
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            vector: ${vectorStr}
-            alpha: 0.5
-          }
-          where: {
-            path: ["filename"],
-            operator: Like,
-            valueText: "faq_*"
-          }
-          limit: ${limit}
-        ) {
-          filename content
-          _additional { score }
-        }
-      }
-    }`;
-  } else {
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            alpha: 0.5
-          }
-          where: {
-            path: ["filename"],
-            operator: Like,
-            valueText: "faq_*"
-          }
-          limit: ${limit}
-        ) {
-          filename content
-          _additional { score }
-        }
-      }
-    }`;
-  }
-
   try {
-    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-      method: "POST",
-      headers: embeddingHeaders,
-      body: JSON.stringify({ query: graphqlQuery }),
-    });
+    // Reuse the main search function — no need for separate Weaviate logic
+    const documents = await searchWeaviate(query, 3, env);
+    console.log('[DEBUG] FAQ search: searchWeaviate returned', documents.length, 'documents');
 
-    const responseText = await response.text();
-    const data = JSON.parse(responseText);
-
-    if (data.errors) {
-      console.error('[DEBUG] FAQ search error:', data.errors);
-      return [];
+    // Extract all FAQ pairs from each document
+    const allFAQs = [];
+    for (const doc of documents) {
+      const faqs = extractFAQs(doc.content);
+      for (const faq of faqs) {
+        allFAQs.push({ filename: doc.filename, question: faq.question });
+      }
     }
+    console.log('[DEBUG] FAQ search: extracted', allFAQs.length, 'total FAQ pairs');
 
-    const documents = data.data?.Get?.Document || [];
-    console.log('[DEBUG] FAQ search returned', documents.length, 'documents');
+    if (!allFAQs.length) return [];
 
-    // Extract first question from each FAQ and return with relevance
-    return documents.map((doc) => ({
-      filename: doc.filename,
-      question: extractFirstQuestion(doc.content),
-      relevance: doc._additional?.score || 0
-    })).filter(doc => doc.question); // Only include docs where we found a question
+    // Rank FAQs by keyword overlap with the user's query
+    const queryLower = query.toLowerCase();
+    const scored = allFAQs.map(faq => ({
+      ...faq,
+      score: scoreFAQMatch(queryLower, faq.question.toLowerCase())
+    }));
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.slice(0, limit);
   } catch (error) {
     console.error('[DEBUG] FAQ search failed:', error.message);
     return [];
