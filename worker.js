@@ -1470,6 +1470,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   const answerText = result.choices?.[0]?.message?.content || "";
   console.log('[DEBUG] Generated answer length:', answerText.length);
   console.log('[DEBUG] Generated answer preview:', answerText.substring(0, 500));
+  // console.log('\n========== [DEBUG] LLM FULL RESPONSE ==========\n' + answerText + '\n================================================\n');
 
   // Step 3: Handle RAAHAT content specially - split and fact-check non-RAAHAT content only
   const { raahatChunk, otherChunk, hasRaahat } = splitRaahatContent(answerText);
