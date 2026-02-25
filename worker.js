@@ -504,9 +504,9 @@ async function rewriteQueryWithSource(query, env) {
   // Fall back to LLM rewriting for unmatched queries
   // Normalize query by removing stopwords before sending to LLM — reduces phrasing variance.
   // The original `query` is still used in the augmented result for FAQ matching.
-  const queryForLLM = removeStopWords(query);
-  console.log('\n\n ********[DEBUG] Stopword-removed query for LLM:********', queryForLLM);
-
+  const queryForLLMrewriting = removeStopWords(query);
+  console.log('[DEBUG] Stopword-removed query for LLM', queryForLLMrewriting);
+  
   const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
 
 ${KNOWLEDGE_BASE_SUMMARY}
