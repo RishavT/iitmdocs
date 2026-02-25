@@ -120,7 +120,7 @@ Learners who wish to exclusively pursue a Diploma in Programming OR Data Science
 * BS Degree in Electronic Systems — Email: support-es@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/es/
 * BS Degree in Aeronautics and Space Technology — Email: support-ae@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/ae/
 
-<end-of-faqs> 
+<!-- end of tags --> 
 
 ---
 

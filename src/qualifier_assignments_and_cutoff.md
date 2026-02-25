@@ -201,7 +201,7 @@ Refer to the Qualifier Process and the section below it to learn about the minim
 **Question**: Is there any concession for SC / ST / OBC-NCL / EWS / PwD candidates in terms of scores?
 **Answer**: SC / ST / OBC-NCL / EWS / PwD candidates will have concession in minimum scores required during the qualifier process to enter the program. Note that there will be no such concessions after entering the program. (OBC candidates not belonging to the OBC-NCL category cannot avail any concession)
 
-<end-of-faqs> 
+<!-- end of tags --> 
 
 ---
 

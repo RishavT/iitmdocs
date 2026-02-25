@@ -53,7 +53,7 @@ Check availability at: https://study.iitm.ac.in/ds/academics.html#AC9
 * Check if there is any additional fee applicable for an international center.
 * Submit the request and complete the payment (if required).
 
-<end-of-faqs> 
+<!-- end of tags --> 
 
 ---
 

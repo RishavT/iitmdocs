@@ -120,7 +120,7 @@ This is where the chatbot figures out what the user actually wants and translate
 - **If fact-check passes**: The answer is streamed back to the user as Server-Sent Events (SSE).
 - **If fact-check fails**: The user sees a "cannot answer" message in their detected language, along with **"Did you mean?" FAQ suggestions** — clickable questions extracted from the knowledge base that the bot is confident it can answer. Finding these suggestions is a two-step process:
   1. **Hybrid search** (same `searchWeaviate()` used in the main pipeline — BM25 + vector, 50/50) finds the top 3 most relevant topic documents.
-  2. All `**Question**:`/`**Answer**:` FAQ pairs are extracted from those documents (only from content before the last `<end-of-faqs>` marker), then the individual FAQ questions are **ranked by keyword overlap** with the user's query. The top 3 are shown as suggestions.
+  2. All `**Question**:`/`**Answer**:` FAQ pairs are extracted from those documents (only from content before the last `<!-- end of tags -->` marker), then the individual FAQ questions are **ranked by keyword overlap** with the user's query. The top 3 are shown as suggestions.
 - Before the answer text, the bot also streams **document references** — links to the source files that were used, displayed as a collapsible "References" section in the UI.
 
 ### Step 9: Frontend rendering
@@ -134,7 +134,7 @@ This is where the chatbot figures out what the user actually wants and translate
 
 - When the user clicks a "Did you mean?" suggestion, the frontend sends the request with a `faq_file` parameter (the topic filename, e.g., `fees_and_payments.md`) and the question text.
 - The backend **skips the entire pipeline** (no query rewriting, no LLM answer generation, no fact-checking) and directly fetches the topic document from Weaviate.
-- It then extracts all FAQ pairs from the document content (using the `**Question**:`/`**Answer**:` format, only before the last `<end-of-faqs>` marker), finds the matching Q&A pair by comparing question text, and returns it formatted — this is fast and guaranteed accurate.
+- It then extracts all FAQ pairs from the document content (using the `**Question**:`/`**Answer**:` format, only before the last `<!-- end of tags -->` marker), finds the matching Q&A pair by comparing question text, and returns it formatted — this is fast and guaranteed accurate.
 
 ---
 

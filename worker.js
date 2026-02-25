@@ -1140,15 +1140,15 @@ async function searchWeaviate(query, limit, env) {
 /**
  * Extracts all FAQ Q&A pairs from document content.
  * FAQ format: "**Question**: <text>\n**Answer**: <text>"
- * Only extracts from content before the last <end-of-faqs> marker.
+ * Only extracts from content before the last <!-- end of tags --> marker.
  * @param {string} content - The document content
  * @returns {Array<{question: string, answer: string}>} - Array of FAQ pairs
  */
 function extractFAQs(content) {
   if (!content) return [];
 
-  // Only look at content before the last <end-of-faqs> marker
-  const endMarkerIndex = content.lastIndexOf('<end-of-faqs>');
+  // Only look at content before the last <!-- end of tags --> marker
+  const endMarkerIndex = content.lastIndexOf('<!-- end of tags -->');
   const searchContent = endMarkerIndex !== -1 ? content.substring(0, endMarkerIndex) : content;
 
   const faqs = [];

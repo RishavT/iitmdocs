@@ -202,7 +202,7 @@ For admission dates, please refer to the academic calendar on the official websi
 **Question**: I had dropped out of degree over two decades ago. Would I be eligible to apply?
 **Answer**: Yes. If you have completed Class 12 or equivalent, you are eligible to apply for the program. There is no requirement to have completed a degree program. For further details you may check the eligibility to apply tab under the admissions section on the BS in Data Science and Applications website: https://study.iitm.ac.in/ds/admissions.html#AD4
 
-<end-of-faqs> 
+<!-- end of tags --> 
 
 ---
 

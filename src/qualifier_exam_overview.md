@@ -186,7 +186,7 @@ In case your uploaded document(s) gets "returned / rejected" during verification
 
 Being honest and careful while filling the application form and uploading correct documents in the correct formats will help get your application "accepted". Check the Application Process for required documents, document formats and sizes.
 
-<end-of-faqs> 
+<!-- end of tags --> 
 
 ---
 

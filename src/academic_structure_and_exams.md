@@ -178,7 +178,7 @@ For courses that you register for in a later term, you will be required to repea
 **Question**: How can I change the exam city within India?
 **Answer**: Each exam has a deadline before which change of exam city is allowed. Option to change the exam city will be available till each deadline in the student Dashboard, in the "Exam Cities and Hall Tickets" page.
 
-<end-of-faqs> 
+<!-- end of tags --> 
 ---
 
 Tags: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam, OPPE, online proctored programming exam, 16 week term, incomplete grade, I grade, make-up examination, academic calendar, refund policy, non-refundable fees, quiz dates, term structure, certificates, marksheets
