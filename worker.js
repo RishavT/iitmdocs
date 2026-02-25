@@ -558,7 +558,7 @@ Examples:
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: queryForLLM },
+          { role: "user", content: queryForLLMrewriting },
         ],
         temperature: 0,
         max_tokens: 100,
