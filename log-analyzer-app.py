@@ -137,10 +137,13 @@ def get_job(job_id: str) -> Optional[dict]:
 
 
 def cleanup_old_jobs():
-    """Remove jobs older than JOB_TTL_SECONDS. Must be called with jobs_lock held."""
+    """Remove completed/errored jobs older than JOB_TTL_SECONDS. Must be called with jobs_lock held."""
     now = datetime.now()
     expired = []
     for jid, job in jobs.items():
+        # Only clean up finished jobs — never remove running ones
+        if job.get("status") not in ("completed", "error"):
+            continue
         try:
             created = datetime.fromisoformat(job["created_at"])
             if (now - created).total_seconds() > JOB_TTL_SECONDS:
