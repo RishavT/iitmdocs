@@ -55,6 +55,7 @@ Testing:
 
 import argparse
 import csv
+import ipaddress
 import json
 import os
 import re
@@ -64,6 +65,7 @@ from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 from tqdm import tqdm
@@ -263,15 +265,12 @@ def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
     """
     Sanitize text for use in Claude prompts to prevent prompt injection.
 
-    - Truncates to max_length
-    - Removes/escapes potentially dangerous patterns
     - Removes control characters
+    - Removes/escapes potentially dangerous patterns
+    - Truncates to max_length AFTER sanitization
     """
     if not text:
         return ""
-
-    # Truncate
-    text = text[:max_length]
 
     # Remove control characters (except newlines and tabs)
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
@@ -293,6 +292,9 @@ def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
 
     # Replace multiple newlines with single
     text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # Truncate AFTER sanitization to ensure injection patterns are removed
+    text = text[:max_length]
 
     return text.strip()
 
@@ -573,7 +575,39 @@ def search_answers_batch_with_claude(questions: list[dict], batch_size: int = 25
 # NEW BOT COMPARISON FUNCTIONS
 # ============================================================================
 
-def query_new_bot(question: str, bot_url: str, timeout: int = 60) -> str:
+def validate_bot_url(url: str) -> str | None:
+    """
+    Validate a bot URL to prevent SSRF attacks.
+
+    Returns None if valid, or an error message if invalid.
+    Blocks private/reserved IP ranges and non-HTTP(S) schemes.
+    """
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return "Invalid URL format"
+
+    # Only allow http/https
+    if parsed.scheme not in ('http', 'https'):
+        return f"Invalid URL scheme: {parsed.scheme}. Only http/https allowed"
+
+    if not parsed.hostname:
+        return "No hostname in URL"
+
+    # Check if hostname is an IP address in a private range
+    try:
+        ip = ipaddress.ip_address(parsed.hostname)
+        if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+            return f"URL points to a private/reserved IP: {parsed.hostname}"
+    except ValueError:
+        # It's a hostname, not an IP - that's fine
+        pass
+
+    return None
+
+
+def query_new_bot(question: str, bot_url: str, timeout: int = 60,
+                  allow_private_urls: bool = False) -> str:
     """
     Query the new chatbot and return its response.
 
@@ -585,10 +619,16 @@ def query_new_bot(question: str, bot_url: str, timeout: int = 60) -> str:
         question: The question to ask
         bot_url: URL of the new chatbot API endpoint
         timeout: Request timeout in seconds
+        allow_private_urls: If True, skip SSRF validation (for local testing)
 
     Returns:
         The chatbot's response text, or an error message
     """
+    if not allow_private_urls:
+        url_error = validate_bot_url(bot_url)
+        if url_error:
+            return f"[ERROR: {url_error}]"
+
     try:
         response = requests.post(
             bot_url,
@@ -742,7 +782,8 @@ def parse_comparison_result(result: str, expected_count: int) -> list[dict]:
     return results[:expected_count]
 
 
-def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: int = 10) -> list[dict]:
+def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: int = 10,
+                             allow_private_urls: bool = False) -> list[dict]:
     """
     Check if the new bot can answer questions that the old bot couldn't.
 
@@ -762,7 +803,8 @@ def check_new_bot_can_answer(questions: list[dict], bot_url: str, batch_size: in
     # First, query the new bot for all questions with progress bar
     results = []
     for item in tqdm(questions, desc="    Querying new bot", unit="query"):
-        new_response = query_new_bot(item['question'], bot_url)
+        new_response = query_new_bot(item['question'], bot_url,
+                                     allow_private_urls=allow_private_urls)
         results.append({
             "question": item['question'],
             "row_index": item.get('row_index'),
@@ -1259,6 +1301,8 @@ Examples:
                         help="Compare old logs with new bot. Comma-separated: could-answer, could-not-answer, or both")
     parser.add_argument("--new-bot-url", type=str, default="http://localhost:8787/answer",
                         help="URL of the new chatbot API endpoint (default: http://localhost:8787/answer)")
+    parser.add_argument("--allow-private-urls", action="store_true",
+                        help="Allow private/local URLs for --new-bot-url (for local testing)")
 
     args = parser.parse_args()
 
@@ -1386,7 +1430,8 @@ Examples:
 
             # Query new bot for all could-answer questions
             for item in tqdm(could_answer_rows, desc="    Querying new bot", unit="query"):
-                item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
+                item['new_response'] = query_new_bot(item['question'], args.new_bot_url,
+                                                     allow_private_urls=args.allow_private_urls)
 
             # Compare with Claude
             staging_comparison_results = compare_responses_with_claude(could_answer_rows)
@@ -1405,7 +1450,8 @@ Examples:
             print(f"  Checking {len(could_not_answer_rows)} could-not-answer queries...")
             staging_could_not_answer_results = check_new_bot_can_answer(
                 could_not_answer_rows,
-                args.new_bot_url
+                args.new_bot_url,
+                allow_private_urls=args.allow_private_urls
             )
 
             # Map to comparison_data by row_index
@@ -1480,7 +1526,8 @@ Examples:
 
             # Query new bot for all could-answer questions
             for item in tqdm(could_answer_rows, desc="    Querying new bot", unit="query"):
-                item['new_response'] = query_new_bot(item['question'], args.new_bot_url)
+                item['new_response'] = query_new_bot(item['question'], args.new_bot_url,
+                                                     allow_private_urls=args.allow_private_urls)
 
             # Compare with Claude
             production_comparison_results = compare_responses_with_claude(could_answer_rows)
@@ -1499,7 +1546,8 @@ Examples:
             print(f"  Checking {len(could_not_answer_rows)} could-not-answer queries...")
             production_could_not_answer_results = check_new_bot_can_answer(
                 could_not_answer_rows,
-                args.new_bot_url
+                args.new_bot_url,
+                allow_private_urls=args.allow_private_urls
             )
 
             # Map to comparison_data by row_index

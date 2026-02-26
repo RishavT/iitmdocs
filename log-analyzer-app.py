@@ -72,12 +72,38 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Password authentication
 APP_PASSWORD = os.environ.get('LOG_ANALYZER_PASSWORD', '')
 
+# Rate limiting for auth attempts
+auth_attempts = {}  # ip -> {"count": int, "first_attempt": float}
+auth_lock = threading.Lock()
+MAX_AUTH_ATTEMPTS = 10
+AUTH_WINDOW_SECONDS = 300  # 5 minutes
+
+
+def check_rate_limit(ip: str) -> bool:
+    """Return True if the IP is rate-limited."""
+    with auth_lock:
+        now = time.time()
+        if ip in auth_attempts:
+            entry = auth_attempts[ip]
+            # Reset window if expired
+            if now - entry["first_attempt"] > AUTH_WINDOW_SECONDS:
+                auth_attempts[ip] = {"count": 1, "first_attempt": now}
+                return False
+            if entry["count"] >= MAX_AUTH_ATTEMPTS:
+                return True
+            entry["count"] += 1
+        else:
+            auth_attempts[ip] = {"count": 1, "first_attempt": now}
+    return False
+
+
 # ============================================================================
 # JOB STORE - In-memory storage for background jobs
 # ============================================================================
 
 jobs = {}  # job_id -> job_state
 jobs_lock = threading.Lock()
+JOB_TTL_SECONDS = 3600  # Clean up jobs older than 1 hour
 
 
 def create_job() -> str:
@@ -105,7 +131,24 @@ def update_job(job_id: str, **kwargs):
 def get_job(job_id: str) -> Optional[dict]:
     """Get job state."""
     with jobs_lock:
+        # Clean up old jobs while we're here
+        cleanup_old_jobs()
         return jobs.get(job_id, {}).copy()
+
+
+def cleanup_old_jobs():
+    """Remove jobs older than JOB_TTL_SECONDS. Must be called with jobs_lock held."""
+    now = datetime.now()
+    expired = []
+    for jid, job in jobs.items():
+        try:
+            created = datetime.fromisoformat(job["created_at"])
+            if (now - created).total_seconds() > JOB_TTL_SECONDS:
+                expired.append(jid)
+        except (KeyError, ValueError):
+            continue
+    for jid in expired:
+        del jobs[jid]
 
 
 # ============================================================================
@@ -214,15 +257,12 @@ def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
     """
     Sanitize text for use in Claude prompts to prevent prompt injection.
 
-    - Truncates to max_length
-    - Removes/escapes potentially dangerous patterns
     - Removes control characters
+    - Removes/escapes potentially dangerous patterns
+    - Truncates to max_length AFTER sanitization
     """
     if not text:
         return ""
-
-    # Truncate
-    text = text[:max_length]
 
     # Remove control characters (except newlines and tabs)
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
@@ -244,6 +284,9 @@ def sanitize_for_prompt(text: str, max_length: int = 500) -> str:
 
     # Replace multiple newlines with single
     text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # Truncate AFTER sanitization to ensure injection patterns are removed
+    text = text[:max_length]
 
     return text.strip()
 
@@ -612,12 +655,12 @@ def run_analysis_job(job_id: str, csv_content: str,
                    progress=100,
                    result=result)
 
-    except Exception as e:
+    except Exception:
         update_job(job_id,
                    status="error",
-                   message=f"Error: {str(e)}",
+                   message="Analysis failed. Please check your CSV file and try again.",
                    progress=100,
-                   error=str(e))
+                   error="Analysis failed")
 
 
 # ============================================================================
@@ -633,6 +676,11 @@ def index():
 @app.route('/analyze', methods=['POST'])
 def start_analysis():
     """Start a new analysis job."""
+    # Rate limiting
+    client_ip = request.remote_addr or "unknown"
+    if check_rate_limit(client_ip):
+        return jsonify({"error": "Too many attempts. Please try again later."}), 429
+
     # Check password
     if APP_PASSWORD:
         password = request.form.get('password', '')
@@ -654,7 +702,18 @@ def start_analysis():
     try:
         csv_content = file.read().decode('utf-8')
     except Exception as e:
-        return jsonify({"error": f"Failed to read file: {str(e)}"}), 400
+        return jsonify({"error": "Failed to read file. Ensure it is valid UTF-8."}), 400
+
+    # Validate CSV has required columns
+    try:
+        reader = csv.DictReader(io.StringIO(csv_content))
+        headers = reader.fieldnames or []
+        if 'question' not in headers or 'response' not in headers:
+            missing = [h for h in ('question', 'response') if h not in headers]
+            return jsonify({"error": f"CSV missing required columns: {', '.join(missing)}. "
+                           f"Found: {', '.join(headers[:10])}"}), 400
+    except csv.Error:
+        return jsonify({"error": "Invalid CSV format"}), 400
 
     # Parse dates
     after_date = None
