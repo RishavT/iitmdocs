@@ -246,7 +246,7 @@ steps:
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
           --set-env-vars "$$ENV_VARS" \
-          --task-timeout=30m \
+          --task-timeout=60m \
           --max-retries=1
 
   # Step 11: Execute the embed job and stream logs (only if src/ changed)

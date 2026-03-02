@@ -39,4 +39,4 @@ The Electronic Systems qualifier covers 4 subjects:
 
 ---
 
-Tags: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras
+Tags: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras, physics and mathematics class 12, qualifier subjects ES, Electronic Systems Thinking and Circuits, Introduction to C Programming, cannot switch programs, ES registration, ES website, four year BS ES

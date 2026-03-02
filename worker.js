@@ -274,107 +274,111 @@ async function handleFeedback(request) {
 const QUERY_SYNONYMS = [
   // GRADING & ASSESSMENT
   [["grading policy", "grading formula", "grade calculation", "how is grade calculated", "marks distribution", "score calculation"],
-   "grading formula score calculation GAA quiz end term OPPE weightage"],
+    "grading formula score calculation GAA quiz end term OPPE weightage"],
   [["pdsa grading", "pdsa marks", "pdsa score"],
-   "PDSA Programming Data Structures Algorithms grading formula T = 0.1GAA + 0.4F + 0.2OP quiz"],
+    "PDSA Programming Data Structures Algorithms grading formula T = 0.1GAA + 0.4F + 0.2OP quiz"],
   [["python grading", "python marks"],
-   "Python programming grading formula OPPE PE1 PE2 quiz end term"],
+    "Python programming grading formula OPPE PE1 PE2 quiz end term"],
   [["i grade", "incomplete grade", "i_op", "i_both"],
-   "I grade incomplete I_OP I_BOTH absent end term OPPE fail next term"],
+    "I grade incomplete I_OP I_BOTH absent end term OPPE fail next term"],
 
   // QUIZ & EXAM
   [["quiz 1 syllabus", "quiz1 syllabus", "q1 syllabus"],
-   "Quiz 1 syllabus weeks 1-4 content coverage"],
+    "Quiz 1 syllabus weeks 1-4 content coverage"],
   [["quiz 2 syllabus", "quiz2 syllabus", "q2 syllabus"],
-   "Quiz 2 Qz2 syllabus Week 5-8 Week 3-8 content coverage grading"],
+    "Quiz 2 Qz2 syllabus Week 5-8 Week 3-8 content coverage grading"],
   [["end term syllabus", "final exam syllabus", "et syllabus"],
-   "End term exam syllabus weeks 1-12 full course content"],
+    "End term exam syllabus weeks 1-12 full course content"],
   [["exam city change", "change exam center", "change quiz city", "edit exam city"],
-   "exam city change registration different cities quiz end term each term"],
+    "exam city change registration different cities quiz end term each term"],
   [["answer review", "review answers", "see my answers", "check answers after exam"],
-   "answer review exam results dashboard score release"],
+    "answer review exam results dashboard score release"],
   [["no quiz 1", "without quiz 1", "courses no quiz"],
-   "courses without Quiz 1 Software Engineering MLP BDM TDS Big Data"],
+    "courses without Quiz 1 Software Engineering MLP BDM TDS Big Data"],
   [["no quiz 2", "without quiz 2"],
-   "courses without Quiz 2 Python Programming C MLP TDS Big Data"],
+    "courses without Quiz 2 Python Programming C MLP TDS Big Data"],
 
   // CREDITS
   [["3 credits", "three credits", "3 credit subjects", "which subjects 3 credits"],
-   "credits per course foundation 4 credits diploma degree 4 credits NPTEL 1-3 credits"],
+    "credits per course foundation 4 credits diploma degree 4 credits NPTEL 1-3 credits"],
   [["4 credits", "four credits"],
-   "4 credits foundation courses diploma courses apprenticeship"],
+    "4 credits foundation courses diploma courses apprenticeship"],
   [["nptel credits", "nptel transfer", "how many nptel", "nptel credit transfer"],
-   "NPTEL credit transfer maximum 8 credits 4-week=1 8-week=2 12-week=3 Rs 1000 per credit"],
+    "NPTEL credit transfer maximum 8 credits 4-week=1 8-week=2 12-week=3 Rs 1000 per credit"],
   [["campus credits", "iitm campus courses"],
-   "campus courses credit transfer maximum 24 credits CGPA 8.0 Rs 2500 per credit"],
+    "campus courses credit transfer maximum 24 credits CGPA 8.0 Rs 2500 per credit"],
 
   // COURSES & CURRICULUM
   [["diploma data science courses", "ds diploma courses", "data science diploma subjects"],
-   "Diploma Data Science courses MLF MLT MLP BDM BA TDS Machine Learning Business"],
+    "Diploma Data Science courses MLF MLT MLP BDM BA TDS Machine Learning Business"],
   [["diploma programming courses", "dp diploma courses", "programming diploma subjects"],
-   "Diploma Programming courses DBMS PDSA Java System Commands AppDev1 AppDev2"],
+    "Diploma Programming courses DBMS PDSA Java System Commands AppDev1 AppDev2"],
   [["foundation courses", "foundation subjects", "year 1 courses"],
-   "Foundation courses Maths 1 2 Statistics 1 2 English 1 2 Python Computational Thinking"],
+    "Foundation courses Maths 1 2 Statistics 1 2 English 1 2 Python Computational Thinking"],
   [["degree courses", "bsc courses", "bs courses"],
-   "Degree level courses Software Engineering Testing AI Deep Learning electives"],
+    "Degree level courses Software Engineering Testing AI Deep Learning electives"],
   [["core pairs", "mandatory pairs"],
-   "core pairs Software Engineering Testing AI Search Deep Learning degree level"],
+    "core pairs Software Engineering Testing AI Search Deep Learning degree level"],
   [["prerequisites", "prereq", "pre-requisite"],
-   "prerequisites course requirements Maths Statistics English Python foundation diploma"],
+    "prerequisites course requirements Maths Statistics English Python foundation diploma"],
+
+  // DATES & CALENDAR
+  [["registration date", "important dates", "academic calendar", "term start", "term dates", "registration deadline"],
+    "registration dates academic calendar term start important dates admissions timeline course registration deadline"],
 
   // ADMISSION & ELIGIBILITY
   [["direct entry", "dad", "direct admission diploma", "skip foundation"],
-   "Direct Admission Diploma DAD 2 years UG qualifier exam Rs 6000"],
+    "Direct Admission Diploma DAD 2 years UG qualifier exam Rs 6000"],
   [["jee entry", "jee admission", "jee advanced"],
-   "JEE Advanced direct entry foundation level skip qualifier"],
+    "JEE Advanced direct entry foundation level skip qualifier"],
   [["eligibility", "who can apply", "qualification required"],
-   "eligibility Class 12 passed Mathematics English Class 10 any age any stream"],
+    "eligibility Class 12 passed Mathematics English Class 10 any age any stream"],
   [["qualifier exam", "qualifier process", "how to qualify"],
-   "qualifier exam 4 weeks preparation Rs 3000 fee application process"],
+    "qualifier exam 4 weeks preparation Rs 3000 fee application process"],
 
   // FEES
   [["fee waiver", "scholarship", "fee reduction", "concession"],
-   "fee waiver SC ST PwD OBC-NCL EWS income 50% 75% waiver"],
+    "fee waiver SC ST PwD OBC-NCL EWS income 50% 75% waiver"],
   [["fee waiver documents", "documents for waiver", "waiver proof"],
-   "fee waiver documents category certificate income certificate PwD certificate"],
+    "fee waiver documents category certificate income certificate PwD certificate"],
   [["army fee waiver", "defense fee waiver", "military fee waiver"],
-   "fee waiver army defense General category income based EWS 50% 75% waiver"],
+    "fee waiver army defense General category income based EWS 50% 75% waiver"],
   [["total fee", "programme fee", "course fee", "how much fee"],
-   "fee structure Foundation Rs 32000 Diploma Rs 62500 BSc Rs 2.21L BS Rs 3.25L"],
+    "fee structure Foundation Rs 32000 Diploma Rs 62500 BSc Rs 2.21L BS Rs 3.25L"],
   [["international fee", "foreign student fee", "outside india fee"],
-   "international students facilitation fee Quiz Rs 2000 End Term Rs 2000-4000"],
+    "international students facilitation fee Quiz Rs 2000 End Term Rs 2000-4000"],
 
   // CERTIFICATES
   [["hard copy certificate", "original certificate", "physical certificate"],
-   "original certificate hard copy alumni registration Rs 6000 exit form processing"],
+    "original certificate hard copy alumni registration Rs 6000 exit form processing"],
   [["transcript", "mark sheet", "grade card"],
-   "transcript academic record grades courses completed CGPA"],
+    "transcript academic record grades courses completed CGPA"],
 
   // OPPE & SCT
   [["oppe", "online proctored", "programming exam"],
-   "OPPE Online Proctored Programming Exam remote proctored coding"],
+    "OPPE Online Proctored Programming Exam remote proctored coding"],
   [["sct", "system compatibility", "compatibility test"],
-   "SCT System Compatibility Test mandatory before OPPE camera microphone check"],
+    "SCT System Compatibility Test mandatory before OPPE camera microphone check"],
 
   // PLACEMENTS
   [["placement eligibility", "when placement", "eligible for placement"],
-   "placement eligibility internship after 1 diploma job after BSc degree"],
+    "placement eligibility internship after 1 diploma job after BSc degree"],
   [["average salary", "placement salary", "package"],
-   "placement salary average Rs 10 LPA highest Rs 25 LPA internship Rs 30000"],
+    "placement salary average Rs 10 LPA highest Rs 25 LPA internship Rs 30000"],
   [["companies", "recruiters", "which companies"],
-   "recruiters Amazon Microsoft Deloitte Wipro TCS companies placement"],
+    "recruiters Amazon Microsoft Deloitte Wipro TCS companies placement"],
 
   // ACADEMIC POLICIES
   [["repeat course", "fail course", "retake"],
-   "repeat course fail full fee again all assessments next term"],
+    "repeat course fail full fee again all assessments next term"],
   [["probation", "struck off", "removed"],
-   "academic probation 2 terms struck off 3 terms without registration readmission"],
+    "academic probation 2 terms struck off 3 terms without registration readmission"],
   [["chatgpt", "llm", "ai help", "plagiarism"],
-   "LLM ChatGPT plagiarism honor code violation not allowed assignments"],
+    "LLM ChatGPT plagiarism honor code violation not allowed assignments"],
 
   // HIGHER STUDIES
   [["masters", "mtech", "ms", "phd", "higher studies"],
-   "Masters MTech MS PhD GATE CFTI route CGPA 8.0 research campus upgrade"],
+    "Masters MTech MS PhD GATE CFTI route CGPA 8.0 research campus upgrade"],
 ];
 
 // Condensed knowledge base summary for query rewriting context.
@@ -382,41 +386,71 @@ const QUERY_SYNONYMS = [
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. About IIT Madras BS Program: IIT Madras BS, BS degree IITM, IITM online degree, about IIT Madras BS, program overview, data science degree IIT Madras, online BS program, IITM BS introduction, what is IIT Madras BS, IIT Madras online program, program details, program information, IITM BS degree, BS degree validity, degree recognition, UGC approved degree, IIT Madras degree value, official degree certificate, academic credibility, degree awarded by IIT Madras, recognition in India, recognition abroad
+1. About IIT Madras BS Program: program overview, four BS programmes offered, exit points (certificate/diploma/BSc/BS/MTech), online learning mode, BTech vs BS, degree validity and recognition, cannot apply multiple programs
+2. Academic Structure and Exams: term structure (16 weeks), quiz and end-term exam pattern, OPPE programming exam, grading weightage, I grade incomplete, make-up examination, academic calendar
+3. Academic Level Progression and Rules: level progression (Foundation→Diploma→Degree), credit requirements (114 BSc / 142 BS), U grade re-registration, cannot take courses across levels, course access revocation
+4. Course Registration Process: registration steps, select exam cities, same-term vs subsequent-term registration, qualifier score as Quiz 1, maximum 4 courses per term, defer joining, prerequisites
+5. Fees and Payments: fee structure, qualifier application fee, reattempt fee, category-wise fees (SC/ST/PwD/OBC), fee waiver, refund policy, international facilitation fee, online payment only
+6. JEE Based Entry: JEE Advanced direct admission, skip qualifier, CCC of 4, JEE proof upload, which JEE years valid per term, cannot switch entry type, SAT/AP/IB not accepted
+7. Qualifier Exam Overview: 4-week qualifier process, qualifier subjects (DS/MG vs ES/AE courses), week-wise content release, preparation difficulty, self-study sufficient, 10 hours per week
+8. Qualifier Eligibility: who can apply, Class 10 Maths/English (DS/MG), Class 12 Physics/Maths (ES/AE), NIOS pathway, two-stage eligibility (apply vs proceed to foundation), Class 11 students, cannot apply multiple programs
+9. Qualifier Assignments and Cutoff: assignment scores graded out of 100, category-wise cutoff (General 40%/OBC 35%/SC-ST 30%), first 2 weeks average, best 2 of 3 weeks, hall ticket eligibility
+10. Qualifier Results and Validity: score validity (3 terms), Class 12 validity (3 terms or 6 terms whichever earlier), admission letter, qualifier score as Quiz 1 (same term only), program choice locked
+11. Qualifier Reattempts: second attempt same term, reattempt fee, absent or failed reattempt, no repeat assignments, unlimited attempts across terms, fresh application new term
+12. Qualifier Exam Format and Centers: exam cities (select 2), 4 hours duration, MCQ/MSQ/numerical format, in-person India / remote international, hall ticket and ID proof, no negative marking, calculator enabled
+13. Working Professionals and Parallel Study: job alongside degree, flexible schedule, pre-recorded lectures, 10 hours per week, no special approval, in-person exam mandatory, can defer 3 terms
+14. International Students Information: remote proctored exam, Rs 2000 facilitation fee per subject, IST exam timing, residence/ID proof documents, global entry email, exam city availability abroad
+15. Placements: placement portal, minimum diploma level required, salary and companies, internship opportunities, BS Electronic Systems placement, same portal all programs
+16. BS Electronic Systems Program: ES program details, difference from DS, Physics/Maths Class 12 required, ES qualifier subjects (Electronic Systems Thinking and Circuits, C Programming), cannot switch programs
+17. Contact and Support Information: program-specific support emails (DS/ES/AE/MG), phone number, office address, qualifier support email, PwD accommodation, what support helps with
+18. Paradox Event: annual offline event, May-June dates, valid student ID required, qualifier-cleared students eligible
+19. Independent FAQs: laptop/hostel/VPN not provided, campus visit rules, student ID and email issuance, SCT compatibility test, recorded lectures, English language, online-only application and payment`;
 
-2. Academic Structure and Exams: academic structure, program structure, foundation level, diploma level, degree level, exam pattern, assessment structure, internal assessment, end term exam, exam schedule, exam frequency, weekly quizzes, exam weightage, evaluation method, pass exam, fail exam
+// Words that look like stopwords but must NEVER be removed (domain-specific or ambiguous)
+const STOPWORDS_TO_IGNORE = new Set([
+  'may',    // month name (May 2026 term)
+  'not',    // changes meaning entirely ("can I not transfer" vs "can I transfer")
+  'no',     // same as above
+  'only',   // "only diploma" vs "diploma" — different meaning
+  'free',   // "is it free?" — content word here
+  'all',    // "all courses" — content word
+]);
 
-3. Academic Level Progression and Rules: level progression, promotion rules, progression criteria, eligibility to continue, move to next level, academic rules, continuation policy, progression after failure, academic standing, termination rules
+// Safe grammatical stopwords — carry no domain-specific meaning for this chatbot
+const STOPWORDS = new Set([
+  'a', 'an', 'the',
+  'i', 'me', 'my', 'we', 'our', 'you', 'your', 'it', 'its',
+  'is', 'are', 'was', 'were', 'am', 'be', 'been', 'being',
+  'do', 'does', 'did', 'done',
+  'will', 'would', 'could', 'should', 'shall',
+  'have', 'has', 'had',
+  'what', 'where', 'when', 'how', 'which', 'who', 'whom', 'why',
+  'this', 'that', 'these', 'those',
+  'and', 'but', 'or', 'so',
+  'to', 'of', 'in', 'on', 'at', 'by', 'with', 'from', 'as', 'into', 'for',
+  'please', 'tell', 'give', 'let', 'know', 'want', 'need', 'get', 'got',
+  'there', 'here', 'just', 'also', 'very', 'if', 'then', 'any', 'some',
+]);
 
-4. Course Registration Process: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration
-
-5. Fees and Payments: fees structure, program fees, course fees, tuition fees, total program cost, fee breakup, per course fee, payment process, payment deadline, payment modes, installment payment, late fee penalty, payment failure, transaction issue, refund rules, refund timeline, fee receipt
-
-6. JEE Based Entry: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE  
-
-7. Qualifier Exam Overview: qualifier exam, IITM qualifier, entrance exam, foundation qualifier, qualifier details, qualifier process, qualifier introduction, qualifier structure
-
-8. Qualifier Eligibility: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
-
-9. Qualifier Assignments and Cutoff: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment
-
-10. Qualifier Results and Validity: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
-
-11. Qualifier Reattempts: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period
-12. Qualifier Exam Format and Centers: exam format, online exam, offline exam, proctored exam, home proctored exam, center based exam, exam centers, exam cities, exam city selection, change exam city, exam slot booking, technical issues during exam
-
-13. Working Professionals and Parallel Study: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals
-
-14. International Students Information: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement
-
-15. Placements: placements, placement support, job opportunities, career outcomes, hiring companies, placement assistance, employment prospects, placement eligibility, placement after diploma, internship opportunities, career support, job after IITM BS
-
-16. BS Electronic Systems Program: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras
-17. Contact and Support Information: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time
-
-18. Paradox Event: paradox event, paradox competition, IITM paradox, student event, paradox details, event participation, paradox FAQs, paradox registration
-
-19. Independent FAQs: Laptop, VPN, language, English, hostel, accommodation, library, facilities, campus access, sports, clinic, international students, abroad, exam timing, scholarships, student ID, email, application, payment, SCT, System Compatibility Test, handbook, lectures, doubts, Gen AI`;
+/**
+ * Removes common grammatical stopwords from a query to normalize it before LLM rewriting.
+ * Words in STOPWORDS_TO_IGNORE are always preserved even if they appear in STOPWORDS.
+ * The original query is still used for augmentation — this cleaned version is only sent to the LLM.
+ * @param {string} query - The user query
+ * @returns {string} - Query with stopwords removed, or original if result would be empty
+ */
+function removeStopWords(query) {
+  const words = query.trim().split(/\s+/);
+  const filtered = words.filter(word => {
+    const lower = word.toLowerCase().replace(/[?!.,]$/, ''); // strip trailing punctuation for comparison
+    if (STOPWORDS_TO_IGNORE.has(lower)) return true;
+    if (STOPWORDS.has(lower)) return false;
+    return true;
+  });
+  const result = filtered.join(' ').trim();
+  // If stopword removal wiped everything (e.g. query was "what is the"), return original
+  return result.length > 0 ? result : query;
+}
 
 /**
  * Checks if a query matches any synonym pattern and returns the canonical query.
@@ -427,7 +461,8 @@ function findSynonymMatch(query) {
   const queryLower = query.toLowerCase();
   for (const [patterns, canonicalQuery] of QUERY_SYNONYMS) {
     for (const pattern of patterns) {
-      if (queryLower.includes(pattern.toLowerCase())) {
+      const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'); // word boundary regex, case-insensitive
+      if (regex.test(query)) {
         return canonicalQuery;
       }
     }
@@ -468,6 +503,11 @@ async function rewriteQueryWithSource(query, env) {
   }
 
   // Fall back to LLM rewriting for unmatched queries
+  // Normalize query by removing stopwords before sending to LLM — reduces phrasing variance.
+  // The original `query` is still used in the augmented result for FAQ matching.
+  const queryForLLMrewriting = removeStopWords(query);
+  console.log('[DEBUG] Stopword-removed query for LLM', queryForLLMrewriting);
+  
   const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
 
 ${KNOWLEDGE_BASE_SUMMARY}
@@ -523,7 +563,7 @@ Examples:
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: query },
+          { role: "user", content: queryForLLMrewriting },
         ],
         temperature: 0,
         max_tokens: 100,
@@ -543,7 +583,7 @@ Examples:
     const langTagMatch = llmRewrite.match(/\[LANG:\w+\]/i);
     const langTag = langTagMatch ? langTagMatch[0] : '[LANG:english]';
     const keywordsOnly = llmRewrite.replace(/\[LANG:\w+\]/i, '').trim();
-    const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
+    const augmentedQuery = `${query} | ${keywordsOnly} ${langTag}`;
 
     console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
     return { query: augmentedQuery, source: "llm" };
@@ -554,7 +594,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions, rewriteQueryWithSource };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource };
 
 export default {
   async fetch(request, env) {
@@ -729,74 +769,36 @@ async function fetchFAQDocument(filename, env) {
 
 /**
  * Formats FAQ content for display.
- * Extracts the relevant Q&A section and formats it nicely.
+ * Extracts the matching Q&A pair from the document using the new
+ * **Question**:/**Answer**: format and returns it formatted.
  */
 function formatFAQContent(content, question) {
   if (!content) return "FAQ content not available.";
 
-  // The FAQ content contains multiple Q&A pairs
-  // Try to find the matching question and return that section
-  const lines = content.split('\n');
-  let result = [];
-  let capturing = false;
-  let foundMatch = false;
+  const faqs = extractFAQs(content);
+  if (!faqs.length) return "FAQ content not available.";
 
-  for (const line of lines) {
-    // Check if this is a question line
-    if (line.match(/^Q\d+:/)) {
-      if (capturing && result.length > 0) {
-        // We were capturing the previous Q&A, stop now
-        break;
-      }
-      // Check if this question matches (fuzzy match)
-      const questionText = line.replace(/^Q\d+:\s*/, '').trim();
-      if (questionText.toLowerCase().includes(question.toLowerCase().slice(0, 20)) ||
-          question.toLowerCase().includes(questionText.toLowerCase().slice(0, 20))) {
-        capturing = true;
-        foundMatch = true;
-        result.push(`### ${questionText}`);
-      }
-    } else if (capturing) {
-      // Capture answer lines
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('Answer:')) {
-        result.push(trimmedLine.replace('Answer:', '').trim());
-      } else if (trimmedLine) {
-        result.push(trimmedLine);
-      }
+  // Find the best matching FAQ by comparing question text
+  const questionLower = question.toLowerCase();
+  let bestMatch = faqs[0];
+  let bestScore = -1;
+
+  for (const faq of faqs) {
+    const score = scoreFAQMatch(questionLower, faq.question.toLowerCase());
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = faq;
     }
   }
 
-  // If no match found, return the full content formatted
-  if (!foundMatch || result.length === 0) {
-    // Just return the first Q&A from the document
-    result = [];
-    capturing = false;
-    for (const line of lines) {
-      if (line.match(/^Q\d+:/)) {
-        if (capturing) break;
-        capturing = true;
-        const questionText = line.replace(/^Q\d+:\s*/, '').trim();
-        result.push(`### ${questionText}`);
-      } else if (capturing) {
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith('Answer:')) {
-          result.push(trimmedLine.replace('Answer:', '').trim());
-        } else if (trimmedLine) {
-          result.push(trimmedLine);
-        }
-      }
-    }
-  }
-
-  return result.join('\n\n') || content;
+  return `### ${bestMatch.question}\n\n${bestMatch.answer}`;
 }
 
 async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
-  console.log('[DEBUG] answer() called');
+  console.log('\n[DEBUG] answer() called');
   const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
@@ -1141,143 +1143,95 @@ async function searchWeaviate(query, limit, env) {
 }
 
 /**
- * Extracts the first question from FAQ document content.
- * FAQ format: "Q#: <question text>\nAnswer: ..."
- * Prefers questions ending with "?" over section headers.
- * @param {string} content - The FAQ document content
- * @returns {string|null} - The first question text, or null if not found
+ * Extracts all FAQ Q&A pairs from document content.
+ * FAQ format: "**Question**: <text>\n**Answer**: <text>"
+ * Only extracts from content before the last <!-- end of tags --> marker.
+ * @param {string} content - The document content
+ * @returns {Array<{question: string, answer: string}>} - Array of FAQ pairs
  */
-function extractFirstQuestion(content) {
-  if (!content) return null;
+function extractFAQs(content) {
+  if (!content) return [];
 
-  // Find all Q#: lines
-  const matches = content.matchAll(/^Q\d+:\s*(.+?)(?:\n|$)/gm);
+  // Only look at content before the last <!-- end of tags --> marker
+  const endMarkerIndex = content.lastIndexOf('<!-- end of tags -->');
+  const searchContent = endMarkerIndex !== -1 ? content.substring(0, endMarkerIndex) : content;
 
-  let firstQuestion = null;
-  for (const match of matches) {
-    const question = match[1].trim();
-    // Prefer questions that end with "?"
-    if (question.endsWith('?')) {
-      return question;
-    }
-    // Keep the first match as fallback
-    if (!firstQuestion) {
-      firstQuestion = question;
+  const faqs = [];
+  // Split on **Question**: to get each FAQ block
+  const parts = searchContent.split(/\*\*Question\*\*:\s*/);
+
+  // First part is content before the first FAQ — skip it
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i];
+    // Split on **Answer**: to separate question from answer
+    const answerSplit = part.split(/\*\*Answer\*\*:\s*/);
+    if (answerSplit.length >= 2) {
+      const question = answerSplit[0].trim();
+      // Answer runs until the next **Question**: or end of this part
+      const answer = answerSplit[1].trim();
+      if (question) {
+        faqs.push({ question, answer });
+      }
     }
   }
 
-  return firstQuestion;
+  return faqs;
 }
 
 /**
- * Searches Weaviate for FAQ documents only.
+ * Scores how well a FAQ question matches the user's query using word overlap.
+ * @param {string} query - The user's query (lowercased)
+ * @param {string} faqQuestion - The FAQ question text (lowercased)
+ * @returns {number} - Overlap score (higher = better match)
+ */
+function scoreFAQMatch(query, faqQuestion) {
+  const queryWords = new Set(query.split(/\s+/).filter(w => w.length > 2));
+  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => w.length > 2));
+  let overlap = 0;
+  for (const word of queryWords) {
+    if (faqWords.has(word)) overlap++;
+  }
+  return overlap;
+}
+
+/**
+ * Searches Weaviate for documents and extracts relevant FAQ suggestions.
+ * Uses the existing searchWeaviate() for retrieval, then extracts and ranks
+ * individual FAQ Q&A pairs from the returned documents.
  * @param {string} query - The search query
- * @param {number} limit - Maximum number of results
+ * @param {number} limit - Maximum number of FAQ suggestions to return
  * @param {Object} env - Environment variables
- * @returns {Promise<Array>} - Array of FAQ documents with questions extracted
+ * @returns {Promise<Array>} - Array of {filename, question} objects
  */
 async function searchFAQs(query, limit, env) {
   console.log('[DEBUG] searchFAQs() called, query:', query);
 
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
-  let weaviateUrl;
-  const embeddingHeaders = { "Content-Type": "application/json" };
-
-  if (embeddingMode === "local") {
-    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
-  } else if (embeddingMode === "gce") {
-    weaviateUrl = env.GCE_WEAVIATE_URL;
-  } else {
-    weaviateUrl = env.WEAVIATE_URL;
-    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
-    if (embeddingProvider === "cohere") {
-      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
-    } else {
-      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
-    }
-  }
-
-  const sanitizedQuery = query
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, " ")
-    .replace(/\r/g, " ")
-    .replace(/\t/g, " ");
-
-  // Filter for FAQ files only using 'where' clause with Like operator
-  let graphqlQuery;
-  if (embeddingMode === "gce") {
-    const ollamaUrl = env.GCE_OLLAMA_URL;
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl);
-    const vectorStr = `[${queryVector.join(",")}]`;
-
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            vector: ${vectorStr}
-            alpha: 0.5
-          }
-          where: {
-            path: ["filename"],
-            operator: Like,
-            valueText: "faq_*"
-          }
-          limit: ${limit}
-        ) {
-          filename content
-          _additional { score }
-        }
-      }
-    }`;
-  } else {
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            alpha: 0.5
-          }
-          where: {
-            path: ["filename"],
-            operator: Like,
-            valueText: "faq_*"
-          }
-          limit: ${limit}
-        ) {
-          filename content
-          _additional { score }
-        }
-      }
-    }`;
-  }
-
   try {
-    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-      method: "POST",
-      headers: embeddingHeaders,
-      body: JSON.stringify({ query: graphqlQuery }),
-    });
+    // Reuse the main search function — no need for separate Weaviate logic
+    const documents = await searchWeaviate(query, 3, env);
+    console.log('[DEBUG] FAQ search: searchWeaviate returned', documents.length, 'documents');
 
-    const responseText = await response.text();
-    const data = JSON.parse(responseText);
-
-    if (data.errors) {
-      console.error('[DEBUG] FAQ search error:', data.errors);
-      return [];
+    // Extract all FAQ pairs from each document
+    const allFAQs = [];
+    for (const doc of documents) {
+      const faqs = extractFAQs(doc.content);
+      for (const faq of faqs) {
+        allFAQs.push({ filename: doc.filename, question: faq.question });
+      }
     }
+    console.log('[DEBUG] FAQ search: extracted', allFAQs.length, 'total FAQ pairs');
 
-    const documents = data.data?.Get?.Document || [];
-    console.log('[DEBUG] FAQ search returned', documents.length, 'documents');
+    if (!allFAQs.length) return [];
 
-    // Extract first question from each FAQ and return with relevance
-    return documents.map((doc) => ({
-      filename: doc.filename,
-      question: extractFirstQuestion(doc.content),
-      relevance: doc._additional?.score || 0
-    })).filter(doc => doc.question); // Only include docs where we found a question
+    // Rank FAQs by keyword overlap with the user's query
+    const queryLower = query.toLowerCase();
+    const scored = allFAQs.map(faq => ({
+      ...faq,
+      score: scoreFAQMatch(queryLower, faq.question.toLowerCase())
+    }));
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.slice(0, limit);
   } catch (error) {
     console.error('[DEBUG] FAQ search failed:', error.message);
     return [];
@@ -1383,22 +1337,22 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   const validatedHistory = Array.isArray(history)
     ? history
-        .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
-        .filter((msg) => {
-          // Validate message structure
-          if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
-            return false;
-          }
-          // Validate role is either 'user' or 'assistant'
-          if (msg.role !== "user" && msg.role !== "assistant") {
-            return false;
-          }
-          // Validate message length to prevent DoS
-          if (msg.content.length > MAX_MESSAGE_LENGTH) {
-            return false;
-          }
-          return true;
-        })
+      .slice(0, MAX_HISTORY_MESSAGES) // Limit total messages
+      .filter((msg) => {
+        // Validate message structure
+        if (!msg?.role || !msg?.content || typeof msg.content !== "string") {
+          return false;
+        }
+        // Validate role is either 'user' or 'assistant'
+        if (msg.role !== "user" && msg.role !== "assistant") {
+          return false;
+        }
+        // Validate message length to prevent DoS
+        if (msg.content.length > MAX_MESSAGE_LENGTH) {
+          return false;
+        }
+        return true;
+      })
     : [];
 
   // Build messages array with conversation history
@@ -1436,6 +1390,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   const answerText = result.choices?.[0]?.message?.content || "";
   console.log('[DEBUG] Generated answer length:', answerText.length);
   console.log('[DEBUG] Generated answer preview:', answerText.substring(0, 500));
+  // console.log('\n========== [DEBUG] LLM FULL RESPONSE ==========\n' + answerText + '\n================================================\n');
 
   // Step 3: Handle RAAHAT content specially - split and fact-check non-RAAHAT content only
   const { raahatChunk, otherChunk, hasRaahat } = splitRaahatContent(answerText);
@@ -1530,9 +1485,9 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 function containsRaahat(text) {
   const lowerText = text.toLowerCase();
   return lowerText.includes('raahat') ||
-         lowerText.includes('wellness.society@study.iitm.ac.in') ||
-         lowerText.includes('@wellness.society_iitmbs') ||
-         lowerText.includes('mental health & wellness society');
+    lowerText.includes('wellness.society@study.iitm.ac.in') ||
+    lowerText.includes('@wellness.society_iitmbs') ||
+    lowerText.includes('mental health & wellness society');
 }
 
 /**
@@ -1593,8 +1548,8 @@ function countStatements(text) {
     const trimmed = line.trim();
     // Skip empty lines, headers (starting with #), and very short lines
     return trimmed.length > 0 &&
-           !trimmed.startsWith('#') &&
-           trimmed.length > 5;
+      !trimmed.startsWith('#') &&
+      trimmed.length > 5;
   });
 
   return lines.length;
@@ -1735,6 +1690,7 @@ Output your fact-check result as JSON:`;
     console.log('[DEBUG] checkResponse() - Full API response:', JSON.stringify(result));
     const rawAnswer = result.choices?.[0]?.message?.content?.trim();
     console.log('[DEBUG] checkResponse() - Raw fact-check response:', rawAnswer);
+    // console.log('\n========== [DEBUG] FACT-CHECKER FULL RESPONSE ==========\n' + rawAnswer + '\n=========================================================\n');
 
     // Parse JSON response
     try {

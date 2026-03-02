@@ -1,24 +1,37 @@
 # Qualifier Exam Eligibility
 
-## Who Can Apply for the Qualifier Exam?
+## A) Eligibility to Apply for the Qualifier Exam
 
-### Basic Requirements (For Both DS and ES Programs)
+### For BS in Data Science and Applications (DS) and BS in Management and Data Science (MG)
 - Must have studied Mathematics and English in Class 10
-- Anyone who has passed Class 12 or an equivalent examination is eligible to apply
-- No restrictions on age or academic background
+- School students who have appeared for and passed their Class 11 final exams can apply, irrespective of age/group/stream/board. Those who pass the qualifier exams will be allowed to proceed to the Foundation level only after passing their Class 12 exams.
 
-### For Class 11 Students
-- School students who have completed their Class 11 final examinations are also eligible to apply
-- Irrespective of their group, stream, or board
-- Those who pass the Qualifier Exam can join the program after subsequently completing Class 12
+### For BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
+- Must have passed Class 12 or equivalent with Physics and Mathematics, irrespective of age/group/stream/board
+- School students who have appeared for and passed their Class 11 final exams can apply, irrespective of age/group/stream/board. Those who pass the qualifier exams will be allowed to proceed to the Foundation level only after passing their Class 12 exams.
+- If students have passed Class 12 without Physics and Mathematics, but have passed Physics and Mathematics separately through NIOS or any other equivalent organization, they will be permitted to apply to ES/AE after committee approval.
 
-### Additional Requirements for BS in Electronic Systems (ES)
-- Applicants must have studied Physics and Mathematics in Class 12 or equivalent
-- This is in addition to the general eligibility conditions mentioned above
+## B) Eligibility to Proceed from Qualifier Level to Foundation Level
+
+After passing the qualifier examinations, students may choose to apply for the Foundation Level of their program.
+
+### For BS in Data Science and Applications (DS) and BS in Management and Data Science (MG)
+1. Studied Maths and English in Class 10
+AND
+2. Passed Class 12 or an equivalent examination regardless of age or academic background
+
+For further details: DS admissions page: https://study.iitm.ac.in/ds/ | MG admission page: https://study.iitm.ac.in/mg
+
+### For BS in Electronic Systems (ES) and BS in Aeronautics and Space Technology (AE)
+1. Applicants must have studied Physics and Mathematics in Class 12 or equivalent, OR passed Physics and Mathematics through NIOS or any other equivalent organization
+AND
+2. Passed Class 12 or an equivalent examination regardless of age or academic background
+
+For further details: ES admissions page: https://study.iitm.ac.in/es/ | AE admission page: https://study.iitm.ac.in/ae
 
 ## Important Notes
 
-- There are no additional eligibility criteria to apply for the Qualifier Exam or to join the Foundation Level after clearing it
+- A student cannot apply for multiple programs simultaneously
 - List of accepted Class 12 equivalents: https://study.iitm.ac.in/ds/accepted-class-12-equivalents.html
 - No limit on the number of times a candidate can attempt the qualifier process
 
@@ -26,6 +39,8 @@
 
 - BS in Data Science and Applications: https://study.iitm.ac.in/ds/
 - BS in Electronic Systems admissions page: https://study.iitm.ac.in/es/
+- BS in Management and Data Science: https://study.iitm.ac.in/mg/
+- BS in Aeronautics and Space Technology: https://study.iitm.ac.in/ae/
 
 # Class 12 Eligibility and Requirements
 
@@ -50,9 +65,7 @@ You CANNOT:
 - Register for Foundation courses without Class 12
 
 ## Qualifier Validity for Class 12 Students
-- For those who cleared qualifier before passing Class 12
-- Validity starts from when they pass Class 12
-- Valid for 3 terms from Class 12 completion
+- For students who have not yet passed Class 12 (and are currently studying for Class 12), the validity is 3 terms after passing their Class 12 exam, OR 6 terms after the qualifier exam date — whichever is earlier
 
 ## Without Class 12 Completion
 If you did not complete 10th and 12th grade, you are NOT eligible for the qualifier exam. Class 12 or equivalent is mandatory.
@@ -73,19 +86,22 @@ Yes, non-science and commerce stream students can apply for BS in Data Science, 
 # FAQs
 
 **Question**: What is the general eligibility for the qualifier?
-**Answer**: To be eligible to write the qualifier exam (regular entry), a learner must:
+**Answer**: Eligibility has two stages:
 
+**Stage A — To apply for the qualifier exam:**
+* DS/MG: Must have studied Mathematics and English in Class 10. Class 11 students who passed their finals can also apply.
+* ES/AE: Must have passed Class 12 with Physics and Mathematics. If Class 12 was passed without Physics/Mathematics, students who cleared these subjects through NIOS or equivalent can apply after committee approval.
+
+**Stage B — To proceed from qualifier to Foundation level:**
+* DS/MG: Studied Maths and English in Class 10 AND passed Class 12 or equivalent.
+* ES/AE: Physics and Mathematics in Class 12 (or via NIOS/equivalent) AND passed Class 12 or equivalent.
+
+To be eligible to write the qualifier exam, a learner must also:
 * Complete the 4-week qualifier coursework
 * Achieve the minimum required average assignment score in all four courses
   Only then will a hall ticket be issued.
 
-Separately, basic program eligibility requires:
-
-* Completion of Class 12 (or equivalent)
-* Required subjects:
-
-  * Data Science: Mathematics and English
-  * Electronic Systems: Mathematics and Physics
+Note: A student cannot apply for multiple programs simultaneously.
 
 
 
@@ -114,8 +130,8 @@ School students who have appeared for their Class 11 final exams can apply, irre
 
 
 **Question**: Can diploma holders attempt the qualifier?
-**Answer**: If a diploma is considered equivalent to Class 12, diploma holders may be able to attempt the qualifier.
-Learners are advised to verify this on the official IIT Madras BS website.
+**Answer**: Diploma holders may be able to attempt the qualifier if their diploma is considered equivalent to Class 12. A diploma recognised by AICTE or a state board of technical education of at least 3-year duration is generally considered equivalent.
+Learners are advised to verify eligibility on the official IIT Madras BS website: https://study.iitm.ac.in/ds/admissions.html#AD4
 
 
 
@@ -160,6 +176,34 @@ Students from commerce or non-science streams can apply, provided they have stud
 **Answer**: Class 12 students are eligible to apply for the qualifier irrespective of stream or board.
 If they pass the qualifier, they can join the program after completing Class 12.
 
+
+
+**Question**: Can I get provisional admission while awaiting my Class 12 marksheet?
+**Answer**: If a learner is awaiting the Class 12 marksheet (for example, results expected in May), they may attempt the qualifier in the January term and enroll in the Foundation level in the May term once the marksheet is available.
+For admission dates, please refer to the academic calendar on the official website.
+
+
+
+**Question**: What is the eligibility criteria to apply for the Degree Program?
+**Answer**: Check the Eligibility section in the Admissions page for the latest update of the eligibility criteria.
+
+
+
+**Question**: Is the program available to students currently in class 12 or equivalent?
+**Answer**: Students currently in class 12 (or equivalent) will be allowed to apply for the program, go through the qualifier phase and write the qualifier exam, but will not be allowed to register for the foundational level of the program until they clear class 12 (or equivalent). Note that a Qualifier Exam result is valid only for 3 terms (about 1 year) right after the exam. So, plan accordingly.
+
+
+
+**Question**: I took a break year after class 12 to prepare for JEE / NEET. Can I apply for the Program?
+**Answer**: Yes, you may apply for the Program if you have studied Mathematics and English in class 10 and have cleared class 12 or equivalent.
+
+
+
+**Question**: I had dropped out of degree over two decades ago. Would I be eligible to apply?
+**Answer**: Yes. If you have completed Class 12 or equivalent, you are eligible to apply for the program. There is no requirement to have completed a degree program. For further details you may check the eligibility to apply tab under the admissions section on the BS in Data Science and Applications website: https://study.iitm.ac.in/ds/admissions.html#AD4
+
+<!-- end of tags --> 
+
 ---
 
-Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier
+Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier, NIOS pathway, committee approval ES AE, apply for qualifier, proceed to foundation level, class 10 maths english, class 12 physics mathematics, cannot apply multiple programs, class 11 students eligible, DS MG eligibility, ES AE eligibility, accepted class 12 equivalents, commerce arts students, diploma holders eligibility, AICTE diploma equivalent, no age restriction, foundation level registration eligibility, provisional admission, awaiting class 12 marksheet
