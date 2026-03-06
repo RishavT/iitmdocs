@@ -63,9 +63,9 @@ The BS programme has multiple levels, which provide flexibility to students to e
 
 
 
-**Question**: Is the degree awarded by IIT Madras valid?
+**Question**: Is the degree awarded by IIT Madras valid? Is it valid worldwide?
 **Answer**: Yes.
-The degree awarded by IIT Madras is a valid 4-year undergraduate degree.
+The degree awarded by IIT Madras is a valid 4-year undergraduate degree. IIT Madras is a nationally and internationally recognized institute, and the degree is valid for employment and higher studies worldwide.
 
 
 
@@ -73,13 +73,6 @@ The degree awarded by IIT Madras is a valid 4-year undergraduate degree.
 **Answer**: No.
 The BS degree is not equivalent to the BTech degree.
 However, it is still a valid 4-year degree from IIT Madras.
-
-
-
-**Question**: Is the IIT Madras BS degree valid worldwide?
-**Answer**: Yes.
-The degree is awarded by IIT Madras, which is a nationally and internationally recognized institute, and the degree is valid for employment and higher studies worldwide.
-It is stated to be as valid as the BTech awarded by IIT Madras.
 
 
 

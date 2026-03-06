@@ -80,20 +80,6 @@ Only those who get the minimum required average assignment scores in all four co
 - Foundation level onwards: Same criteria for all categories
 - OBC must be OBC-NCL (Non-Creamy Layer)
 
-## Application Fee by Category
-| Category | Fee |
-|----------|-----|
-| General / OBC | Rs 4000 |
-| SC / ST / PwD | Rs 2000 |
-| SC/ST + PwD | Rs 1000 |
-
-## Reattempt Fee by Category
-| Category | Fee |
-|----------|-----|
-| General / OBC | Rs 2000 |
-| SC / ST / PwD | Rs 1000 |
-| SC/ST + PwD | Rs 500 |
-
 ## Category Documents Required
 - OBC-NCL certificate (not mandatory to match website format exactly)
 - SC/ST caste certificate

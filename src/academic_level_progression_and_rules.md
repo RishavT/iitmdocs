@@ -53,20 +53,6 @@ The BS program has multiple exit points:
 - Can take longer based on pace
 - 3 terms per year available
 
-## Programs Offered
-1. BS in Data Science and Applications
-2. BS in Electronic Systems
-3. BS in Management and Data Science
-4. BS in Aeronautics and Space Technology
-
-## Learning Mode
-- Content delivered online
-- Quizzes and exams in-person at exam centers
-- Can learn from anywhere
-
-## Degree Value
-The BS degree from IIT Madras is a valid 4-year undergraduate degree, equivalent in validity to BTech from IITM (though not the same as BTech).
-
 
 # U Grade and Course Re-registration
 

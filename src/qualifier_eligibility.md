@@ -110,22 +110,9 @@ Note: A student cannot apply for multiple programs simultaneously.
 
 
 
-**Question**: Can Class 12 students appear for the qualifier?
+**Question**: Can Class 11 or Class 12 students appear for the qualifier?
 **Answer**: Yes.
-Students who have completed Class 11 final examinations are eligible to apply for the qualifier.
-They can join the program after passing Class 12.
-
-
-
-**Question**: Can I attempt the qualifier before completing Class 12?
-**Answer**: Yes.
-Students who have completed Class 11 final exams can attempt the qualifier, but program registration is allowed only after passing Class 12.
-
-
-
-**Question**: Can Class 11 students apply?
-**Answer**: Yes.
-School students who have appeared for their Class 11 final exams can apply, irrespective of stream, group, or board.
+Students who have completed Class 11 final examinations can apply for the qualifier, irrespective of stream, group, or board. They will be allowed to register for the the Foundation level only after passing Class 12 (or equivalent). Note that a Qualifier Exam result is valid only for 3 terms (about 1 year) right after the exam. So, plan accordingly. 
 
 
 
@@ -172,11 +159,6 @@ Students from commerce or non-science streams can apply, provided they have stud
 
 
 
-**Question**: Class 12 eligibility confirmation
-**Answer**: Class 12 students are eligible to apply for the qualifier irrespective of stream or board.
-If they pass the qualifier, they can join the program after completing Class 12.
-
-
 
 **Question**: Can I get provisional admission while awaiting my Class 12 marksheet?
 **Answer**: If a learner is awaiting the Class 12 marksheet (for example, results expected in May), they may attempt the qualifier in the January term and enroll in the Foundation level in the May term once the marksheet is available.
@@ -187,10 +169,6 @@ For admission dates, please refer to the academic calendar on the official websi
 **Question**: What is the eligibility criteria to apply for the Degree Program?
 **Answer**: Check the Eligibility section in the Admissions page for the latest update of the eligibility criteria.
 
-
-
-**Question**: Is the program available to students currently in class 12 or equivalent?
-**Answer**: Students currently in class 12 (or equivalent) will be allowed to apply for the program, go through the qualifier phase and write the qualifier exam, but will not be allowed to register for the foundational level of the program until they clear class 12 (or equivalent). Note that a Qualifier Exam result is valid only for 3 terms (about 1 year) right after the exam. So, plan accordingly.
 
 
 

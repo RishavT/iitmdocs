@@ -82,12 +82,6 @@ For international student details, visit: https://study.iitm.ac.in/ds/admissions
 **Answer**: No. Payments are online only.
 
 
-
-**Question**: Can I come to campus to make payment?
-**Answer**: No. Payments are online only.
-
-
-
 **Question**: What is SCT?
 **Answer**: SCT is a System Compatibility Test, mandatory for remote-proctored exams.
 All students must mandatorily attend the SCT and ensure their system conforms to the requirements. Dates for SCT are communicated by the Admin team via email.
