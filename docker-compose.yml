@@ -14,6 +14,8 @@ services:
       - embed
     networks:
       - iitm-network
+    depends_on:
+      - weaviate
 
   # Cloudflare Worker dev server
   worker:
@@ -46,8 +48,9 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
       PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
       DEFAULT_VECTORIZER_MODULE: 'text2vec-ollama'
-      ENABLE_MODULES: 'text2vec-ollama'
+      ENABLE_MODULES: 'text2vec-ollama,reranker-transformers'
       OLLAMA_API_ENDPOINT: 'http://ollama:11434'
+      RERANKER_INFERENCE_API: 'http://reranker:8080'
       MODULES_CLIENT_TIMEOUT: '600s'
     volumes:
       - weaviate_data:/var/lib/weaviate
@@ -57,6 +60,18 @@ services:
       - iitm-network
     depends_on:
       - ollama
+      - reranker
+
+  # Cross-encoder reranker for more accurate document relevance scoring
+  reranker:
+    image: cr.weaviate.io/semitechnologies/reranker-transformers:baai-bge-reranker-v2-m3
+    container_name: iitm-reranker
+    environment:
+      ENABLE_CUDA: '0'
+    profiles:
+      - local
+    networks:
+      - iitm-network
 
   # Ollama for local embeddings
   ollama:
