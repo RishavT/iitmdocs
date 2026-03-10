@@ -144,7 +144,7 @@ Once all the documents uploaded in the foundation level course registration form
 **Question**: Will I be issued an ID card?
 **Answer**: An ID card in electronic format will be provided, subject to conditions on use of ID card.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

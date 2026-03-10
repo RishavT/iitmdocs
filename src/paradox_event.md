@@ -29,7 +29,7 @@ Qualifier-cleared students who have a valid student ID are also eligible to atte
 **Question**: Where can I find more details about Paradox?
 **Answer**: More details about the Paradox event are available on the official Paradox website: https://paradox-showcase.web.app/
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

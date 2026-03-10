@@ -50,7 +50,7 @@ While this is the estimated time till BS degree, a diploma can potentially be ob
 **Question**: How much time do I need to spend on a course per day?
 **Answer**: The expected effort to do well in one course is about 10 hours per week.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 ---
 
 Tags: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals, no special approval needed, 10 hours per week per course, pre-recorded video lectures, YouTube accessible, learn at own pace, in-person exam mandatory, select convenient exam cities, can defer 3 terms, can pursue alongside another degree, self study materials, no coaching needed, student communities peer support

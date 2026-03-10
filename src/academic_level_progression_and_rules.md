@@ -135,7 +135,7 @@ For example: if a student completes the 8 courses of the foundation level and wi
 The highest grade will be recorded in the transcript.
 The highest score among all attempts of a course will be used for calculating the CGPA. Course fee for Repeat for Improvement courses will be double the normal fee.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

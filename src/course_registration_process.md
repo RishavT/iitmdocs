@@ -114,7 +114,7 @@ Note that there will be an added Exam Fee applicable for learners opting to writ
 **Question**: What is the procedure to add / drop a course?
 **Answer**: Once the registration window closes in any term, adding courses will not be allowed. Dropping a course will be allowed within 4 weeks of the term start.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

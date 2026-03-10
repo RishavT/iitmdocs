@@ -139,7 +139,7 @@ For upcoming term dates: https://study.iitm.ac.in/ds/admissions.html#AD0
 **Question**: I applied for the Qualifier Exam but I didn't obtain the minimum required average assignment scores to take Qualifier Exam, and hence didn't receive any hall ticket for the same. What will be the procedure to re-apply?
 **Answer**: You have to re-apply as a new applicant with payment of full application fee.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

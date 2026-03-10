@@ -196,7 +196,7 @@ For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
 **Question**: What are the JEE eligibility confirmations?
 **Answer**: Learners who cleared JEE Main and are eligible for JEE Advanced within the allowed years can apply for the BS program under JEE-based entry.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

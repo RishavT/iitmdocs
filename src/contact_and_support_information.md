@@ -69,7 +69,7 @@ We will use WhatsApp from our side for communication or reminder purpose only.
 
 If the error is after payment has been made, please forward the confirmation email from Razorpay along with email ID, application number and screenshot with description.
 
-<!-- end of tags --> 
+<!-- end of faqs --> 
 
 ---
 

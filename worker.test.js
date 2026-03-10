@@ -740,11 +740,11 @@ Indicative totals:
   });
 
   describe("end-of-faqs marker", () => {
-    it("should only extract FAQs before the last <!-- end of tags -->", () => {
+    it("should only extract FAQs before the last <!-- end of faqs -->", () => {
       const content = `**Question**: What is the fee?
 **Answer**: Rs 4000.
 
-<!-- end of tags -->
+<!-- end of faqs -->
 
 Tags: fees, payment, cost`;
       const faqs = extractFAQs(content);
@@ -752,16 +752,16 @@ Tags: fees, payment, cost`;
       expect(faqs[0].question).toBe("What is the fee?");
     });
 
-    it("should extract FAQs across multiple <!-- end of tags --> sections", () => {
+    it("should extract FAQs across multiple <!-- end of faqs --> sections", () => {
       const content = `**Question**: FAQ from section 1?
 **Answer**: Answer 1.
 
-<!-- end of tags -->
+<!-- end of faqs -->
 
 **Question**: FAQ from section 2?
 **Answer**: Answer 2.
 
-<!-- end of tags -->
+<!-- end of faqs -->
 
 Tags: some, tags`;
       const faqs = extractFAQs(content);
@@ -785,7 +785,7 @@ The application fee is non-refundable.
 **Question**: Is the fee refundable?
 **Answer**: No, the fee is non-refundable.
 
-<!-- end of tags -->
+<!-- end of faqs -->
 
 Tags: fee, refund`;
       const faqs = extractFAQs(content);
@@ -808,11 +808,11 @@ Tags: fee, refund`;
     });
 
     it("should return empty array for content without FAQ format", () => {
-      const content = "This is just some text without FAQ format.\n<!-- end of tags -->\nTags: test";
+      const content = "This is just some text without FAQ format.\n<!-- end of faqs -->\nTags: test";
       expect(extractFAQs(content)).toEqual([]);
     });
 
-    it("should handle content with no <!-- end of tags --> marker", () => {
+    it("should handle content with no <!-- end of faqs --> marker", () => {
       const content = `**Question**: What is IITM?
 **Answer**: Indian Institute of Technology Madras.`;
       const faqs = extractFAQs(content);
@@ -868,7 +868,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "# Fees\n\n**Question**: What is the admission fee?\n**Answer**: 10000\n\n**Question**: How do I register?\n**Answer**: Online\n\n**Question**: When is the deadline?\n**Answer**: Check portal\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "# Fees\n\n**Question**: What is the admission fee?\n**Answer**: 10000\n\n**Question**: How do I register?\n**Answer**: Online\n\n**Question**: When is the deadline?\n**Answer**: Check portal\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -898,7 +898,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -926,7 +926,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -954,7 +954,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1019,7 +1019,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1047,7 +1047,7 @@ describe("getFAQSuggestions()", () => {
               Document: [
                 {
                   filename: "fees_and_payments.md",
-                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of tags -->\n\nTags: fees",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1085,7 +1085,7 @@ describe("getFAQSuggestions()", () => {
 **Question**: How many times can I attempt the qualifier?
 **Answer**: Check the reattempt policy.
 
-<!-- end of tags -->
+<!-- end of faqs -->
 
 Tags: qualifier, exam`,
                   _additional: { score: "0.9" }
