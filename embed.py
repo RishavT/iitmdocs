@@ -15,11 +15,15 @@ import hashlib
 import logging
 import os
 import weaviate
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from pathlib import Path
 from weaviate.classes.config import Configure, Property, DataType
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
+
+# Max parallel threads for embedding operations (keep low to avoid overwhelming Ollama)
+MAX_PARALLEL_WORKERS = 5
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -111,7 +115,7 @@ EXCLUDED_FILES = [
 
 
 def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None) -> bool:
-    """Embed all documents from the src directory into Weaviate"""
+    """Embed all documents from the src directory into Weaviate using parallel operations"""
     collection = create_schema(weaviate_client, embedding_mode, embedding_provider, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
 
@@ -120,62 +124,98 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud",
     total_files = len(files)
     logger.info(f"Processing {total_files} files from {src_path.absolute()}")
 
-    successful_embeds = 0
-    skipped = 0
-    failed = 0
-
-    for idx, file_path in enumerate(files, 1):
+    # Phase 1: Read all files and compute hashes (no network calls)
+    docs_to_process = []
+    skipped_read = 0
+    for file_path in files:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
         except (UnicodeDecodeError, IOError) as e:
-            logger.warning(f"[{idx}/{total_files}] Skipping {file_path.name}: {e}")
-            skipped += 1
+            logger.warning(f"Skipping {file_path.name}: {e}")
+            skipped_read += 1
             continue
+        docs_to_process.append({
+            "filename": file_path.name,
+            "filepath": str(file_path),
+            "content": content,
+            "file_size": file_path.stat().st_size,
+            "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            "file_extension": file_path.suffix,
+        })
 
+    # Phase 2: Check which documents need inserting vs updating vs skipping
+    to_insert = []
+    to_update = []  # list of (uuid, doc_data)
+    skipped_unchanged = 0
+
+    for doc_data in docs_to_process:
         try:
-            doc_data = {
-                "filename": file_path.name,
-                "filepath": str(file_path),
-                "content": content,
-                "file_size": file_path.stat().st_size,
-                "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),
-                "file_extension": file_path.suffix,
-            }
-
             existing = collection.query.fetch_objects(
                 filters=Filter.by_property("filepath").equal(doc_data["filepath"]), limit=1
             )
-
-            # Log character length for tracking (success path will log later)
-            content_char_length = len(content)
-            logger.info(f"[{idx}/{total_files}] Processing: {file_path.name} ({content_char_length} chars)")
-
             if existing.objects:
                 existing_doc = existing.objects[0]
                 if existing_doc.properties["content_hash"] == doc_data["content_hash"]:
-                    logger.info(f"[{idx}/{total_files}] Unchanged: {file_path.name}")
-                    skipped += 1
+                    logger.info(f"Unchanged: {doc_data['filename']}")
+                    skipped_unchanged += 1
                     continue
-                collection.data.update(uuid=existing_doc.uuid, properties=doc_data)
-                logger.info(f"[{idx}/{total_files}] Updated: {file_path.name}")
+                to_update.append((existing_doc.uuid, doc_data))
+                logger.info(f"Queued for update: {doc_data['filename']} ({len(doc_data['content'])} chars)")
             else:
-                collection.data.insert(doc_data)
-                logger.info(f"[{idx}/{total_files}] Embedded: {file_path.name}")
-
-            successful_embeds += 1
+                to_insert.append(doc_data)
+                logger.info(f"Queued for insert: {doc_data['filename']} ({len(doc_data['content'])} chars)")
         except Exception as e:
-            # LOG FULL PAYLOAD ONLY WHEN EMBEDDING FAILS
-            logger.error(f"[{idx}/{total_files}] EMBEDDING FAILED for {file_path.name}")
-            logger.error(f"[{idx}/{total_files}] Failed payload had {len(content)} characters")
-            # logger.error(f"[{idx}/{total_files}] FULL PAYLOAD TEXT START >>>")
-            # logger.error(content)
-            # logger.error(f"[{idx}/{total_files}] FULL PAYLOAD TEXT END <<<")
-            logger.error(f"[{idx}/{total_files}] Error: {e}")
-            failed += 1
-            continue
+            logger.error(f"Error checking {doc_data['filename']}: {e}. Will attempt insert.")
+            to_insert.append(doc_data)
 
-    logger.info(f"Completed: {successful_embeds} embedded, {skipped} skipped, {failed} failed (total: {total_files})")
+    logger.info(f"Batch plan: {len(to_insert)} to insert, {len(to_update)} to update, "
+                f"{skipped_unchanged} unchanged, {skipped_read} unreadable")
+
+    successful_embeds = 0
+    failed = 0
+
+    # Phase 3a: Parallel insert new documents with per-file progress
+    if to_insert:
+        logger.info(f"Inserting {len(to_insert)} new documents in parallel ({MAX_PARALLEL_WORKERS} workers)...")
+
+        def insert_one(doc_data):
+            try:
+                collection.data.insert(doc_data)
+                logger.info(f"Embedded: {doc_data['filename']}")
+                return True
+            except Exception as e:
+                logger.error(f"EMBEDDING FAILED for {doc_data['filename']}: {e}")
+                return False
+
+        with ThreadPoolExecutor(max_workers=min(len(to_insert), MAX_PARALLEL_WORKERS)) as executor:
+            results = list(executor.map(insert_one, to_insert))
+
+        successful_embeds += sum(1 for r in results if r)
+        failed += sum(1 for r in results if not r)
+
+    # Phase 3b: Parallel update changed documents with per-file progress
+    if to_update:
+        logger.info(f"Updating {len(to_update)} changed documents in parallel ({MAX_PARALLEL_WORKERS} workers)...")
+
+        def update_one(uuid_and_doc):
+            uuid, doc_data = uuid_and_doc
+            try:
+                collection.data.update(uuid=uuid, properties=doc_data)
+                logger.info(f"Updated: {doc_data['filename']}")
+                return True
+            except Exception as e:
+                logger.error(f"EMBEDDING FAILED for {doc_data['filename']}: {e}")
+                return False
+
+        with ThreadPoolExecutor(max_workers=min(len(to_update), MAX_PARALLEL_WORKERS)) as executor:
+            results = list(executor.map(update_one, to_update))
+
+        successful_embeds += sum(1 for r in results if r)
+        failed += sum(1 for r in results if not r)
+
+    total_skipped = skipped_read + skipped_unchanged
+    logger.info(f"Completed: {successful_embeds} embedded, {total_skipped} skipped, {failed} failed (total: {total_files})")
     return True
 
 
