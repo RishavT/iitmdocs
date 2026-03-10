@@ -381,6 +381,11 @@ const QUERY_SYNONYMS = [
     "Masters MTech MS PhD GATE CFTI route CGPA 8.0 research campus upgrade"],
 ];
 
+const COMPILED_SYNONYMS = QUERY_SYNONYMS.map(([patterns, canonical]) => [
+  patterns.map(p => new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i')),
+  canonical
+]);
+
 // Condensed knowledge base summary for query rewriting context.
 // This is a compact version of src/_knowledge_base_summary.md (the detailed reference).
 // When the source documents change significantly, update both this constant and the full summary file.
@@ -458,10 +463,8 @@ function removeStopWords(query) {
  * @returns {string|null} - The canonical query if matched, null otherwise
  */
 function findSynonymMatch(query) {
-  const queryLower = query.toLowerCase();
-  for (const [patterns, canonicalQuery] of QUERY_SYNONYMS) {
-    for (const pattern of patterns) {
-      const regex = new RegExp(`\\b${pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'); // word boundary regex, case-insensitive
+  for (const [regexes, canonicalQuery] of COMPILED_SYNONYMS) {
+    for (const regex of regexes) {
       if (regex.test(query)) {
         return canonicalQuery;
       }
