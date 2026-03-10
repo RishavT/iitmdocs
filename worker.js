@@ -334,7 +334,7 @@ const QUERY_SYNONYMS = [
   [["eligibility", "who can apply", "qualification required"],
     "eligibility Class 12 passed Mathematics English Class 10 any age any stream"],
   [["qualifier exam", "qualifier process", "how to qualify"],
-    "qualifier exam 4 weeks preparation Rs 3000 fee application process"],
+    "qualifier exam 4 weeks preparation Rs 4000 fee application process"],
 
   // FEES
   [["fee waiver", "scholarship", "fee reduction", "concession"],
@@ -344,7 +344,7 @@ const QUERY_SYNONYMS = [
   [["army fee waiver", "defense fee waiver", "military fee waiver"],
     "fee waiver army defense General category income based EWS 50% 75% waiver"],
   [["total fee", "programme fee", "course fee", "how much fee"],
-    "fee structure Foundation Rs 32000 Diploma Rs 62500 BSc Rs 2.21L BS Rs 3.25L"],
+    "fee structure Foundation Rs 32000 Diploma Rs 62500 BSc Rs 2.21L BS Rs 3.86L"],
   [["international fee", "foreign student fee", "outside india fee"],
     "international students facilitation fee Quiz Rs 2000 End Term Rs 2000-4000"],
 
