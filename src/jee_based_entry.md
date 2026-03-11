@@ -196,7 +196,7 @@ A learner entering through the qualifier route cannot switch to JEE-based entry 
 **Answer**: Learners who cleared JEE Main and are eligible for JEE Advanced within the allowed years can apply for the BS program under JEE-based entry.
 
 **Question**: When does the May 2026 qualifier application start?
-**Answer**: The May 2026 qualifier application has currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
 
 **Question**: When is the last date to apply for the May 2026 qualifier?
 **Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
