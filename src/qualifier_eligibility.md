@@ -160,10 +160,10 @@ Students from commerce or non-science streams can apply, provided they have stud
 **Answer**: Class 12 students are eligible to apply for the qualifier irrespective of stream or board.
 If they pass the qualifier, they can join the program after completing Class 12.
 
-**Question**:When does the May 2026 qualifier application starts?    
-**Answer**:The May 2026 qualfier application has already in-progress. The last date to apply is May 30th, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+**Question**: When is the May 2026 qualifier application starts?
+**Answer**: The May 2026 qualifier application has currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
 
-**Question**: When does the last date to apply for the May 2026 qualifier?
+**Question**: When is the last date to apply for the May 2026 qualifier?
 **Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
 
 ---
