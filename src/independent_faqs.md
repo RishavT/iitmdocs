@@ -1,3 +1,22 @@
+---
+title: Miscellaneous FAQs
+description: Common questions about the IIT Madras BS program — laptop and technical requirements, language of instruction (English only), campus facilities (not available), student ID and email, SCT (System Compatibility Test), recorded lectures, Gen AI courses, and topper recognition.
+covers:
+  - Laptop and technical requirements
+  - Language of instruction (English only)
+  - Campus facilities not available (hostel, library, sports)
+  - Student ID card and official email issuance
+  - System Compatibility Test (SCT) for remote exams
+  - Gen AI theory and project courses
+sample_queries:
+  - Do I need a laptop and what are the technical requirements?
+  - Can BS students access IIT Madras campus facilities?
+  - What is the language of instruction?
+  - When do I get my student ID card and email?
+  - What is the System Compatibility Test (SCT)?
+  - What are the Gen AI courses in the program?
+---
+
 # Misc FAQs
 
 **Question**: What if I don't have money to buy a laptop?

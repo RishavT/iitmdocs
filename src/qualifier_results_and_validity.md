@@ -1,3 +1,22 @@
+---
+title: Qualifier Results and Validity
+description: Qualifier exam results — announcement channels (email, WhatsApp, portal), score validity period (3 terms), special validity for Class 12 students, registration steps after clearing, qualifier score as Quiz 1, and delaying Foundation registration.
+covers:
+  - Results announcement (email, WhatsApp, student portal)
+  - Qualifier score validity (3 terms, expires automatically)
+  - Special validity for Class 12 students (3 terms after Class 12 or 6 terms after exam)
+  - Steps after clearing (registration, documents, exam cities, payment)
+  - Qualifier score counted as Quiz 1 (same term only)
+  - Delaying registration within validity period
+sample_queries:
+  - When and where are qualifier results announced?
+  - How long is the qualifier score valid?
+  - What happens when my qualifier validity expires?
+  - What should I do after clearing the qualifier exam?
+  - Can I delay Foundation registration after clearing the qualifier?
+  - Is my qualifier score counted as Quiz 1 for Foundation courses?
+---
+
 # Qualifier Results Communication
 
 ## Communication Channels

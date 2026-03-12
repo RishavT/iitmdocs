@@ -1,3 +1,22 @@
+---
+title: Qualifier Exam Eligibility
+description: Eligibility criteria for the qualifier exam and Foundation level — requirements for DS/MG vs ES/AE programs, Class 10 and Class 12 requirements, age restrictions (none), commerce/arts students, diploma holders, international students, and NIOS pathway.
+covers:
+  - Eligibility to apply for qualifier (DS/MG vs ES/AE requirements)
+  - Eligibility to proceed from qualifier to Foundation level
+  - Class 10 (Maths + English) and Class 12 requirements
+  - Class 11 students and provisional admission
+  - No age restrictions
+  - Commerce, arts, and non-science stream eligibility
+sample_queries:
+  - What is the eligibility criteria for the qualifier exam?
+  - Can I apply for the qualifier while still in Class 11 or 12?
+  - Can commerce or arts stream students apply?
+  - Are diploma holders eligible for the qualifier?
+  - Is there an age limit to apply for the BS program?
+  - Can I get provisional admission without my Class 12 marksheet?
+---
+
 # Qualifier Exam Eligibility
 
 ## A) Eligibility to Apply for the Qualifier Exam

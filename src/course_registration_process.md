@@ -1,3 +1,22 @@
+---
+title: Course Registration Process
+description: Step-by-step course registration for Foundation level and beyond — selecting courses, choosing exam cities, prerequisites, payment, same term vs subsequent term registration, add/drop policy, and required documents.
+covers:
+  - Registration steps (courses, exam cities, prerequisites, payment)
+  - Foundation registration in same term vs subsequent term
+  - Qualifier score counted as Quiz 1 (same term only)
+  - Maximum 4 courses per term
+  - Required documents for Foundation registration
+  - Add/drop course policy and deadlines
+sample_queries:
+  - How many courses can I take per term?
+  - How do I register for Foundation level courses after clearing the qualifier?
+  - What documents do I need for Foundation registration?
+  - Can I add or drop a course after registration?
+  - What is the difference between same term and subsequent term registration?
+  - Do I need to resubmit category certificates for Foundation registration?
+---
+
 ## Registration Process
 
 ### Step 1: Select Courses

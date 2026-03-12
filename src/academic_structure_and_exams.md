@@ -1,3 +1,22 @@
+---
+title: Academic Structure and Exams
+description: Term structure (16 weeks), exam schedule (quizzes and end term), OPPE for programming courses, incomplete grade policy, end term eligibility rules, attendance requirements, and refund policy for qualifier and course fees.
+covers:
+  - Term duration and academic calendar
+  - Quiz and end term exam schedule
+  - OPPE (Online Proctored Programming Exam) and applicable courses
+  - Incomplete (I) grade and make-up examination
+  - End term exam eligibility (assignment score + quiz attendance)
+  - Refund policy (non-refundable qualifier and reattempt fees)
+sample_queries:
+  - How long is each term and when are exams held?
+  - What is OPPE and which courses have it?
+  - What happens if I get an incomplete grade?
+  - Can I take exams from home or change exam dates?
+  - What are the requirements to be eligible for the end term exam?
+  - Is the qualifier exam fee refundable?
+---
+
 # Refund Policy
 
 ## Application Fee - Non-Refundable
