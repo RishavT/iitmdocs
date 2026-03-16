@@ -183,6 +183,12 @@ Clearing the qualifier for:
 
 The learner must join within the validity period.
 
+**Question**: When does the May 2026 qualifier application start?
+**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+
+**Question**: When is the last date to apply for the May 2026 qualifier?
+**Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+
 ---
 
 Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score
