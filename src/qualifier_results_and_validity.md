@@ -205,6 +205,12 @@ The learner must join within the validity period.
 **Question**: Will my Qualifier Exam Score be considered in the subsequent term?
 **Answer**: The Qualifier Exam Score will be counted as Quiz 1 Score for the courses registered in the Foundation level in the same term of the qualifier exam only. It will not be considered as Quiz 1 score for courses registered in subsequent terms.
 
+**Question**: When does the May 2026 qualifier application start?
+**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+
+**Question**: When is the last date to apply for the May 2026 qualifier?
+**Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+
 <!-- end of faqs --> 
 
 ---

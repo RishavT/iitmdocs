@@ -104,10 +104,8 @@ To be eligible to write the qualifier exam, a learner must also:
 Note: A student cannot apply for multiple programs simultaneously.
 
 
-
 **Question**: Who is eligible to appear for the qualifier exam?
 **Answer**: Any learner who completes the qualifier coursework and meets the minimum assignment score requirement in all four courses is eligible to appear.
-
 
 
 **Question**: Can Class 12 students appear for the qualifier?
@@ -116,11 +114,9 @@ Students who have completed Class 11 final examinations are eligible to apply fo
 They can join the program after passing Class 12.
 
 
-
 **Question**: Can I attempt the qualifier before completing Class 12?
 **Answer**: Yes.
 Students who have completed Class 11 final exams can attempt the qualifier, but program registration is allowed only after passing Class 12.
-
 
 
 **Question**: Can Class 11 students apply?
@@ -128,11 +124,9 @@ Students who have completed Class 11 final exams can attempt the qualifier, but 
 School students who have appeared for their Class 11 final exams can apply, irrespective of stream, group, or board.
 
 
-
 **Question**: Can diploma holders attempt the qualifier?
 **Answer**: Diploma holders may be able to attempt the qualifier if their diploma is considered equivalent to Class 12. A diploma recognised by AICTE or a state board of technical education of at least 3-year duration is generally considered equivalent.
 Learners are advised to verify eligibility on the official IIT Madras BS website: https://study.iitm.ac.in/ds/admissions.html#AD4
-
 
 
 **Question**: Can international students write the qualifier exam?
@@ -140,17 +134,14 @@ Learners are advised to verify eligibility on the official IIT Madras BS website
 The qualifier exam is open to international students.
 
 
-
 **Question**: Is there any age restriction?
 **Answer**: No.
 There is no age restriction for appearing in the qualifier exam.
 
 
-
 **Question**: Do working professionals need special approval?
 **Answer**: No.
 As long as the learner meets the basic eligibility criteria, no special approval is required.
-
 
 
 **Question**: Can I write the qualifier if I failed Class 12 earlier?
@@ -159,11 +150,9 @@ A learner can write the qualifier even if they failed Class 12 earlier.
 However, to proceed to the Foundation level after clearing the qualifier, Class 12 must be passed.
 
 
-
 **Question**: Can I attempt the qualifier while pursuing another degree?
 **Answer**: Yes.
 Learners can attempt the qualifier while pursuing another degree, provided they meet basic eligibility requirements.
-
 
 
 **Question**: Can commerce or non-science students apply?
@@ -171,39 +160,34 @@ Learners can attempt the qualifier while pursuing another degree, provided they 
 Students from commerce or non-science streams can apply, provided they have studied English and Mathematics in Class 10.
 
 
-
 **Question**: Class 12 eligibility confirmation
 **Answer**: Class 12 students are eligible to apply for the qualifier irrespective of stream or board.
 If they pass the qualifier, they can join the program after completing Class 12.
-
 
 
 **Question**: Can I get provisional admission while awaiting my Class 12 marksheet?
 **Answer**: If a learner is awaiting the Class 12 marksheet (for example, results expected in May), they may attempt the qualifier in the January term and enroll in the Foundation level in the May term once the marksheet is available.
 For admission dates, please refer to the academic calendar on the official website.
 
-
-
 **Question**: What is the eligibility criteria to apply for the Degree Program?
 **Answer**: Check the Eligibility section in the Admissions page for the latest update of the eligibility criteria.
-
-
 
 **Question**: Is the program available to students currently in class 12 or equivalent?
 **Answer**: Students currently in class 12 (or equivalent) will be allowed to apply for the program, go through the qualifier phase and write the qualifier exam, but will not be allowed to register for the foundational level of the program until they clear class 12 (or equivalent). Note that a Qualifier Exam result is valid only for 3 terms (about 1 year) right after the exam. So, plan accordingly.
 
-
-
 **Question**: I took a break year after class 12 to prepare for JEE / NEET. Can I apply for the Program?
 **Answer**: Yes, you may apply for the Program if you have studied Mathematics and English in class 10 and have cleared class 12 or equivalent.
-
-
 
 **Question**: I had dropped out of degree over two decades ago. Would I be eligible to apply?
 **Answer**: Yes. If you have completed Class 12 or equivalent, you are eligible to apply for the program. There is no requirement to have completed a degree program. For further details you may check the eligibility to apply tab under the admissions section on the BS in Data Science and Applications website: https://study.iitm.ac.in/ds/admissions.html#AD4
 
-<!-- end of faqs --> 
+**Question**: When does the May 2026 qualifier application start?
+**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
 
+**Question**: When is the last date to apply for the May 2026 qualifier?
+**Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
+
+<!-- end of faqs --> 
 ---
 
 Tags: qualifier eligibility, who can write qualifier, eligibility criteria, age eligibility, educational eligibility, class 12 students qualifier, gap year students, working professionals eligibility, international eligibility for qualifier, NIOS pathway, committee approval ES AE, apply for qualifier, proceed to foundation level, class 10 maths english, class 12 physics mathematics, cannot apply multiple programs, class 11 students eligible, DS MG eligibility, ES AE eligibility, accepted class 12 equivalents, commerce arts students, diploma holders eligibility, AICTE diploma equivalent, no age restriction, foundation level registration eligibility, provisional admission, awaiting class 12 marksheet
