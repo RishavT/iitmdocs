@@ -447,7 +447,7 @@ const STOPWORDS = new Set([
 function removeStopWords(query) {
   const words = query.trim().split(/\s+/);
   const filtered = words.filter(word => {
-    const lower = word.toLowerCase().replace(/[?!.,]$/, ''); // strip trailing punctuation for comparison
+    const lower = word.toLowerCase().replace(/[?!.,]+$/, ''); // strip trailing punctuation for comparison
     if (STOPWORDS_TO_IGNORE.has(lower)) return true;
     if (STOPWORDS.has(lower)) return false;
     return true;
