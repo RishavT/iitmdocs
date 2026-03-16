@@ -116,7 +116,7 @@ Learners who wish to exclusively pursue a Diploma in Programming OR Data Science
 **Question**: I am interested to know about the other non-campus programs offered by IIT Madras. What are they?
 **Answer**: For any queries related to the other programs you can visit the respective websites below:
 
-* BS Degree in Management and Data Science — Email: support-mg@study.iitm.ac.in, Contact: +91-7850999966, Website: https://study.iitm.ac.in/ds/
+* BS Degree in Management and Data Science — Email: support-mg@study.iitm.ac.in, Contact: +91-7850999966, Website: https://study.iitm.ac.in/mg/
 * BS Degree in Electronic Systems — Email: support-es@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/es/
 * BS Degree in Aeronautics and Space Technology — Email: support-ae@study.iitm.ac.in, Contact: +91-9711397993, Website: https://study.iitm.ac.in/ae/
 
