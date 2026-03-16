@@ -113,7 +113,7 @@ For **BS in Data Science and Application (DS)** and **BS in Management and Data 
 
 2\. Passed class 12 or an equivalent examination regardless of age or academic background
 
-For further details, please refer to the official DS admissions page: [https://study.iitm.ac.in/ds/](https://study.iitm.ac.in/ds/) and  official MG admission page [https://study.iitm.ac.in/mg](https://study.iitm.ac.in/ae)
+For further details, please refer to the official DS admissions page: [https://study.iitm.ac.in/ds/](https://study.iitm.ac.in/ds/) and  official MG admission page [https://study.iitm.ac.in/mg](https://study.iitm.ac.in/mg)
 
 For  **For the BS in Electronic Systems (ES) programme** and **BS in Aeronautics and space technology (AE)** , students should fulfill the below conditions:
 
