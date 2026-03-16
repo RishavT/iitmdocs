@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFirstQuestion, getFAQSuggestions } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -698,95 +698,149 @@ describe("sanitizeQuery()", () => {
 // Task 3: FAQ Suggestions ("Did you mean?") Tests
 // ============================================================================
 
-describe("extractFirstQuestion()", () => {
+describe("extractFAQs()", () => {
   describe("Basic extraction", () => {
-    it("should extract question from standard FAQ format", () => {
-      const content = "Q1: What is the admission fee?\nAnswer: The fee is 10000.";
-      expect(extractFirstQuestion(content)).toBe("What is the admission fee?");
+    it("should extract a single FAQ pair", () => {
+      const content = "**Question**: What is the admission fee?\n**Answer**: The fee is 10000.";
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(1);
+      expect(faqs[0].question).toBe("What is the admission fee?");
+      expect(faqs[0].answer).toBe("The fee is 10000.");
     });
 
-    it("should extract question with double-digit Q number", () => {
-      const content = "Q12: How do I register?\nAnswer: Visit the portal.";
-      expect(extractFirstQuestion(content)).toBe("How do I register?");
+    it("should extract multiple FAQ pairs", () => {
+      const content = `**Question**: What is the fee?
+**Answer**: Rs 4000.
+
+**Question**: How do I register?
+**Answer**: Visit the portal.
+
+**Question**: When is the deadline?
+**Answer**: Check the website.`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(3);
+      expect(faqs[0].question).toBe("What is the fee?");
+      expect(faqs[1].question).toBe("How do I register?");
+      expect(faqs[2].question).toBe("When is the deadline?");
     });
 
-    it("should extract question with triple-digit Q number", () => {
-      const content = "Q123: Is there a deadline?\nAnswer: Yes, check the portal.";
-      expect(extractFirstQuestion(content)).toBe("Is there a deadline?");
+    it("should extract FAQ with multi-line answer", () => {
+      const content = `**Question**: What is the fee structure?
+**Answer**: The fee depends on the total credits completed.
+Indicative totals:
+
+* Foundation only (32 credits): Rs 48,000
+* BS Degree (142 credits): Rs 3,86,000`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(1);
+      expect(faqs[0].question).toBe("What is the fee structure?");
+      expect(faqs[0].answer).toContain("Foundation only");
+      expect(faqs[0].answer).toContain("BS Degree");
     });
   });
 
-  describe("Preferring actual questions over headers", () => {
-    it("should prefer question ending with ? over section header", () => {
-      const content = `Q81: 🔹 Post-Qualifier Process
-Answer: Check your dashboard.
+  describe("end-of-faqs marker", () => {
+    it("should only extract FAQs before the last <!-- end of faqs -->", () => {
+      const content = `**Question**: What is the fee?
+**Answer**: Rs 4000.
 
-Q82: What should I do after clearing the qualifier?
-Answer: Complete course registration.`;
-      expect(extractFirstQuestion(content)).toBe("What should I do after clearing the qualifier?");
+<!-- end of faqs -->
+
+Tags: fees, payment, cost`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(1);
+      expect(faqs[0].question).toBe("What is the fee?");
     });
 
-    it("should fall back to first Q# line if no question mark found", () => {
-      const content = `Q1: Section Header
-Answer: Some info.
+    it("should extract FAQs across multiple <!-- end of faqs --> sections", () => {
+      const content = `**Question**: FAQ from section 1?
+**Answer**: Answer 1.
 
-Q2: Another Header
-Answer: More info.`;
-      expect(extractFirstQuestion(content)).toBe("Section Header");
+<!-- end of faqs -->
+
+**Question**: FAQ from section 2?
+**Answer**: Answer 2.
+
+<!-- end of faqs -->
+
+Tags: some, tags`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(2);
+      expect(faqs[0].question).toBe("FAQ from section 1?");
+      expect(faqs[1].question).toBe("FAQ from section 2?");
+    });
+  });
+
+  describe("Mixed content (info + FAQs)", () => {
+    it("should extract FAQs from content that also has non-FAQ text", () => {
+      const content = `# Fee Structure
+
+The application fee is non-refundable.
+
+## Fee Table
+| Category | Fee |
+|----------|-----|
+| General  | 4000|
+
+**Question**: Is the fee refundable?
+**Answer**: No, the fee is non-refundable.
+
+<!-- end of faqs -->
+
+Tags: fee, refund`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(1);
+      expect(faqs[0].question).toBe("Is the fee refundable?");
     });
   });
 
   describe("Edge cases", () => {
-    it("should return null for null content", () => {
-      expect(extractFirstQuestion(null)).toBe(null);
+    it("should return empty array for null content", () => {
+      expect(extractFAQs(null)).toEqual([]);
     });
 
-    it("should return null for undefined content", () => {
-      expect(extractFirstQuestion(undefined)).toBe(null);
+    it("should return empty array for undefined content", () => {
+      expect(extractFAQs(undefined)).toEqual([]);
     });
 
-    it("should return null for empty string", () => {
-      expect(extractFirstQuestion("")).toBe(null);
+    it("should return empty array for empty string", () => {
+      expect(extractFAQs("")).toEqual([]);
     });
 
-    it("should return null for content without Q# pattern", () => {
-      const content = "This is just some text without FAQ format.";
-      expect(extractFirstQuestion(content)).toBe(null);
+    it("should return empty array for content without FAQ format", () => {
+      const content = "This is just some text without FAQ format.\n<!-- end of faqs -->\nTags: test";
+      expect(extractFAQs(content)).toEqual([]);
     });
 
-    it("should handle question at end of line without newline", () => {
-      const content = "Q1: What is IITM?";
-      expect(extractFirstQuestion(content)).toBe("What is IITM?");
-    });
-
-    it("should trim whitespace from extracted question", () => {
-      const content = "Q1:   What is the fee?   \nAnswer: 10000";
-      expect(extractFirstQuestion(content)).toBe("What is the fee?");
+    it("should handle content with no <!-- end of faqs --> marker", () => {
+      const content = `**Question**: What is IITM?
+**Answer**: Indian Institute of Technology Madras.`;
+      const faqs = extractFAQs(content);
+      expect(faqs).toHaveLength(1);
+      expect(faqs[0].question).toBe("What is IITM?");
     });
   });
+});
 
-  describe("Multiple questions in content", () => {
-    it("should find first question with ? from multiple entries", () => {
-      const content = `Q1: Overview Section
-Answer: General info.
+describe("scoreFAQMatch()", () => {
+  it("should score full word overlap", () => {
+    const score = scoreFAQMatch("what is the fee structure", "what is the fee structure");
+    expect(score).toBeGreaterThan(0);
+  });
 
-Q2: What are the eligibility criteria?
-Answer: You need 12th pass.
+  it("should score partial overlap", () => {
+    const full = scoreFAQMatch("what is the fee", "what is the fee structure");
+    const partial = scoreFAQMatch("how to register", "what is the fee structure");
+    expect(full).toBeGreaterThan(partial);
+  });
 
-Q3: What is the fee structure?
-Answer: Check the portal.`;
-      expect(extractFirstQuestion(content)).toBe("What are the eligibility criteria?");
-    });
+  it("should return 0 for no overlap", () => {
+    expect(scoreFAQMatch("eligibility criteria", "payment refund policy")).toBe(0);
+  });
 
-    it("should handle mixed format with emojis", () => {
-      const content = `Q1: 📚 About IITM BS
-Answer: Description.
-
-Q2: 🎓 How to apply?
-Answer: Apply online.`;
-      // The emoji is part of the question text, and it ends with ? so it's selected
-      expect(extractFirstQuestion(content)).toBe("🎓 How to apply?");
-    });
+  it("should ignore short words (2 chars or less)", () => {
+    // "is" and "a" are <= 2 chars, should be ignored
+    expect(scoreFAQMatch("is a", "is a test")).toBe(0);
   });
 });
 
@@ -805,7 +859,7 @@ describe("getFAQSuggestions()", () => {
 
   describe("Formatting suggestions", () => {
     it("should format English suggestions correctly", async () => {
-      // Mock successful Weaviate response with FAQ documents
+      // Mock successful Weaviate response with topic documents containing FAQs
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({
@@ -813,19 +867,9 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the admission fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "# Fees\n\n**Question**: What is the admission fee?\n**Answer**: 10000\n\n**Question**: How do I register?\n**Answer**: Online\n\n**Question**: When is the deadline?\n**Answer**: Check portal\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
-                },
-                {
-                  filename: "faq_2.md",
-                  content: "Q2: How do I register?\nAnswer: Online",
-                  _additional: { score: "0.8" }
-                },
-                {
-                  filename: "faq_3.md",
-                  content: "Q3: When is the deadline?\nAnswer: Check portal",
-                  _additional: { score: "0.7" }
                 }
               ]
             }
@@ -841,9 +885,8 @@ describe("getFAQSuggestions()", () => {
       const result = await getFAQSuggestions("fee query", env, "english");
 
       expect(result).toContain("**Did you mean:**");
-      expect(result).toContain("1. What is the admission fee?");
-      expect(result).toContain("2. How do I register?");
-      expect(result).toContain("3. When is the deadline?");
+      expect(result).toContain("What is the admission fee?");
+      expect(result).toContain("[FAQ:fees_and_payments.md]");
     });
 
     it("should format Hindi suggestions correctly", async () => {
@@ -854,8 +897,8 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -882,8 +925,8 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -910,8 +953,8 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -975,8 +1018,8 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1003,8 +1046,8 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_1.md",
-                  content: "Q1: What is the fee?\nAnswer: 10000",
+                  filename: "fees_and_payments.md",
+                  content: "**Question**: What is the fee?\n**Answer**: 10000\n\n<!-- end of faqs -->\n\nTags: fees",
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1025,7 +1068,7 @@ describe("getFAQSuggestions()", () => {
   });
 
   describe("Question extraction in suggestions", () => {
-    it("should extract actual questions from FAQ content", async () => {
+    it("should extract and rank FAQ questions from document content", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({
@@ -1033,12 +1076,18 @@ describe("getFAQSuggestions()", () => {
             Get: {
               Document: [
                 {
-                  filename: "faq_18.md",
-                  content: `Q81: 🔹 Post-Qualifier Process
-Answer: Check your dashboard.
+                  filename: "qualifier_exam_overview.md",
+                  content: `# Qualifier Exam
 
-Q82: What should I do after clearing the qualifier?
-Answer: Complete registration.`,
+**Question**: What should I do after clearing the qualifier?
+**Answer**: Complete course registration.
+
+**Question**: How many times can I attempt the qualifier?
+**Answer**: Check the reattempt policy.
+
+<!-- end of faqs -->
+
+Tags: qualifier, exam`,
                   _additional: { score: "0.9" }
                 }
               ]
@@ -1052,11 +1101,9 @@ Answer: Complete registration.`,
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
-      const result = await getFAQSuggestions("qualifier", env, "english");
+      const result = await getFAQSuggestions("qualifier clearing", env, "english");
 
-      // Should prefer the actual question over the section header
       expect(result).toContain("What should I do after clearing the qualifier?");
-      expect(result).not.toContain("Post-Qualifier Process");
     });
   });
 });
