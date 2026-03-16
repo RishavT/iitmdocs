@@ -1188,8 +1188,8 @@ function extractFAQs(content) {
  * @returns {number} - Overlap score (higher = better match)
  */
 function scoreFAQMatch(query, faqQuestion) {
-  const queryWords = new Set(query.split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w)));
-  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => w.length > 2 && !STOPWORDS.has(w)));
+  const queryWords = new Set(query.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
+  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
   let overlap = 0;
   for (const word of queryWords) {
     if (faqWords.has(word)) overlap++;
