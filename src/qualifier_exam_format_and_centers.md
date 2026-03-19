@@ -1,3 +1,22 @@
+---
+title: Qualifier Exam Format and Centers
+description: Qualifier exam format (4 hours, MCQ/MSQ/numerical, no negative marking, closed book), exam mode (in-person in India, remote proctored abroad), exam city selection, documents required at center, and special accommodation for PwD students.
+covers:
+  - Exam format (4 hours, MCQ/MSQ/numerical/short answer)
+  - No negative marking, closed book, calculator enabled
+  - In-person exam in India, remote proctored for international students
+  - Exam city selection (pick 2 cities) and city change window
+  - Documents required at exam center (hall ticket + ID proof)
+  - Special accommodation and scribe for PwD students
+sample_queries:
+  - Is the qualifier exam online or offline?
+  - What is the format and duration of the qualifier exam?
+  - How do I choose or change my exam city?
+  - What documents do I need to bring to the exam center?
+  - Can I get special accommodation or a scribe for the exam?
+  - Are exams conducted at the IIT Madras campus?
+---
+
 # Exam Cities for IIT Madras BS Program
 
 Quizzes and exams for the IIT Madras BS Program are conducted in person at exam centres across India and abroad.

@@ -1,3 +1,21 @@
+---
+title: Contact and Support Information
+description: Official contact details for the IIT Madras BS program — program-specific support emails, phone number, office address, qualifier support, international student support (Global Entry), and special accommodation requests.
+covers:
+  - Program-specific support emails (DS, ES, AE, MG)
+  - Qualifier support email
+  - International students / Global Entry contact
+  - Phone support and office address
+  - What the chatbot can and cannot help with
+  - Special accommodation and scribe requests for PwD students
+sample_queries:
+  - What is the support email for the IITM BS program?
+  - Are there any official WhatsApp or Telegram groups?
+  - Who do I contact for application or payment issues?
+  - How do I contact support as an international student?
+  - How do I request special accommodation for exams?
+---
+
 # Contact Information and Support
 
 ## Program-Specific Support Emails

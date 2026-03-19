@@ -1,3 +1,22 @@
+---
+title: About the IIT Madras BS Program
+description: Overview of IIT Madras BS degree programmes in Data Science, Electronic Systems, Management, and Aeronautics — learning mode, program levels, exit points, degree validity, and certificates awarded.
+covers:
+  - Programs offered (DS, ES, MG, AE)
+  - Online learning mode with in-person exams
+  - Program levels and exit points (Foundation, Diploma, BSc, BS, PGD, MTech)
+  - Degree validity and recognition (BS vs BTech)
+  - No prior coding knowledge required
+  - Credits are non-transferable
+sample_queries:
+  - What is the IIT Madras BS degree and is it valid?
+  - Is the IITM BS program online or on-campus?
+  - What are the levels and exit points in the BS program?
+  - Do I need prior coding knowledge for this program?
+  - Can I transfer credits from this program to another university?
+  - What other BS programs does IIT Madras offer?
+---
+
 # About the IIT Madras BS Program
 
 IIT Madras offers four-year BS programmes that aim to provide quality education to all, irrespective of age, educational background, or location. The programmes are carefully designed to impart industry-relevant skills through rigorous coursework, hands-on training, and projects.

@@ -1,3 +1,21 @@
+---
+title: International Students Information
+description: Guide for international students applying to the IIT Madras BS program — eligibility, remote proctored exam mode, IST exam timings, additional facilitation fee (Rs 2000 per subject), required documents (residence proof, ID proof), and payment support.
+covers:
+  - International student eligibility
+  - Remote proctored exam mode (no travel to India needed)
+  - Exam timing in IST
+  - Additional exam facilitation fee (Rs 2000 per subject)
+  - Required documents (residence proof, visa/citizenship)
+  - Changing exam city between India and abroad
+sample_queries:
+  - Can international students enroll in the IITM BS program?
+  - What extra fees do international students pay?
+  - What documents do international students need to submit?
+  - Can I change my exam city from India to outside India?
+  - What do I do if payment fails from outside India?
+---
+
 # International Students Guide
 
 ## Eligibility

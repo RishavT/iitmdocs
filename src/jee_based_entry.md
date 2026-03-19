@@ -1,3 +1,22 @@
+---
+title: JEE-Based Entry
+description: Direct entry into the IIT Madras BS Foundation level via JEE Advanced eligibility — two admission pathways (regular vs JEE), validity period (3 terms), application process, proof requirements, and benefits of JEE-based entry.
+covers:
+  - Two entry pathways (regular qualifier vs JEE-based direct entry)
+  - JEE Advanced eligibility and validity period (3 terms)
+  - Application process and proof requirements (scorecard, admit card)
+  - Benefits of JEE entry (skip qualifier, CCC of 4)
+  - Cannot switch between entry types after applying
+  - International exams (SAT, AP, IB, A-Levels) not accepted
+sample_queries:
+  - What are the different ways to enter the IITM BS program?
+  - Can I skip the qualifier exam if I have JEE Advanced?
+  - Which JEE years are eligible for direct entry?
+  - Can I switch between qualifier and JEE entry after applying?
+  - What documents do I need for JEE-based entry?
+  - Can I use SAT, AP, or IB scores for admission?
+---
+
 # Admission Pathways to IIT Madras BS Program
 
 To enter the IIT Madras BS Program, applicants can join through 2 paths:

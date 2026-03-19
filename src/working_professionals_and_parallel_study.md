@@ -1,3 +1,20 @@
+---
+title: Working Professionals and Parallel Study
+description: Information for working professionals and students pursuing parallel degrees — time commitment (10 hours per week per course), flexible online learning with pre-recorded lectures, in-person exam requirements, and expected completion timeline (4-6 years).
+covers:
+  - Working professionals eligibility (no special approval needed)
+  - Pursuing alongside another degree or job
+  - Time commitment (10 hours per week per course)
+  - Online flexibility (pre-recorded lectures, learn at own pace)
+  - In-person exam attendance required
+sample_queries:
+  - Can I do this program while working a full-time job?
+  - Can I pursue this degree alongside another college degree?
+  - How long does the BS program take for working professionals?
+  - How many hours per week do I need to study?
+  - Are lectures live or pre-recorded?
+---
+
 # Working Professionals and Parallel Study
 
 ## Can Working Professionals Apply?

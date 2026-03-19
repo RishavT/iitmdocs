@@ -1,3 +1,22 @@
+---
+title: Qualifier Assignments and Cutoff
+description: Qualifier exam passing criteria and assignment requirements — category-wise cutoff marks (General, OBC-NCL, SC/ST/PwD), assignment grading, eligibility for first and second attempts within a term, and category relaxation policies.
+covers:
+  - Qualifier exam passing criteria (per-subject and overall cutoffs)
+  - Category-wise cutoff marks (General, OBC-NCL/EWS, SC/ST/PwD)
+  - Assignment grading (out of 100, unattempted = 0)
+  - First attempt vs second attempt eligibility
+  - Category relaxations (apply only during qualifier, not after)
+  - Category documents required and changing category
+sample_queries:
+  - Are qualifier assignments mandatory and what happens if I miss them?
+  - What are the minimum cutoff marks to pass the qualifier?
+  - Is there a cutoff relaxation for SC/ST/OBC/PwD candidates?
+  - Can I improve my qualifier scores after passing?
+  - What is the passing criteria for the qualifier exam?
+  - Are qualifier assignments proctored or can I do them from home?
+---
+
 # Qualifier Exam Passing Criteria
 
 In the qualifier exam comprising 4 subjects, the learner should obtain marks >= individual subject cut-off as shown below. The total of all subject marks should be greater than or equal to the total cut-off.

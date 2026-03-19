@@ -1,3 +1,16 @@
+---
+title: Paradox Event
+description: Paradox is the annual offline student event hosted by the IIT Madras BS Degree program, held in May or June each year. Open to students with a valid IIT Madras BS student ID.
+covers:
+  - What Paradox is and when it is held
+  - Eligibility to attend (valid student ID required)
+  - Paradox website and event details
+sample_queries:
+  - What is the Paradox event?
+  - When is Paradox held and what are the dates?
+  - Who is eligible to attend Paradox?
+---
+
 # FAQs
 
 

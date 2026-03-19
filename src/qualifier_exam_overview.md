@@ -1,3 +1,22 @@
+---
+title: Qualifier Exam Overview
+description: Overview of the qualifier process — 4 weeks of online coursework followed by an in-person exam, subjects covered (DS/MG vs ES/AE), content release schedule, preparation tips, application process, and document verification.
+covers:
+  - Qualifier process structure (4 weeks coursework + exam)
+  - Subjects by program (DS/MG and ES/AE)
+  - Weekly content release (videos, tutorials, assignments)
+  - Preparation time (10 hours per week per course)
+  - Self-study sufficient, no coaching required
+  - Application process and document verification
+sample_queries:
+  - What is the qualifier exam and how does it work?
+  - What subjects are covered in the qualifier exam?
+  - How should I prepare for the qualifier exam?
+  - Does the qualifier exam require coding knowledge?
+  - How do I apply for the qualifier exam?
+  - What happens after I submit my qualifier application?
+---
+
 # Qualifier Exam Preparation
 
 All regular entry applicants must go through the 4-week Qualifier process to earn admission to the Foundation Level.
