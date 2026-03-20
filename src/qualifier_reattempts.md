@@ -1,3 +1,22 @@
+---
+title: Qualifier Exam Reattempts
+description: Reattempt policy for the qualifier exam — two attempts per term (end of week 4 and week 8), reattempt fees by category, assignment score carry-forward, unlimited attempts across terms, and single-subject reattempt option.
+covers:
+  - Two attempts per term (first at week 4, second at week 8)
+  - Reattempt eligibility (absent or failed first attempt)
+  - Reattempt fees by category
+  - Assignment scores carry forward for same-term reattempt
+  - Unlimited attempts across terms (fresh application needed)
+  - Cannot improve marks if already passed
+sample_queries:
+  - What happens if I fail the qualifier exam?
+  - How many times can I reattempt the qualifier?
+  - What is the reattempt fee for the qualifier exam?
+  - Do I need to redo assignments for a qualifier reattempt?
+  - Can I reattempt just one subject in the qualifier?
+  - What if I was absent for the qualifier exam?
+---
+
 # Qualifier Exam Reattempt
 
 ## Attempts Within a Term

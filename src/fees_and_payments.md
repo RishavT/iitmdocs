@@ -1,3 +1,22 @@
+---
+title: Fees and Payments
+description: Fee structure for the qualifier exam and Foundation/Diploma/Degree levels, payment methods (online only, no EMI or cheque), refund policy (non-refundable), fee waivers for SC/ST/PwD/EWS and income-based concessions, and educational loan availability.
+covers:
+  - Qualifier application fee and reattempt fee by category
+  - Total program cost by level (Foundation through MTech)
+  - Payment modes (online only, no EMI, no cheque)
+  - Refund policy (non-refundable fees, course drop admin charges)
+  - Fee waivers (SC/ST/PwD, income-based, EWS certificate)
+  - Educational loan and scholarship availability
+sample_queries:
+  - How much does the qualifier exam cost and what is the total program fee?
+  - Is there a fee waiver and what documents do I need?
+  - What payment modes are accepted for fees?
+  - Can I get a refund if I drop a course or miss the exam?
+  - Is an educational loan or scholarship available?
+  - Can I carry over course fees to the next term?
+---
+
 # Qualifier Exam Fee Structure
 
 The application fee for the Qualifier exam must be paid during registration and is non-refundable under any circumstances.
@@ -25,72 +44,6 @@ For candidates who were absent or failed the first attempt and want to re-attemp
 - The Qualifier Examination fee is non-refundable under all circumstances
 - This includes cases where the learner misses the examination or does not pass it
 - Candidates outside India may have to pay an additional exam facilitation fee
-
-# Qualifier Exam Fees and Reattempt Charges
-
-## Qualifier Exam Application Fee
-
-| Category | Application Fee |
-|----------|-----------------|
-| General / OBC | Rs 4000 |
-| SC / ST / PwD (40%+ disability) | Rs 2000 |
-| SC/ST who is also PwD | Rs 1000 |
-
-## Qualifier Reattempt Fee (within same term)
-
-| Category | Reattempt Fee |
-|----------|---------------|
-| General / OBC | Rs 2000 |
-| SC / ST / PwD | Rs 1000 |
-| SC/ST + PwD | Rs 500 |
-
-## Important Notes
-- Application fee is **non-refundable** under any circumstances  
-- Reattempt fee is also **non-refundable**
-
-# Refund Policy
-
-## Application Fee - Non-Refundable
-The Qualifier exam application fee is NON-REFUNDABLE under ANY circumstances.
-
-This includes:
-- Unable to write the exam
-- Absent from exam
-- Failed the exam
-- Changed mind about joining
-- Medical emergencies
-- Personal reasons
-
-## Reattempt Fee - Non-Refundable
-The reattempt fee is also non-refundable.
-
-## Course Fee Refunds
-Course registration fees follow program refund policy. Contact support@study.iitm.ac.in for specific cases.
-
-## Before Paying
-Consider the following before registering:
-- Are you sure about joining?
-- Can you commit to the schedule?
-- Do you have time for coursework?
-- Can you attend exams at selected cities?
-
-## Fee Structure Summary
-| Fee Type | Amount | Refundable |
-|----------|--------|------------|
-| Application Fee (General/OBC) | Rs 4000 | No |
-| Application Fee (SC/ST/PwD) | Rs 2000 | No |
-| Reattempt Fee (General/OBC) | Rs 2000 | No |
-| Reattempt Fee (SC/ST/PwD) | Rs 1000 | No |
-
-## Getting Money Back
-You will NOT get your money back if:
-- You don't want the course anymore
-- You can't write the exam
-- You are absent
-- You fail
-
-## Contact for Fee Issues
-support@study.iitm.ac.in
 
 
 # FAQs-1

@@ -1,3 +1,21 @@
+---
+title: Placements and Career Support
+description: Placement and internship support for IIT Madras BS students — placement portal, eligibility (minimum one Diploma level), CGPA considerations, Industry Interaction Cell, and career outcomes for BS graduates.
+covers:
+  - Placement and internship support availability
+  - Placement portal URL
+  - Eligibility (minimum Diploma level required)
+  - CGPA and placement opportunities
+  - BS Electronic Systems placements
+  - Industry Interaction Cell and recruitment outreach
+sample_queries:
+  - Does the IIT Madras BS program offer placements?
+  - What is the minimum eligibility for placements?
+  - Does CGPA matter for placements?
+  - How does IIT Madras handle placements for so many students?
+  - Are internship opportunities available through IITM?
+---
+
 # FAQs
 
 

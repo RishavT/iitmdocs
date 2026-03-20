@@ -1,3 +1,22 @@
+---
+title: Academic Level Progression and Rules
+description: Rules for progressing between Foundation, Diploma, and Degree levels — credit requirements, U grade re-registration, prerequisites, course access revocation, repeat for improvement, and exit procedures.
+covers:
+  - Level progression rules and restrictions
+  - Credit requirements for each level (Foundation through MTech)
+  - U grade, course re-registration, and CGPA impact
+  - Prerequisites and course access revocation
+  - Repeat for improvement policy
+  - Exit and quit procedures with multiple exit points
+sample_queries:
+  - How do I exit or quit the BS program?
+  - Can I take a break between levels?
+  - Can I take courses across different levels?
+  - Can I repeat a course to improve my grade?
+  - What happens if I fail a course and get a U grade?
+  - How many credits do I need for BSc, BS, or MTech?
+---
+
 ## Level Restrictions
 
 Students can take any course within a particular level of study but are not allowed to sign up for courses across levels.
