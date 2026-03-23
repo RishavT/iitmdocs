@@ -316,7 +316,7 @@ steps:
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
-          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,CHAT_API_KEY=${_CHAT_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
 
 # Store images in Google Container Registry
 # Note: Only worker images are listed here since embed images are conditionally built
@@ -326,9 +326,9 @@ images:
 
 # Substitutions for environment variables
 substitutions:
-  _OPENAI_API_KEY: ''
-  _CHAT_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions'
-  _CHAT_MODEL: 'gpt-4o-mini'
+  _CHAT_API_KEY: ''
+  _CHAT_API_ENDPOINT: 'https://api.deepseek.com/chat/completions'
+  _CHAT_MODEL: 'deepseek-chat'
 
 # 40 minutes timeout for first-time setup
 timeout: '2400s'
