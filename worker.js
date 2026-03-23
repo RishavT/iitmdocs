@@ -333,8 +333,10 @@ const QUERY_SYNONYMS = [
     "JEE Advanced direct entry foundation level skip qualifier"],
   [["eligibility", "who can apply", "qualification required"],
     "eligibility Class 12 passed Mathematics English Class 10 any age any stream"],
-  [["qualifier exam", "qualifier process", "how to qualify"],
+  [["what is qualifier exam", "how to qualify", "qualifier process"],
     "qualifier exam 4 weeks preparation Rs 4000 fee application process"],
+    [["pass qualifier", "after qualifier", "qualifier score validity", "next step after qualifier", "register after qualifier"],
+    "qualifier result validity 3 terms register next term admission letter"],
 
   // FEES
   [["fee waiver", "scholarship", "fee reduction", "concession"],
