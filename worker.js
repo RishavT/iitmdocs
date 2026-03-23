@@ -565,7 +565,7 @@ Examples:
         Authorization: `Bearer ${chatApiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model:env.CHAT_MODEL || "deepseek-chat",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: queryForLLMrewriting },
@@ -1330,7 +1330,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   // Configure chat API endpoint and model (defaults to OpenAI for backwards compatibility)
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
-  const chatModel = env.CHAT_MODEL || "gpt-4o-mini";
+  const chatModel = env.CHAT_MODEL || "deepseek-chat";
 
   // Use CHAT_API_KEY if provided (for custom endpoints like AI Pipe), otherwise fall back to OPENAI_API_KEY
   // This allows using different providers while maintaining backwards compatibility
@@ -1664,7 +1664,7 @@ ${response}
 Output your fact-check result as JSON:`;
 
   const chatEndpoint = env.CHAT_API_ENDPOINT || "https://api.openai.com/v1/chat/completions";
-  const factCheckModel = "gpt-4o-mini";
+  const factCheckModel = env.CHAT_MODEL || "deepseek-chat";
   const chatApiKey = env.CHAT_API_KEY || env.OPENAI_API_KEY;
 
   try {
