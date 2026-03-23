@@ -23,7 +23,7 @@ sample_queries:
 
 There are two attempts within any term currently. In every term, qualifier exams are conducted:
 - At the end of 4 weeks (first attempt)
-- At the end of 8 weeks (second attempt)
+- At the end of 8 weeks (second attempt (reattempt))
 
 ## Who Can Apply for Reattempt Within Same Term?
 
@@ -162,4 +162,4 @@ For upcoming term dates: https://study.iitm.ac.in/ds/admissions.html#AD0
 
 ---
 
-Tags: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period, two attempts per term, end of 4 weeks first attempt, end of 8 weeks second attempt, absent candidates reattempt, failed candidates reattempt, no repeat assignments same term, reattempt fee Rs 2000 1000 500, unlimited attempts across terms, fresh application new term, redo coursework new term, cannot improve marks if passed, same difficulty reattempt, failing does not affect future admissions
+Tags: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt (reattempt) qualifier, third attempt allowed, cooling period, two attempts per term, end of 4 weeks first attempt, end of 8 weeks second attempt (reattempt), absent candidates reattempt, failed candidates reattempt, no repeat assignments same term, reattempt fee Rs 2000 1000 500, unlimited attempts across terms, fresh application new term, redo coursework new term, cannot improve marks if passed, same difficulty reattempt, failing does not affect future admissions
