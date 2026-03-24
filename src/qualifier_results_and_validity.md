@@ -83,8 +83,8 @@ For students who have not yet passed Class 12 (and are currently studying for Cl
 - Their qualifier score will be treated as the Quiz 1 score for calculating the final grade
 - They may also register in the next two terms, as long as the qualifier score remains valid
 
-### Second Attempt Qualifiers
-- Candidates who qualify in the second attempt can register only from the subsequent term
+### Second attempt (reattempt within same term) Qualifiers
+- Candidates who qualify in the second attempt (reattempt) can register only from the subsequent term
 - Registration is possible while the qualifier score remains valid
 
 # FAQs
@@ -234,4 +234,4 @@ The learner must join within the validity period.
 
 ---
 
-Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score, email WhatsApp portal notification, admission letter, marks on portal, 3 terms validity, invalid 4th term onwards, class 12 validity 3 terms or 6 terms whichever earlier, cannot reattempt during validity, first attempt same term registration, qualifier score as Quiz 1, second attempt subsequent term, results on dashboard, validity expires automatically, cannot extend validity, program choice locked after clearing, registration not automatic, delay registration within validity
+Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score, email WhatsApp portal notification, admission letter, marks on portal, 3 terms validity, invalid 4th term onwards, class 12 validity 3 terms or 6 terms whichever earlier, cannot reattempt during validity, first attempt same term registration, qualifier score as Quiz 1, second attempt (reattempt) subsequent term, results on dashboard, validity expires automatically, cannot extend validity, program choice locked after clearing, registration not automatic, delay registration within validity

@@ -1,11 +1,11 @@
 ---
 title: Qualifier Assignments and Cutoff
-description: Qualifier exam passing criteria and assignment requirements — category-wise cutoff marks (General, OBC-NCL, SC/ST/PwD), assignment grading, eligibility for first and second attempts within a term, and category relaxation policies.
+description: Qualifier exam passing criteria and assignment requirements — category-wise cutoff marks (General, OBC-NCL, SC/ST/PwD), assignment grading, eligibility for first and second attempt (reattempt) within a term, and category relaxation policies.
 covers:
   - Qualifier exam passing criteria (per-subject and overall cutoffs)
   - Category-wise cutoff marks (General, OBC-NCL/EWS, SC/ST/PwD)
   - Assignment grading (out of 100, unattempted = 0)
-  - First attempt vs second attempt eligibility
+  - First attempt vs second attempt (reattempt within same term) eligibility
   - Category relaxations (apply only during qualifier, not after)
   - Category documents required and changing category
 sample_queries:
@@ -143,9 +143,9 @@ qualifier assignment, qualifier assignment requirements, qualifier exam eligibil
 ### First Attempt Eligibility
 - If the average of the first 2 weeks' assignment scores is ≥ 40/100 (or as per the cutoff for each category of students) in each of the 4 subjects, the students will be eligible to write the qualifier exam in the first attempt within the term.
 
-### Second Attempt Eligibility
+### second attempt (reattempt) Eligibility
 - For students who do not qualify after the week 2 assignments, the average of the best 2 out of the first 3 weeks' assignment scores will be considered.
-- If this score is ≥ 40/100 (or as per the cutoff for each category of students) in each of the 4 subjects, the students will become eligible to write the qualifier exam in the second attempt within the term.
+- If this score is ≥ 40/100 (or as per the cutoff for each category of students) in each of the 4 subjects, the students will become eligible to write the qualifier exam in the second attempt (reattempt within the term).
 - Reattempts within the term will be given suitably.
 
 # FAQs
@@ -160,7 +160,7 @@ Any assignment that is not attempted is marked as 0.
 Eligibility rules:
 
 * If the average of the first 2 weeks’ assignments is ≥ the required cutoff in each of the 4 subjects, the learner becomes eligible for the first attempt.
-* If not eligible after week 2, the best 2 out of the first 3 weeks’ assignments are considered for eligibility for the second attempt within the term.
+* If not eligible after week 2, the best 2 out of the first 3 weeks’ assignments are considered for eligibility for the second attempt (reattempt within the term).
 * Reattempts within the term may be provided suitably.
 
 Only learners who meet the minimum required average assignment score in all four courses are allowed to appear for the qualifier exam.
