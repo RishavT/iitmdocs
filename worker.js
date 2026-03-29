@@ -6,6 +6,9 @@
 // Set to false to treat each message as a new conversation
 const ENABLE_HISTORY = false;
 
+// Re-ranker narrows these down to the requested numDocs (default 2).
+const RERANK_CANDIDATE_COUNT = 6;
+
 // ============================================================================
 // LOGGING INFRASTRUCTURE
 // Structured logging for Cloud Run / Google Cloud Logging
@@ -597,7 +600,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource, rerankDocuments };
 
 export default {
   async fetch(request, env) {
@@ -907,14 +910,22 @@ async function answer(request, env) {
         console.log('[DEBUG] Detected language:', detectedLanguage);
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
-        // Search Weaviate for relevant documents using clean query (without language tag)
-        const documents = await searchWeaviate(cleanQuery, numDocs, env);
+        // Retrieve extra candidates from Weaviate, then re-rank for better accuracy
+        const candidateDocs = await searchWeaviate(cleanQuery, RERANK_CANDIDATE_COUNT, env);
+        const rerankResult = await rerankDocuments(cleanQuery, candidateDocs, numDocs, env);
+        const documents = rerankResult.documents;
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
           filename: doc.filename,
           relevance: doc.relevance,
+          ...(doc.rerank_score !== undefined && {
+            rerank_score: doc.rerank_score,
+            original_rank: doc.original_rank,
+          }),
         }));
+        logContext.rerank_used = rerankResult.reranked;
+        if (rerankResult.latency_ms) logContext.rerank_latency_ms = rerankResult.latency_ms;
 
         // Stream documents first (single enqueue)
         if (documents?.length) {
@@ -1098,9 +1109,28 @@ async function searchWeaviate(query, limit, env) {
         }
       }
     }`;
+  } else if (embeddingMode === "local") {
+    // Local mode: hybrid search + Weaviate reranker-transformers (cross-encoder)
+    // Reranking happens inside Weaviate — results come back already re-ranked
+    graphqlQuery = `{
+      Get {
+        Document(
+          hybrid: {
+            query: "${sanitizedQuery}"
+            alpha: 0.5
+          }
+          limit: ${limit}
+        ) {
+          filename filepath content file_size
+          _additional {
+            score
+            rerank(property: "content", query: "${sanitizedQuery}") { score }
+          }
+        }
+      }
+    }`;
   } else {
-    // Local/Cloud mode: use hybrid search (Weaviate handles embedding for vector part)
-    // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
+    // Cloud mode: plain hybrid search (reranking happens via Cohere in rerankDocuments())
     graphqlQuery = `{
       Get {
         Document(
@@ -1140,9 +1170,113 @@ async function searchWeaviate(query, limit, env) {
   if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
 
   const documents = data.data?.Get?.Document || [];
-  console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
+  // Log retrieved documents for debugging
+  console.log(`[DEBUG] Weaviate returned ${documents.length} documents (hybrid search, ranked):`);
+  documents.forEach((doc, i) => {
+    console.log(`  #${i + 1}: ${doc.filename} (score=${doc._additional?.score})`);
+  });
+
   // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
-  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
+  return documents.map((doc) => ({
+    ...doc,
+    relevance: doc._additional?.score || 0,
+    // Preserve rerank score from Weaviate reranker-transformers (local mode only)
+    ...(doc._additional?.rerank?.[0]?.score !== undefined && {
+      rerank_score: doc._additional.rerank[0].score,
+    }),
+  }));
+}
+
+/**
+ * Re-ranks documents using a cross-encoder for better relevance.
+ * - Local mode: Weaviate already reranked via reranker-transformers — just slice.
+ * - GCE/Cloud mode: Calls Cohere Rerank API (rerank-v3.5).
+ * - Fallback: If reranking fails or no API key, returns original ranking.
+ *
+ * @param {string} query - The search query
+ * @param {Array} documents - Candidate documents from searchWeaviate()
+ * @param {number} topN - How many documents to return after reranking
+ * @param {Object} env - Environment variables
+ * @returns {Promise<{documents: Array, reranked: boolean, latency_ms?: number}>}
+ */
+async function rerankDocuments(query, documents, topN, env) {
+  if (!documents?.length) {
+    return { documents: [], reranked: false };
+  }
+
+  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+
+  // LOCAL MODE: Weaviate already reranked via reranker-transformers
+  if (embeddingMode === "local") {
+    const hasRerankScores = documents.some(doc => doc.rerank_score !== undefined);
+
+    if (hasRerankScores) {
+      // Sort by rerank score (higher is better) and take top N
+      const sorted = [...documents]
+        .sort((a, b) => (b.rerank_score || -Infinity) - (a.rerank_score || -Infinity))
+        .slice(0, topN);
+
+      console.log(`[RERANK] Weaviate reranker-transformers results (top ${topN}):`);
+      sorted.forEach((doc, i) => {
+        console.log(`  #${i + 1}: ${doc.filename} (rerank_score=${doc.rerank_score}, hybrid_score=${doc.relevance})`);
+      });
+
+      return { documents: sorted, reranked: true };
+    }
+
+    // No rerank scores — fall through to return original ranking
+    console.log('[RERANK] Local mode but no rerank scores found, using hybrid ranking');
+    return { documents: documents.slice(0, topN), reranked: false };
+  }
+
+  // GCE/CLOUD MODE: Use Cohere Rerank API
+  const cohereApiKey = env.COHERE_API_KEY;
+  if (!cohereApiKey) {
+    console.log('[RERANK] No COHERE_API_KEY, skipping reranking');
+    return { documents: documents.slice(0, topN), reranked: false };
+  }
+
+  try {
+    const startTime = Date.now();
+
+    const response = await fetch('https://api.cohere.com/v2/rerank', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cohereApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'rerank-v3.5',
+        query: query,
+        documents: documents.map(doc => doc.content),
+        top_n: topN,
+      }),
+    });
+
+    const latencyMs = Date.now() - startTime;
+
+    if (!response.ok) {
+      console.error(`[RERANK] Cohere API error: ${response.status} ${response.statusText}`);
+      return { documents: documents.slice(0, topN), reranked: false };
+    }
+
+    const result = await response.json();
+    const reranked = result.results.map(r => ({
+      ...documents[r.index],
+      rerank_score: r.relevance_score,
+      original_rank: r.index + 1,
+    }));
+
+    console.log(`[RERANK] Cohere rerank results (top ${topN}, ${latencyMs}ms):`);
+    reranked.forEach((doc, i) => {
+      console.log(`  #${i + 1}: ${doc.filename} (rerank_score=${doc.rerank_score}, was_rank=#${doc.original_rank})`);
+    });
+
+    return { documents: reranked, reranked: true, latency_ms: latencyMs };
+  } catch (err) {
+    console.error('[RERANK] Cohere rerank failed:', err.message);
+    return { documents: documents.slice(0, topN), reranked: false };
+  }
 }
 
 /**
