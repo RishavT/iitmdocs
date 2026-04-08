@@ -189,3 +189,38 @@ def search(req: SearchRequest) -> SearchResponse:
 
     return SearchResponse(results=results)
 
+
+@app.get("/faq/{faq_id}", response_model=SearchResult)
+def get_faq(faq_id: int) -> SearchResult:
+    """Fetch a single FAQ row by id (direct lookup for UI clickthrough)."""
+
+    s = get_settings()
+    sql = """
+    SELECT
+      id,
+      topic_filename,
+      question,
+      answer,
+      1.0 AS cosine_similarity
+    FROM faqs
+    WHERE id = %s;
+    """
+
+    try:
+        with open_pg_connection(s) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, (faq_id,))
+                row = cur.fetchone()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
+
+    if not row:
+        raise HTTPException(status_code=404, detail="FAQ not found")
+
+    return SearchResult(
+        id=int(row[0]),
+        topic_filename=row[1],
+        question=row[2],
+        answer=row[3],
+        cosine_similarity=float(row[4]),
+    )

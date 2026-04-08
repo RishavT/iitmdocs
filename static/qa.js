@@ -153,13 +153,22 @@ function processFAQSuggestions(html) {
       const processedList = list.replace(
         /<li>([\s\S]*?)<\/li>/gi,
         (liMatch, content) => {
-          // Extract FAQ filename if present: [FAQ:filename.md]
-          const faqMatch = content.match(/\[FAQ:([^\]]+)\]/);
-          const faqFile = faqMatch ? faqMatch[1] : '';
-          // Remove the [FAQ:...] tag from display text
-          const displayContent = content.replace(/\s*\[FAQ:[^\]]+\]/, '').trim();
-          const faqAttr = faqFile ? ` data-faq-file="${faqFile}"` : '';
-          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqAttr}>${displayContent}</button>`;
+          // Extract FAQ id if present: [FAQID:123]
+          const faqIdMatch = content.match(/\[FAQID:(\d+)\]/);
+          const faqId = faqIdMatch ? faqIdMatch[1] : '';
+
+          // Backwards compatibility: [FAQ:filename.md]
+          const faqFileMatch = content.match(/\[FAQ:([^\]]+)\]/);
+          const faqFile = faqFileMatch ? faqFileMatch[1] : '';
+
+          // Remove tags from display text
+          let displayContent = content.replace(/\s*\[FAQID:\d+\]/, '').trim();
+          displayContent = displayContent.replace(/\s*\[FAQ:[^\]]+\]/, '').trim();
+
+          const faqIdAttr = faqId ? ` data-faq-id="${faqId}"` : '';
+          const faqFileAttr = faqFile ? ` data-faq-file="${faqFile}"` : '';
+
+          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqIdAttr}${faqFileAttr}>${displayContent}</button>`;
         }
       );
       // Wrap in a container and replace <ol> tags
@@ -455,8 +464,9 @@ async function handleReportSubmit(messageId, question, response) {
  * Prevents race conditions by tracking request order
  * @param {Event} e - Submit event from the form
  * @param {string} faqFile - Optional FAQ filename for direct lookup (skips LLM)
+ * @param {string|number} faqId - Optional FAQ id for direct lookup (skips LLM)
  */
-async function askQuestion(e, faqFile = null) {
+async function askQuestion(e, faqFile = null, faqId = null) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
@@ -485,6 +495,9 @@ async function askQuestion(e, faqFile = null) {
     const requestBody = { q, ndocs: 2, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
     if (faqFile) {
       requestBody.faq_file = faqFile;
+    }
+    if (faqId) {
+      requestBody.faq_id = Number(faqId);
     }
 
     // Collect the full response
@@ -530,13 +543,18 @@ chatArea.addEventListener("click", function (e) {
   if (suggestionBtn) {
     const question = suggestionBtn.dataset.question;
     const faqFile = suggestionBtn.dataset.faqFile;
+    const faqId = suggestionBtn.dataset.faqId;
     if (question) {
       // Set the question in the input
       questionInput.value = question;
       // Update validation (will enable the ask button)
       updateInputValidation();
-      // Submit the question (with faq_file for direct lookup, skipping LLM)
-      askQuestion(null, faqFile);
+      // Submit the question with a direct lookup hint (prefers faq_id over faq_file)
+      if (faqId) {
+        askQuestion(null, null, faqId);
+      } else {
+        askQuestion(null, faqFile);
+      }
       // Smooth scroll to bottom
       chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
     }

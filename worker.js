@@ -727,6 +727,59 @@ async function handleDirectFAQLookup(faqFile, question, sessionId, conversationI
 }
 
 /**
+ * Handles direct FAQ lookup by id without LLM call.
+ * Used when user clicks on a "Did you mean?" suggestion backed by the Postgres FAQ DB.
+ */
+async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env) {
+  const logContext = {
+    session_id: sessionId || "anonymous",
+    conversation_id: conversationId,
+    message_id: messageId || null,
+    username: username || null,
+    question: question,
+    rewritten_query: null,
+    query_source: "faq_direct_id",
+    rejection_reason: null,
+    documents: [{ id: String(faqId), relevance: "1" }],
+    response: null,
+    fact_check_passed: true,
+    contains_raahat: false,
+    history_length: 0,
+    latency_ms: null,
+    error: null,
+    detected_language: "english",
+  };
+
+  try {
+    const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
+      logContext.error = `PG FAQ lookup failed: ${response.status}`;
+      logContext.response = getCannotAnswerMessage("english");
+      logContext.latency_ms = Date.now() - startTime;
+      structuredLog("INFO", "conversation_turn", logContext);
+      return createSSEResponse(logContext.response, { rejected: true });
+    }
+
+    const faq = await response.json();
+    const formattedContent = `### ${faq.question}\n\n${faq.answer}`;
+    logContext.response = formattedContent;
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("INFO", "conversation_turn", logContext);
+
+    return createSSEResponse(formattedContent);
+  } catch (error) {
+    console.error("[DEBUG] PG FAQ id lookup error:", error?.message || String(error));
+    logContext.error = error?.message || String(error);
+    logContext.response = getCannotAnswerMessage("english");
+    logContext.latency_ms = Date.now() - startTime;
+    structuredLog("ERROR", "conversation_turn", logContext);
+    return createSSEResponse(logContext.response, { rejected: true });
+  }
+}
+
+/**
  * Fetches a specific FAQ document from Weaviate by filename.
  */
 async function fetchFAQDocument(filename, env) {
@@ -770,6 +823,49 @@ async function fetchFAQDocument(filename, env) {
   return docs.length > 0 ? docs[0] : null;
 }
 
+function getPgFaqApiUrl(env) {
+  return env.PG_FAQ_API_URL || "http://pg-faq-api:8000";
+}
+
+async function fetchPgFaqs(query, k, env) {
+  try {
+    const url = `${getPgFaqApiUrl(env)}/search`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, k }),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
+      return [];
+    }
+    const data = await response.json();
+    return Array.isArray(data?.results) ? data.results : [];
+  } catch (e) {
+    console.error("[DEBUG] PG FAQ API /search error:", e?.message || String(e));
+    return [];
+  }
+}
+
+function formatDbFaqSuggestions(dbFaqs, language = "english") {
+  if (!dbFaqs || !dbFaqs.length) return "";
+
+  const didYouMean = {
+    english: "**Did you mean:**",
+    hindi: "**क्या आपका मतलब था:**",
+    tamil: "**நீங்கள் கருதுவது:**",
+    hinglish: "**Kya aap ye poochna chahte the:**",
+  };
+
+  const header = didYouMean[language] || didYouMean.english;
+  const suggestions = dbFaqs
+    .slice(0, 5)
+    .map((faq, i) => `${i + 1}. ${faq.question} [FAQID:${faq.id}]`)
+    .join("\n");
+  return `\n\n${header}\n\n${suggestions}`;
+}
+
 /**
  * Formats FAQ content for display.
  * Extracts the matching Q&A pair from the document using the new
@@ -802,7 +898,16 @@ async function answer(request, env) {
   const conversationId = generateUUID();
 
   console.log('\n[DEBUG] answer() called');
-  const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const {
+    q: question,
+    ndocs = 2,
+    history: rawHistory = [],
+    session_id: sessionId,
+    username,
+    message_id: messageId,
+    faq_file: faqFile,
+    faq_id: faqId,
+  } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
@@ -810,7 +915,14 @@ async function answer(request, env) {
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
   console.log('[DEBUG] FAQ file:', faqFile || 'not provided');
+  console.log('[DEBUG] FAQ id:', faqId || 'not provided');
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
+
+  // Direct FAQ lookup by id - skip LLM if faq_id is provided
+  if (faqId) {
+    console.log('[DEBUG] Direct FAQ id lookup for:', faqId);
+    return await handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env);
+  }
 
   // Direct FAQ lookup - skip LLM if faq_file is provided
   if (faqFile) {
@@ -882,9 +994,9 @@ async function answer(request, env) {
           logContext.fact_check_passed = false;
           let rejectMessage = getCannotAnswerMessage("english");
 
-          // Add "Did you mean?" FAQ suggestions
-          const faqSuggestions = await getFAQSuggestions(question, env, "english");
-          rejectMessage += faqSuggestions;
+          // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
+          const dbFaqs = await fetchPgFaqs(question, 5, env);
+          rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
 
@@ -909,11 +1021,17 @@ async function answer(request, env) {
 
         // Search Weaviate for relevant documents using clean query (without language tag)
         const documents = await searchWeaviate(cleanQuery, numDocs, env);
+        const dbFaqs = await fetchPgFaqs(question, 5, env);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
           filename: doc.filename,
           relevance: doc.relevance,
+        }));
+        logContext.db_faqs = (dbFaqs || []).map((faq) => ({
+          id: faq.id,
+          topic_filename: faq.topic_filename,
+          cosine_similarity: faq.cosine_similarity,
         }));
 
         // Stream documents first (single enqueue)
@@ -951,7 +1069,7 @@ async function answer(request, env) {
 
         // Generate AI answer using documents as context (with fact-checking)
         // Pass logContext to collect response data, and detected language for responses
-        const answerResponse = await generateAnswer(question, documents, history, env, logContext, detectedLanguage);
+        const answerResponse = await generateAnswer(question, documents, dbFaqs, history, env, logContext, detectedLanguage);
         // Pipe the SSE response to the client
         await answerResponse.body.pipeTo(
           new WritableStream({
@@ -1272,7 +1390,7 @@ async function getFAQSuggestions(query, env, language = 'english') {
   }
 }
 
-async function generateAnswer(question, documents, history, env, logContext = null, language = 'english') {
+async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
   // STEP 2
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
@@ -1286,7 +1404,11 @@ Instagram: @wellness.society_iitmbs
 RAAHAT provides support for emotional, psychological, interpersonal, and financial distress.
 </document>`;
 
-  const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n") + "\n\n" + RAAHAT_INFO;
+  const docContext = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
+  const faqContext = (dbFaqs || [])
+    .map((faq) => `<faq id="${faq.id}" topic_filename="${faq.topic_filename || ""}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
+    .join("\n\n");
+  const context = [docContext, faqContext, RAAHAT_INFO].filter(Boolean).join("\n\n");
 
   // Don't add negative context notes that might make the LLM more hesitant to answer
   let contextNote = "";
@@ -1458,9 +1580,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       // Get "cannot answer" message in the detected language (no API call needed)
       finalAnswer = getCannotAnswerMessage(language);
 
-      // Add "Did you mean?" FAQ suggestions
-      const faqSuggestions = await getFAQSuggestions(question, env, language);
-      finalAnswer += faqSuggestions;
+      // Show the same FAQs that were already retrieved from the DB for this request.
+      finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
 
       if (logContext) {
         logContext.rejection_reason = "fact_check_failed";
