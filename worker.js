@@ -387,29 +387,27 @@ const COMPILED_SYNONYMS = QUERY_SYNONYMS.map(([patterns, canonical]) => [
 ]);
 
 // Condensed knowledge base summary for query rewriting context.
-// This is a compact version of src/_knowledge_base_summary.md (the detailed reference).
+// This is a compact version of src/_knowledge_base_summary.md (the detailed reference [WE DON'T USE THIS md FILE NOW, we generate the KNOWLEDGE_BASE_SUMMARY directly using LLMs]).
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. About IIT Madras BS Program: program overview, four BS programmes offered, exit points (certificate/diploma/BSc/BS/MTech), online learning mode, BTech vs BS, degree validity and recognition, cannot apply multiple programs
-2. Academic Structure and Exams: term structure (16 weeks), quiz and end-term exam pattern, OPPE programming exam, grading weightage, I grade incomplete, make-up examination, academic calendar
-3. Academic Level Progression and Rules: level progression (Foundation→Diploma→Degree), credit requirements (114 BSc / 142 BS), U grade re-registration, cannot take courses across levels, course access revocation
-4. Course Registration Process: registration steps, select exam cities, same-term vs subsequent-term registration, qualifier score as Quiz 1, maximum 4 courses per term, defer joining, prerequisites
-5. Fees and Payments: fee structure, qualifier application fee, reattempt fee, category-wise fees (SC/ST/PwD/OBC), fee waiver, refund policy, international facilitation fee, online payment only
-6. JEE Based Entry: JEE Advanced direct admission, skip qualifier, CCC of 4, JEE proof upload, which JEE years valid per term, cannot switch entry type, SAT/AP/IB not accepted
-7. Qualifier Exam Overview: 4-week qualifier process, qualifier subjects (DS/MG vs ES/AE courses), week-wise content release, preparation difficulty, self-study sufficient, 10 hours per week
-8. Qualifier Eligibility: who can apply, Class 10 Maths/English (DS/MG), Class 12 Physics/Maths (ES/AE), NIOS pathway, two-stage eligibility (apply vs proceed to foundation), Class 11 students, cannot apply multiple programs
-9. Qualifier Assignments and Cutoff: assignment scores graded out of 100, category-wise cutoff (General 40%/OBC 35%/SC-ST 30%), first 2 weeks average, best 2 of 3 weeks, hall ticket eligibility
-10. Qualifier Results and Validity: score validity (3 terms), Class 12 validity (3 terms or 6 terms whichever earlier), admission letter, qualifier score as Quiz 1 (same term only), program choice locked
-11. Qualifier Reattempts: second attempt same term, reattempt fee, absent or failed reattempt, no repeat assignments, unlimited attempts across terms, fresh application new term
-12. Qualifier Exam Format and Centers: exam cities (select 2), 4 hours duration, MCQ/MSQ/numerical format, in-person India / remote international, hall ticket and ID proof, no negative marking, calculator enabled
-13. Working Professionals and Parallel Study: job alongside degree, flexible schedule, pre-recorded lectures, 10 hours per week, no special approval, in-person exam mandatory, can defer 3 terms
-14. International Students Information: remote proctored exam, Rs 2000 facilitation fee per subject, IST exam timing, residence/ID proof documents, global entry email, exam city availability abroad
-15. Placements: placement portal, minimum diploma level required, salary and companies, internship opportunities, BS Electronic Systems placement, same portal all programs
-16. BS Electronic Systems Program: ES program details, difference from DS, Physics/Maths Class 12 required, ES qualifier subjects (Electronic Systems Thinking and Circuits, C Programming), cannot switch programs
-17. Contact and Support Information: program-specific support emails (DS/ES/AE/MG), phone number, office address, qualifier support email, PwD accommodation, what support helps with
-18. Paradox Event: annual offline event, May-June dates, valid student ID required, qualifier-cleared students eligible
-19. Independent FAQs: laptop/hostel/VPN not provided, campus visit rules, student ID and email issuance, SCT compatibility test, recorded lectures, English language, online-only application and payment`;
+1. About IIT Madras BS Program: program overview, four BS programmes (DS, ES, MG, AE), online learning with in-person exams, programme levels, exit points, certificates and degrees, official website and contact details
+2. JEE-Based Entry: admission pathways, direct entry using JEE Advanced eligibility, validity period, application process, proof upload, benefits like skipping qualifier, CCC of 4, entry type restrictions
+3. Academic Level Progression and Rules: Foundation, Diploma, Degree progression, credit requirements (32, 59, 86, 114, 142, 162, 182), cannot take courses across levels, U grade, re-registration, prerequisites, CGPA impact, exit pathways
+4. Qualifier Assignments and Cutoff: assignment grading rules, minimum assignment scores by category, qualifier exam cutoffs, category-wise relaxations, hall ticket eligibility, first and second attempt eligibility rules
+5. Academic Structure and Exams: quizzes and end-term exams, exam structure, eligibility requirements, attendance through assignments, exam rules, refund policy, non-refundable fees, academic guidelines
+6. Qualifier Eligibility: eligibility for DS, MG, ES, AE programs, Class 10 Maths and English, Class 12 requirements, Physics and Mathematics for ES/AE, Class 11 eligibility, NIOS pathway, no age restriction
+7. BS in Electronic Systems Program: ES program overview, eligibility requirements, qualifier subjects, registration process, differences from Data Science, restriction on switching programs
+8. Qualifier Exam Format and Centers: exam format (MCQ, MSQ, numerical, short answer), 4-hour duration, no negative marking, exam cities, in-person India exams, remote proctored international exams, required documents
+9. Contact and Support Information: support emails for DS, ES, AE, MG, qualifier support, Global Entry contact, phone number, office address, when to contact support, chatbot scope and limitations
+10. Qualifier Exam Overview: 4-week qualifier process, weekly content release, videos, tutorials, graded assignments, sample Week-1 access, self-paced learning structure
+11. Course Registration Process: course selection steps, exam city selection, prerequisite checks, payment process, same-term and subsequent-term registration rules, maximum 4 courses, qualifier score usage
+12. Qualifier Reattempts: attempts within a term, eligibility for reattempt, reattempt process, fee structure by category, assignment carry-forward rules, reattempt in future terms
+13. Fees and Payments: qualifier fees, reattempt fees, per-course fees, total program cost by level, online payment rules, fee waivers, international facilitation fees, refund rules
+14. Qualifier Results and Validity: result communication via portal/email/WhatsApp, admission letter, validity for 3 terms, Class 12 special rule, expiry rules, registration after qualifying
+15. International Students Information: eligibility for foreign students, remote proctored exams, IST timing, additional fees, required documents, payment issues, Global Entry support
+16. Working Professionals and Parallel Study: studying alongside job or degree, flexible schedule, pre-recorded lectures, weekly time commitment, in-person exams, taking breaks, self-study approach
+`
 
 // Words that look like stopwords but must NEVER be removed (domain-specific or ambiguous)
 const STOPWORDS_TO_IGNORE = new Set([
@@ -995,7 +993,7 @@ async function answer(request, env) {
           let rejectMessage = getCannotAnswerMessage("english");
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqs = await fetchPgFaqs(question, 5, env);
+          const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -1021,7 +1019,7 @@ async function answer(request, env) {
 
         // Search Weaviate for relevant documents using clean query (without language tag)
         const documents = await searchWeaviate(cleanQuery, numDocs, env);
-        const dbFaqs = await fetchPgFaqs(question, 5, env);
+        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
