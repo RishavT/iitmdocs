@@ -61,6 +61,12 @@ analysis/
 
 # Temp folder
 temp/
+TEMP-DELETE/
+debug/
+ollama_data/
+tmp/
+weaviate_data/
+docs/
 
 # Any source pdf folders
 src_pdf/
