@@ -595,7 +595,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource };
 
 export default {
   async fetch(request, env) {
@@ -631,98 +631,6 @@ export default {
     });
   },
 };
-
-/**
- * Handles direct FAQ lookup without LLM call.
- * Used when user clicks on a "Did you mean?" suggestion.
- */
-async function handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env) {
-  const logContext = {
-    session_id: sessionId || "anonymous",
-    conversation_id: conversationId,
-    message_id: messageId || null,
-    username: username || null,
-    question: question,
-    rewritten_query: null,
-    query_source: "faq_direct",
-    rejection_reason: null,
-    documents: [{ filename: faqFile, relevance: "1" }],
-    response: null,
-    fact_check_passed: true,
-    contains_raahat: false,
-    history_length: 0,
-    latency_ms: null,
-    error: null,
-    detected_language: "english",
-  };
-
-  try {
-    // Fetch the FAQ document from Weaviate
-    const doc = await fetchFAQDocument(faqFile, env);
-
-    if (!doc) {
-      console.log('[DEBUG] FAQ document not found:', faqFile);
-      logContext.error = "FAQ document not found";
-      logContext.response = getCannotAnswerMessage("english");
-      logContext.latency_ms = Date.now() - startTime;
-      structuredLog("INFO", "conversation_turn", logContext);
-      return createSSEResponse(logContext.response, { rejected: true });
-    }
-
-    // Format the FAQ content nicely
-    const formattedContent = formatFAQContent(doc.content, question);
-    logContext.response = formattedContent;
-    logContext.latency_ms = Date.now() - startTime;
-    structuredLog("INFO", "conversation_turn", logContext);
-
-    // Return the FAQ content directly as SSE (with document reference)
-    const encoder = new TextEncoder();
-    const repoUrl = "https://github.com/RishavT/iitmdocs";
-    const docRef = `data: ${JSON.stringify({
-      role: "assistant",
-      choices: [{
-        delta: {
-          tool_calls: [{
-            function: {
-              name: "document",
-              arguments: JSON.stringify({
-                relevance: "1",
-                name: faqFile.replace(/\.md$/, ""),
-                link: `${repoUrl}/blob/main/src/${faqFile}`,
-              }),
-            },
-          }],
-        },
-      }],
-    })}\n\n`;
-
-    const contentData = `data: ${JSON.stringify({
-      choices: [{ delta: { content: formattedContent } }]
-    })}\n\ndata: [DONE]\n\n`;
-
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(encoder.encode(docRef));
-        controller.enqueue(encoder.encode(contentData));
-        controller.close();
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (error) {
-    console.error('[DEBUG] FAQ lookup error:', error.message);
-    logContext.error = error.message;
-    logContext.response = getCannotAnswerMessage("english");
-    logContext.latency_ms = Date.now() - startTime;
-    structuredLog("ERROR", "conversation_turn", logContext);
-    return createSSEResponse(logContext.response, { rejected: true });
-  }
-}
 
 /**
  * Handles direct FAQ lookup by id without LLM call.
@@ -777,50 +685,6 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   }
 }
 
-/**
- * Fetches a specific FAQ document from Weaviate by filename.
- */
-async function fetchFAQDocument(filename, env) {
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
-  let weaviateUrl;
-  const headers = { "Content-Type": "application/json" };
-
-  if (embeddingMode === "local") {
-    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
-  } else if (embeddingMode === "gce") {
-    weaviateUrl = env.GCE_WEAVIATE_URL;
-  } else {
-    weaviateUrl = env.WEAVIATE_URL;
-    headers.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-  }
-
-  const graphqlQuery = `{
-    Get {
-      Document(
-        where: {
-          path: ["filename"],
-          operator: Equal,
-          valueText: "${filename}"
-        }
-        limit: 1
-      ) {
-        filename
-        content
-      }
-    }
-  }`;
-
-  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query: graphqlQuery }),
-  });
-
-  const data = await response.json();
-  const docs = data?.data?.Get?.Document || [];
-  return docs.length > 0 ? docs[0] : null;
-}
-
 function getPgFaqApiUrl(env) {
   return env.PG_FAQ_API_URL || "http://pg-faq-api:8000";
 }
@@ -869,28 +733,6 @@ function formatDbFaqSuggestions(dbFaqs, language = "english") {
  * Extracts the matching Q&A pair from the document using the new
  * **Question**:/**Answer**: format and returns it formatted.
  */
-function formatFAQContent(content, question) {
-  if (!content) return "FAQ content not available.";
-
-  const faqs = extractFAQs(content);
-  if (!faqs.length) return "FAQ content not available.";
-
-  // Find the best matching FAQ by comparing question text
-  const questionLower = question.toLowerCase();
-  let bestMatch = faqs[0];
-  let bestScore = -1;
-
-  for (const faq of faqs) {
-    const score = scoreFAQMatch(questionLower, faq.question.toLowerCase());
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = faq;
-    }
-  }
-
-  return `### ${bestMatch.question}\n\n${bestMatch.answer}`;
-}
-
 async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
@@ -903,7 +745,6 @@ async function answer(request, env) {
     session_id: sessionId,
     username,
     message_id: messageId,
-    faq_file: faqFile,
     faq_id: faqId,
   } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
@@ -912,7 +753,6 @@ async function answer(request, env) {
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
-  console.log('[DEBUG] FAQ file:', faqFile || 'not provided');
   console.log('[DEBUG] FAQ id:', faqId || 'not provided');
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
@@ -920,12 +760,6 @@ async function answer(request, env) {
   if (faqId) {
     console.log('[DEBUG] Direct FAQ id lookup for:', faqId);
     return await handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env);
-  }
-
-  // Direct FAQ lookup - skip LLM if faq_file is provided
-  if (faqFile) {
-    console.log('[DEBUG] Direct FAQ lookup for:', faqFile);
-    return await handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env);
   }
 
   // Validate ndocs to prevent resource exhaustion
@@ -1259,133 +1093,6 @@ async function searchWeaviate(query, limit, env) {
   console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
   // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
-}
-
-/**
- * Extracts all FAQ Q&A pairs from document content.
- * FAQ format: "**Question**: <text>\n**Answer**: <text>"
- * Only extracts from content before the last <!-- end of faqs --> marker.
- * @param {string} content - The document content
- * @returns {Array<{question: string, answer: string}>} - Array of FAQ pairs
- */
-function extractFAQs(content) {
-  if (!content) return [];
-
-  // Only look at content before the last <!-- end of faqs --> marker
-  const endMarkerIndex = content.lastIndexOf('<!-- end of faqs -->');
-  const searchContent = endMarkerIndex !== -1 ? content.substring(0, endMarkerIndex) : content;
-
-  const faqs = [];
-  // Split on **Question**: to get each FAQ block
-  const parts = searchContent.split(/\*\*Question\*\*:\s*/);
-
-  // First part is content before the first FAQ — skip it
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    // Split on **Answer**: to separate question from answer
-    const answerSplit = part.split(/\*\*Answer\*\*:\s*/);
-    if (answerSplit.length >= 2) {
-      const question = answerSplit[0].trim();
-      // Answer runs until the next **Question**: or end of this part
-      const answer = answerSplit[1].trim();
-      if (question) {
-        faqs.push({ question, answer });
-      }
-    }
-  }
-
-  return faqs;
-}
-
-/**
- * Scores how well a FAQ question matches the user's query using word overlap.
- * @param {string} query - The user's query (lowercased)
- * @param {string} faqQuestion - The FAQ question text (lowercased)
- * @returns {number} - Overlap score (higher = better match)
- */
-function scoreFAQMatch(query, faqQuestion) {
-  const queryWords = new Set(query.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
-  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
-  let overlap = 0;
-  for (const word of queryWords) {
-    if (faqWords.has(word)) overlap++;
-  }
-  return overlap;
-}
-
-/**
- * Searches Weaviate for documents and extracts relevant FAQ suggestions.
- * Uses the existing searchWeaviate() for retrieval, then extracts and ranks
- * individual FAQ Q&A pairs from the returned documents.
- * @param {string} query - The search query
- * @param {number} limit - Maximum number of FAQ suggestions to return
- * @param {Object} env - Environment variables
- * @returns {Promise<Array>} - Array of {filename, question} objects
- */
-async function searchFAQs(query, limit, env) {
-  console.log('[DEBUG] searchFAQs() called, query:', query);
-
-  try {
-    // Reuse the main search function — no need for separate Weaviate logic
-    const documents = await searchWeaviate(query, 3, env);
-    console.log('[DEBUG] FAQ search: searchWeaviate returned', documents.length, 'documents');
-
-    // Extract all FAQ pairs from each document
-    const allFAQs = [];
-    for (const doc of documents) {
-      const faqs = extractFAQs(doc.content);
-      for (const faq of faqs) {
-        allFAQs.push({ filename: doc.filename, question: faq.question });
-      }
-    }
-    console.log('[DEBUG] FAQ search: extracted', allFAQs.length, 'total FAQ pairs');
-
-    if (!allFAQs.length) return [];
-
-    // Rank FAQs by keyword overlap with the user's query
-    const queryLower = query.toLowerCase();
-    const scored = allFAQs.map(faq => ({
-      ...faq,
-      score: scoreFAQMatch(queryLower, faq.question.toLowerCase())
-    }));
-    scored.sort((a, b) => b.score - a.score);
-
-    return scored.slice(0, limit);
-  } catch (error) {
-    console.error('[DEBUG] FAQ search failed:', error.message);
-    return [];
-  }
-}
-
-/**
- * Gets FAQ suggestions formatted for "Did you mean?" display.
- * @param {string} query - The user's original query
- * @param {Object} env - Environment variables
- * @param {string} language - The detected language
- * @returns {Promise<string>} - Formatted suggestions string, or empty string if none
- */
-async function getFAQSuggestions(query, env, language = 'english') {
-  try {
-    const faqs = await searchFAQs(query, 3, env);
-    if (!faqs.length) return '';
-
-    const didYouMean = {
-      english: "**Did you mean:**",
-      hindi: "**क्या आपका मतलब था:**",
-      tamil: "**நீங்கள் கருதுவது:**",
-      hinglish: "**Kya aap ye poochna chahte the:**"
-    };
-
-    const header = didYouMean[language] || didYouMean.english;
-    // Include filename in a parseable format for direct FAQ lookup
-    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question} [FAQ:${faq.filename}]`).join('\n');
-
-    // Need blank line between header and list for proper markdown parsing
-    return `\n\n${header}\n\n${suggestions}`;
-  } catch (error) {
-    console.error('[DEBUG] Failed to get FAQ suggestions:', error.message);
-    return '';
-  }
 }
 
 async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
