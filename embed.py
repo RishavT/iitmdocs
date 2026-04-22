@@ -8,10 +8,10 @@
 # ///
 
 # TODO: The file is now too large. Consider splitting into multiple modules (e.g. `weaviate_utils.py`, `pg_bootstrap.py`) for better organization and maintainability. We can also just move the helper functions to seperate files and keep the main embedding logic in `embed.py` to keep it as the single entry point for the embedding process.
-# TODO: Have an end-to-end understanding of the embedding flow and how the different modes (local, cloud, gce) work together, especially with the optional Cloud SQL FAQ bootstrapping. This will help ensure the code is structured in a way that makes sense and is easy to follow for future maintainers.
+# TODO: Have an end-to-end understanding of the embedding flow and how the different modes (local, gce) work together, especially with the optional Cloud SQL FAQ bootstrapping. This will help ensure the code is structured in a way that makes sense and is easy to follow for future maintainers.
 """
 Script to embed all files from src/ directory into Weaviate.
-Supports local (Ollama), cloud (Cohere/OpenAI), and gce (remote Ollama) modes via EMBEDDING_MODE env var.
+Supports local (Ollama) and gce (remote Ollama) modes via EMBEDDING_MODE env var.
 """
 
 import hashlib
@@ -44,7 +44,7 @@ def clear_collection(weaviate_client):
         logger.info("No existing Document collection to clear.")
 
 
-def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None):
+def create_schema(weaviate_client, embedding_mode="local", embedding_model=None, ollama_endpoint=None):
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
     logger.debug(f"EMBEDDING MODE: {embedding_mode}")
@@ -65,14 +65,11 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
             api_endpoint=ollama_url
         )
         expected_vectorizer = "text2vec-ollama"
-    elif embedding_provider == "cohere":
-        model = embedding_model or "embed-multilingual-v3.0"
-        vectorizer_config = Configure.Vectorizer.text2vec_cohere(model=model)
-        expected_vectorizer = "text2vec-cohere"
     else:
-        model = embedding_model or "text-embedding-3-small"
-        vectorizer_config = Configure.Vectorizer.text2vec_openai(model=model)
-        expected_vectorizer = "text2vec-openai"
+        raise ValueError(
+            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Cloud mode is no longer supported. "
+            "Supported values: local, gce."
+        )
 
     # Check if collection exists and validate vectorizer configuration
     if weaviate_client.collections.exists("Document"):
@@ -84,7 +81,7 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
             if existing_vectorizer != expected_vectorizer:
                 logger.warning(
                     f"Vectorizer mismatch! Existing: {existing_vectorizer}, Expected: {expected_vectorizer}. "
-                    f"Deleting and recreating collection with {embedding_mode}/{embedding_provider} embeddings. "
+                    f"Deleting and recreating collection with {embedding_mode} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
                 weaviate_client.collections.delete("Document")
@@ -420,9 +417,9 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         logger.info(f"[pg-bootstrap] Backfill complete. Newly embedded rows: {backfilled}.")
 
 
-def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None) -> bool:
+def embed_documents(weaviate_client, src_directory: str, embedding_mode="local", embedding_model=None, ollama_endpoint=None) -> bool:
     """Embed all documents from the src directory into Weaviate"""
-    collection = create_schema(weaviate_client, embedding_mode, embedding_provider, embedding_model, ollama_endpoint)
+    collection = create_schema(weaviate_client, embedding_mode, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
 
     # Exclude internal files that shouldn't be in vector search
@@ -497,9 +494,16 @@ def main():
     # Set CLEAR_DB=false to keep existing embeddings and only update changed files
     clear_db = os.getenv("CLEAR_DB", "true").lower() == "true"
 
-    # Determine embedding mode: 'local', 'gce', or 'cloud'
-    embedding_mode = os.getenv("EMBEDDING_MODE", "cloud").lower()
+    # Determine embedding mode: 'local' or 'gce'
+    embedding_mode = os.getenv("EMBEDDING_MODE", "local").lower()
     logger.info(f"Embedding mode: {embedding_mode}")
+
+    supported_modes = {"local", "gce"}
+    if embedding_mode not in supported_modes:
+        raise ValueError(
+            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Cloud mode is no longer supported. "
+            "Supported values: local, gce."
+        )
 
     # Optional: bootstrap managed Postgres FAQ DB during deploy (Cloud SQL).
     # Opt-in so local/GCE runs keep behaving the same unless explicitly enabled.
@@ -523,7 +527,7 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model)
+        embed_documents(client, "src", embedding_mode, embedding_model)
         client.close()
     elif embedding_mode == "gce":
         # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
@@ -557,58 +561,7 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
-        client.close()
-    else:
-        # Cloud mode: connect to Weaviate Cloud with API keys
-        required_vars = ["WEAVIATE_URL", "WEAVIATE_API_KEY"]
-        missing_vars = [var for var in required_vars if not os.getenv(var)]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables for cloud mode: {', '.join(missing_vars)}. "
-                f"Please set them in .env file."
-            )
-
-        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
-        embedding_model = os.getenv("EMBEDDING_MODEL")
-
-        # Validate embedding provider
-        valid_providers = ["openai", "cohere"]
-        if embedding_provider not in valid_providers:
-            raise ValueError(
-                f"Invalid EMBEDDING_PROVIDER: '{embedding_provider}'. "
-                f"Must be one of: {', '.join(valid_providers)}"
-            )
-
-        # Configure headers based on embedding provider
-        headers = {}
-        if embedding_provider == "cohere":
-            cohere_key = os.getenv("COHERE_API_KEY")
-            if not cohere_key:
-                raise ValueError(
-                    "COHERE_API_KEY is required when EMBEDDING_PROVIDER=cohere. "
-                    "Please set it in .env file."
-                )
-            headers["X-Cohere-Api-Key"] = cohere_key
-        else:
-            openai_key = os.getenv("OPENAI_API_KEY")
-            if not openai_key:
-                raise ValueError(
-                    "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. "
-                    "Please set it in .env file."
-                )
-            headers["X-OpenAI-Api-Key"] = openai_key
-
-        logger.info(f"Connecting to Weaviate Cloud with {embedding_provider} embeddings")
-        client = weaviate.connect_to_weaviate_cloud(
-            cluster_url=os.getenv("WEAVIATE_URL"),
-            auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-            headers=headers,
-            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
-        )
-        if clear_db:
-            clear_collection(client)
-        embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
+        embed_documents(client, "src", embedding_mode, embedding_model, ollama_url)
         client.close()
 
 

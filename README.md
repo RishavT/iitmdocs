@@ -199,7 +199,7 @@ Views use `JSON_VALUE()` extraction which returns `NULL` for missing fields. Thi
 
 ## Configuration
 
-Choose one of three deployment modes:
+Choose one of two deployment modes:
 
 ### Option 1: Local Development (Recommended for development)
 
@@ -245,39 +245,11 @@ OPENAI_API_KEY=sk-...
 
 **Cost:** ~$25/month for GCE VM (`e2-medium`), Cloud Run scales to zero.
 
-### Option 3: Cloud (Alternative - not used in production)
-
-Uses Weaviate Cloud for vector storage + OpenAI/Cohere APIs for embeddings.
-
-**Environment Variables:**
-```bash
-EMBEDDING_MODE=cloud
-WEAVIATE_URL=https://your-cluster.weaviate.cloud
-WEAVIATE_API_KEY=your_weaviate_key
-
-# Embedding API (choose one)
-EMBEDDING_PROVIDER=openai  # or cohere
-OPENAI_API_KEY=sk-...      # if using OpenAI for embeddings
-COHERE_API_KEY=...         # if using Cohere for embeddings
-
-# Chat API (required)
-OPENAI_API_KEY=sk-...
-```
-
-**⚠️ CRITICAL: Embedding Provider Compatibility**
-
-The embedding provider used during ingestion MUST match the worker configuration. OpenAI and Cohere embeddings are NOT compatible - queries will fail silently if mismatched.
-
-**To switch providers:**
-1. Update `EMBEDDING_PROVIDER` in `.env` and `.dev.vars`
-2. Re-run embeddings to recreate with new provider
-3. Restart the worker
-
 ### Environment Variable Reference
 
 | Variable | Modes | Default | Description |
 |----------|-------|---------|-------------|
-| `EMBEDDING_MODE` | All | `local` | `local`, `gce`, or `cloud` |
+| `EMBEDDING_MODE` | All | `local` | `local` or `gce` |
 | `OPENAI_API_KEY` | All | - | OpenAI API key for chat |
 | `CHAT_API_ENDPOINT` | All | OpenAI URL | Custom chat endpoint |
 | `CHAT_MODEL` | All | `gpt-4o-mini` | Chat model |
@@ -285,10 +257,6 @@ The embedding provider used during ingestion MUST match the worker configuration
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
-| `WEAVIATE_URL` | Cloud | - | Weaviate Cloud URL |
-| `WEAVIATE_API_KEY` | Cloud | - | Weaviate Cloud API key |
-| `EMBEDDING_PROVIDER` | Cloud | `openai` | `openai` or `cohere` |
-| `COHERE_API_KEY` | Cloud | - | Cohere API key |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
 ## Query Rewriting & Search Optimization
@@ -364,20 +332,6 @@ You can query the documents using Weaviate's GraphQL API or Python client.
 ```python
 import weaviate
 client = weaviate.connect_to_local(host="localhost", port=8080)  # or GCE VM IP
-collection = client.collections.get("Document")
-print(collection.query.hybrid(query="admission process", limit=3))
-client.close()
-```
-
-**Cloud mode:**
-```python
-import os
-import weaviate
-client = weaviate.connect_to_weaviate_cloud(
-    cluster_url=os.getenv("WEAVIATE_URL"),
-    auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-    headers={"X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")},  # or Cohere
-)
 collection = client.collections.get("Document")
 print(collection.query.hybrid(query="admission process", limit=3))
 client.close()
