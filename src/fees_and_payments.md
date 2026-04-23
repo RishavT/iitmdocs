@@ -13,8 +13,6 @@ sample_queries:
   - How much does the full BS program cost?
   - What payment methods are allowed?
   - Is there any fee waiver available?
-  - Can I get a refund if I drop a course?
-  - Are EMI or installment payments allowed?
 ---
 
 # Qualifier Exam Fee Structure
@@ -78,4 +76,4 @@ For candidates who were absent or failed the first attempt and want to re-attemp
 
 ---
 
-Tags: fees structure, qualifier fee, application fee 4000 2000 1000, reattempt fee 2000 1000 500, course fees 6000 per course, total program cost, foundation 48000, diploma fees, bsc bs mtech fees, payment methods online only, no emi no cheque, non refundable fees, refund policy, course drop refund rules, admin charges, fee waiver eligibility, income based waiver, ews certificate, income certificate, international exam fee 2000 per subject, payment issues support
+Tags: fees structure, qualifier fee, application fee 4000 2000 1000, reattempt fee 2000 1000 500, course fees 6000 per course, total program cost, foundation 48000, diploma fees, bsc bs mtech fees, payment methods online only, non refundable fees, refund policy, fee waiver eligibility, international exam fee 2000 per subject, payment issues support

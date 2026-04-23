@@ -7,14 +7,12 @@ covers:
   - Prerequisite requirements for courses
   - Foundation registration in same and later terms
   - Maximum course load per term
-  - Add and drop course policy
 sample_queries:
   - How do I register for courses after clearing the qualifier?
   - How many courses can I take in one term?
   - Can I choose my exam city during registration?
   - What happens if I register in a later term?
   - What documents are required for registration?
-  - Can I drop a course after registering?
 ---
 
 ## Registration Process
@@ -103,4 +101,4 @@ If you have U grade (failed) in a subject like Math 1, you must:
 
 ---
 
-Tags: course registration process, registration steps, select courses, choose exam cities, prerequisite check, course payment online, foundation registration same term, subsequent term registration, qualifier score quiz 1 same term, maximum 4 courses per term, course load planning, class 12 document upload, registration deadline, student portal registration, add drop policy, drop within 4 weeks, no adding after deadline, exam city selection, credit based registration, u grade re registration rules
+Tags: course registration process, registration steps, select courses, choose exam cities, prerequisite check, course payment online, foundation registration same term, subsequent term registration, qualifier score quiz 1 same term, maximum 4 courses per term, course load planning, class 12 document upload, registration deadline, student portal registration, exam city selection, credit based registration, u grade re registration rules
