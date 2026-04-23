@@ -4,6 +4,7 @@
 # dependencies = [
 #     "weaviate-client>=4.4.0",
 #     "python-dotenv>=1.0.0",
+#     "psycopg[binary]>=3.1.0",
 # ]
 # ///
 
@@ -14,10 +15,14 @@ Script to embed all files from src/ directory into Weaviate.
 Supports local (Ollama), cloud (Cohere/OpenAI), and gce (remote Ollama) modes via EMBEDDING_MODE env var.
 """
 
+from __future__ import annotations
+
 import hashlib
 import json
 import logging
 import os
+import socket
+import time
 import urllib.error
 import urllib.request
 import weaviate
@@ -219,6 +224,13 @@ def _split_sql_statements(sql_text: str) -> list[str]:
     return statements
 
 
+def _log_pg_env_summary() -> None:
+    # Log presence only (never values for secrets).
+    keys = ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER", "PGPASSWORD", "PGSSLMODE"]
+    summary = {k: ("set" if os.getenv(k) else "unset") for k in keys}
+    logger.info(f"[pg-bootstrap] PG env summary: {summary}")
+
+
 def _pg_connect_from_env() -> psycopg.Connection:
     """Connect to Postgres using `PG*` environment variables (Cloud SQL)."""
 
@@ -228,31 +240,74 @@ def _pg_connect_from_env() -> psycopg.Connection:
     user = os.getenv("PGUSER")
     password = os.getenv("PGPASSWORD")
     sslmode = os.getenv("PGSSLMODE")
+    connect_timeout = int(os.getenv("PGCONNECT_TIMEOUT", "10"))
 
     missing = [k for k, v in [("PGHOST", host), ("PGDATABASE", db), ("PGUSER", user), ("PGPASSWORD", password)] if not v]
     if missing:
+        _log_pg_env_summary()
         raise ValueError(f"Missing required Postgres env vars: {', '.join(missing)}")
 
-    conninfo = f"host={host} port={port} dbname={db} user={user} password={password}"
-    if sslmode:
-        conninfo += f" sslmode={sslmode}"
-    return psycopg.connect(conninfo)
+    logger.info(f"[pg-bootstrap] Connecting to Postgres: host={host} port={port} db={db} user={user} sslmode={sslmode or '<default>'} timeout={connect_timeout}s")
+
+    # DNS resolution logging is extremely helpful for debugging Cloud SQL private IP / VPC issues.
+    try:
+        addrs = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+        uniq = sorted({a[4][0] for a in addrs})
+        logger.info(f"[pg-bootstrap] PGHOST resolved to: {uniq}")
+    except Exception as exc:
+        logger.warning(f"[pg-bootstrap] Could not resolve PGHOST={host}: {exc}")
+
+    try:
+        conn = psycopg.connect(  # type: ignore[misc]
+            host=host,
+            port=port,
+            dbname=db,
+            user=user,
+            password=password,
+            sslmode=sslmode,
+            connect_timeout=connect_timeout,
+        )
+    except Exception:
+        logger.exception("[pg-bootstrap] Postgres connection failed.")
+        raise
+
+    # Emit a lightweight “we are really connected” banner without leaking anything sensitive.
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_database(), current_user, version();")
+            row = cur.fetchone()
+        logger.info(f"[pg-bootstrap] Connected. current_database={row[0]!r} current_user={row[1]!r}")
+    except Exception as exc:
+        logger.warning(f"[pg-bootstrap] Connected but failed to run smoke query: {exc}")
+
+    return conn
 
 
 def _pg_apply_sql_file(conn: psycopg.Connection, path: str) -> None:
     """Execute a SQL file by splitting it into statements safely."""
 
+    t0 = time.monotonic()
     with open(path, "r", encoding="utf-8") as f:
         sql_text = f.read()
 
     statements = _split_sql_statements(sql_text)
     if not statements:
+        logger.info(f"[pg-bootstrap] SQL file is empty, skipping: {path}")
         return
 
+    logger.info(f"[pg-bootstrap] Applying SQL: {path} (statements={len(statements)})")
     with conn.cursor() as cur:
-        for stmt in statements:
-            cur.execute(stmt)
+        for idx, stmt in enumerate(statements, 1):
+            try:
+                cur.execute(stmt)
+            except Exception:
+                snippet = stmt.strip().replace("\n", " ")
+                if len(snippet) > 220:
+                    snippet = snippet[:220] + "…"
+                logger.exception(f"[pg-bootstrap] SQL failed in {path} at statement {idx}/{len(statements)}: {snippet}")
+                raise
     conn.commit()
+    logger.info(f"[pg-bootstrap] Applied SQL OK: {path} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
 
 
 def _load_seed_faqs(path: str) -> list[dict]:
@@ -339,6 +394,7 @@ def _pg_backfill_faq_embeddings(
     batch_size: int,
 ) -> int:
     updated = 0
+    batch_num = 0
     while True:
         with conn.cursor() as cur:
             cur.execute(
@@ -350,6 +406,7 @@ def _pg_backfill_faq_embeddings(
         if not rows:
             break
 
+        batch_num += 1
         updates: list[tuple[str, int]] = []
         for faq_id, question in rows:
             emb = _request_ollama_embedding(question, ollama_url, model)
@@ -364,7 +421,7 @@ def _pg_backfill_faq_embeddings(
         conn.commit()
 
         updated += len(updates)
-        logger.info(f"[pg-bootstrap] Backfilled {len(updates)} embeddings (total updated: {updated})")
+        logger.info(f"[pg-bootstrap] Backfill batch {batch_num}: embedded {len(updates)} rows (total updated: {updated})")
     return updated
 
 
@@ -399,16 +456,65 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
     logger.info(f"[pg-bootstrap] SQL dir: {schema_dir}")
     logger.info(f"[pg-bootstrap] Embedding: model={model}, dim={dimension}, batch={batch_size}, ollama_url={ollama_url}")
 
-    rows = _load_seed_faqs(seed_path)
+    t_all = time.monotonic()
 
+    # Step 1: load seed.
+    try:
+        t0 = time.monotonic()
+        rows = _load_seed_faqs(seed_path)
+        logger.info(f"[pg-bootstrap] Loaded seed FAQs: rows={len(rows)} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
+    except Exception:
+        logger.exception(f"[pg-bootstrap] Failed to load seed file: {seed_path}")
+        raise
+
+    # Step 2: quick Ollama health check before touching the DB.
+    try:
+        t0 = time.monotonic()
+        req = urllib.request.Request(f"{ollama_url.rstrip('/')}/api/tags", method="GET")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            _ = resp.read(256)
+        logger.info(f"[pg-bootstrap] Ollama reachable at {ollama_url} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
+    except Exception:
+        logger.exception(f"[pg-bootstrap] Ollama is not reachable at {ollama_url}. Aborting PG bootstrap.")
+        raise
+
+    # Step 3: connect + migrate + upsert + backfill.
     with _pg_connect_from_env() as conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM pg_extension WHERE extname='vector';")
+                has_vector = bool(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] Precheck: pgvector extension present={has_vector}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Precheck failed (extension query): {exc}")
+
         # Existing schema SQL in the repo (idempotent; safe to re-run).
         _pg_apply_sql_file(conn, os.path.join(schema_dir, "001_faq_schema.sql"))
         _pg_apply_sql_file(conn, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
         _pg_apply_sql_file(conn, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
 
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs;")
+                before_total = int(cur.fetchone()[0])
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                before_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] DB state before upsert/backfill: faqs_total={before_total} faqs_embedding_null={before_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read pre-upsert counts: {exc}")
+
         upserted = _pg_upsert_seed_faqs(conn, rows)
-        logger.info(f"[pg-bootstrap] Upserted {upserted} FAQs from seed.")
+        logger.info(f"[pg-bootstrap] Seed upsert executed for {upserted} input rows (uniqueness=question).")
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs;")
+                after_total = int(cur.fetchone()[0])
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                after_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] DB state after upsert (before backfill): faqs_total={after_total} faqs_embedding_null={after_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read post-upsert counts: {exc}")
 
         backfilled = _pg_backfill_faq_embeddings(
             conn,
@@ -418,6 +524,16 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
             batch_size=batch_size,
         )
         logger.info(f"[pg-bootstrap] Backfill complete. Newly embedded rows: {backfilled}.")
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                final_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] Final DB state: faqs_embedding_null={final_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read final counts: {exc}")
+
+    logger.info(f"[pg-bootstrap] Cloud SQL FAQ bootstrap finished OK (elapsed_ms={int((time.monotonic() - t_all) * 1000)})")
 
 
 def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None) -> bool:
