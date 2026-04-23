@@ -116,6 +116,7 @@ EXCLUDED_FILES = [
 
 
 def _is_true(value: str | None) -> bool:
+    """Return True if the string represents a truthy value (env-var friendly)."""
     return (value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
@@ -299,6 +300,12 @@ def _pg_upsert_seed_faqs(conn: psycopg.Connection, rows: list[dict]) -> int:
 
 
 def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[float]:
+    """
+    Request a single embedding vector from Ollama for the given text.
+
+    Calls `POST {ollama_url}/api/embeddings` with JSON payload:
+    `{"model": <model>, "prompt": <text>}` and returns the `embedding` list.
+    """
     payload = json.dumps({"model": model, "prompt": text}).encode("utf-8")
     req = urllib.request.Request(
         f"{ollama_url.rstrip('/')}/api/embeddings",
@@ -323,6 +330,7 @@ def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[fl
 
 
 def _vector_literal(values: list[float]) -> str:
+    """Convert a float list to a compact pgvector literal string (e.g. `[0.1,0.2,...]`)."""
     # Keep payload small while preserving enough precision for cosine similarity.
     return "[" + ",".join(format(v, ".12g") for v in values) + "]"
 
@@ -335,8 +343,37 @@ def _pg_backfill_faq_embeddings(
     dimension: int,
     batch_size: int,
 ) -> int:
+    """
+    Backfill missing FAQ embeddings in Postgres in small batches.
+
+    This function looks for rows in the `faqs` table where `embedding` is NULL,
+    requests an embedding vector for each row's `question` from Ollama, and then
+    writes the vector back to Postgres (as a `vector` column, via pgvector).
+
+    It repeats until no rows remain with NULL embeddings.
+
+    Parameters
+    ----------
+    conn:
+        An open psycopg connection to the target Postgres database.
+    ollama_url:
+        Base URL of the Ollama server (e.g. `http://ollama:11434`).
+    model:
+        Ollama embedding model name (e.g. `bge-m3`).
+    dimension:
+        Expected embedding vector length. If Ollama returns a different length,
+        the function fails fast to avoid mixing incompatible vector sizes.
+    batch_size:
+        Maximum number of FAQ rows to embed per iteration.
+
+    Returns
+    -------
+    int
+        Total number of FAQ rows updated with embeddings.
+    """
     updated = 0
     while True:
+        # Fetch a deterministic batch of FAQ questions that still need embeddings.
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, question FROM faqs WHERE embedding IS NULL ORDER BY id LIMIT %s;",
@@ -347,17 +384,24 @@ def _pg_backfill_faq_embeddings(
         if not rows:
             break
 
+        # Build a list of `(vector_literal, id)` updates, then write them in a
+        # single executemany call for efficiency.
         updates: list[tuple[str, int]] = []
         for faq_id, question in rows:
+            # Ask Ollama for the embedding for this FAQ's question text.
             emb = _request_ollama_embedding(question, ollama_url, model)
+            # pgvector columns require consistent dimensions across all rows.
             if len(emb) != dimension:
                 raise RuntimeError(
                     f"Embedding dimension mismatch for id={faq_id}: expected {dimension}, got {len(emb)}"
                 )
+            # Convert the Python list into a compact pgvector literal string.
             updates.append((_vector_literal(emb), int(faq_id)))
 
         with conn.cursor() as cur:
+            # `::vector` casts the literal into the pgvector column type.
             cur.executemany("UPDATE faqs SET embedding = %s::vector WHERE id = %s;", updates)
+        # Commit each batch so progress is saved even if a later batch fails.
         conn.commit()
 
         updated += len(updates)
