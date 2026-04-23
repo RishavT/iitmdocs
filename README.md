@@ -203,7 +203,7 @@ Choose one of two deployment modes:
 
 ### Option 1: Local Development (Recommended for development)
 
-Uses Docker Compose with local Weaviate + Ollama containers.
+Uses Docker Compose with local Weaviate + Ollama, plus a local Postgres-backed FAQ search service.
 
 **Environment Variables (`.env` and `.dev.vars`):**
 ```bash
@@ -219,11 +219,18 @@ OPENAI_API_KEY=sk-...
 ```
 
 **Setup:**
-1. Start Weaviate + Ollama: `docker compose --profile local up -d`
+1. Start the local stack: `docker compose --profile local up -d`
 2. Wait for Ollama to pull the model (~2 min first time)
-3. Run embeddings: `docker compose --profile local --profile embed run --rm embed`
-4. Start worker: `docker compose up worker`
-5. Test at `http://localhost:8787`
+3. Run embeddings: `docker compose --profile embed run --rm embed`
+4. Test at `http://localhost:8787`
+
+**Smoke tests (simple checks):**
+- Worker reachable (expect `200`):
+  - `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8787/`
+- Weaviate has documents (expect a non-zero count):
+  - `curl -sS -X POST http://localhost:8080/v1/graphql -H 'Content-Type: application/json' -d '{"query":"{ Aggregate { Document { meta { count } } } }"}'`
+- End-to-end answer stream works:
+  - `curl -N http://localhost:8787/answer -H 'Content-Type: application/json' -d '{"q":"How do I register for courses?","ndocs":3}'`
 
 ### Option 2: GCE (Production - currently used)
 
@@ -257,6 +264,7 @@ OPENAI_API_KEY=sk-...
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
+| `PG_FAQ_API_URL` | All | `http://pg-faq-api:8000` | PG FAQ API base URL (FAQ suggestions + direct `faq_id` lookups) |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
 ## Query Rewriting & Search Optimization
@@ -272,7 +280,7 @@ Before searching, user queries are expanded using an LLM to add relevant keyword
 - **Hinglish support**: "fee kitna hai" → adds "cost structure payment"
 - **Short queries**: "OPPE" → adds "programming exam proctored online"
 
-The query rewriter uses a knowledge base summary (`src/_knowledge_base_summary.md`) as context. This file lists all topics, keywords, and 100 example queries.
+The query rewriter uses the `KNOWLEDGE_BASE_SUMMARY` constant defined in `worker.js` as context. This constant lists all topics and their main keywords.
 
 ### Regenerating the Knowledge Base Summary
 
