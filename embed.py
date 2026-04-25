@@ -77,10 +77,13 @@ def _retry_with_backoff(
     We keep it generic so it can wrap any Weaviate client call (exists/get/delete).
     """
 
+    # Keep this fast by default. The longer "wait for leader" loop should handle
+    # Weaviate warmup; this is only for brief transient blips around a single call.
+    #
     # Allow tuning via env vars in Cloud Run without rebuilding the image.
-    max_attempts = int(os.getenv("WEAVIATE_RETRY_MAX_ATTEMPTS", str(max_attempts or 25)))
+    max_attempts = int(os.getenv("WEAVIATE_RETRY_MAX_ATTEMPTS", str(max_attempts or 6)))
     base_sleep_s = float(os.getenv("WEAVIATE_RETRY_BASE_SLEEP_S", str(base_sleep_s or 2.0)))
-    max_sleep_s = float(os.getenv("WEAVIATE_RETRY_MAX_SLEEP_S", str(max_sleep_s or 30.0)))
+    max_sleep_s = float(os.getenv("WEAVIATE_RETRY_MAX_SLEEP_S", str(max_sleep_s or 5.0)))
 
     t0 = time.monotonic()
     attempt = 0
@@ -93,9 +96,9 @@ def _retry_with_backoff(
                 logger.exception(f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}); giving up.")
                 raise
 
-            # Exponential backoff with small jitter to avoid synchronized retries.
-            sleep_s = min(max_sleep_s, base_sleep_s * (2 ** (attempt - 1)))
-            sleep_s = sleep_s * random.uniform(0.8, 1.2)
+            # Linear-ish backoff with small jitter. Avoid long exponential waits in deploy jobs.
+            sleep_s = min(max_sleep_s, base_sleep_s * attempt)
+            sleep_s = sleep_s * random.uniform(0.85, 1.15)
             elapsed_s = time.monotonic() - t0
             logger.warning(
                 f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}): {exc}. "
@@ -106,26 +109,38 @@ def _retry_with_backoff(
 
 def _wait_for_weaviate_ready(weaviate_client) -> None:
     """
-    Wait until Weaviate reports "ready" (or at least stops throwing transient startup errors).
+    Wait for Weaviate Raft leader to be elected before schema operations.
 
-    This reduces failures like:
-    - raft "leader not found" (HTTP 500) during cluster warm-up
+    This mirrors `older_embed.py` logic: call a schema-level endpoint
+    (`collections.list_all()`) and retry if the error indicates leader election
+    hasn't completed yet (e.g. "leader not found").
+
+    Important: this wait is bounded and predictable, so Cloud Run jobs don't
+    hang for a very long time.
     """
 
-    is_ready_fn = getattr(weaviate_client, "is_ready", None)
-    if not callable(is_ready_fn):
-        # Older clients may not expose a ready helper. In that case our per-call
-        # retry wrappers still provide resilience.
-        logger.info("[weaviate-retry] Client has no is_ready(); skipping explicit readiness wait.")
-        return
+    max_retries = int(os.getenv("WEAVIATE_READY_MAX_RETRIES", "30"))
+    delay_s = float(os.getenv("WEAVIATE_READY_DELAY_S", "3"))
 
-    def _check_ready():
-        ready = bool(is_ready_fn())
-        if not ready:
-            raise RuntimeError("Weaviate not ready yet")
-        return True
+    for attempt in range(1, max_retries + 1):
+        try:
+            weaviate_client.collections.list_all()
+            logger.info(f"[weaviate-ready] Weaviate is fully ready (attempt {attempt}/{max_retries})")
+            return
+        except Exception as exc:
+            if _is_transient_weaviate_error(exc):
+                logger.info(
+                    f"[weaviate-ready] Weaviate not ready yet (attempt {attempt}/{max_retries}): {exc}. "
+                    f"Retrying in {delay_s:.1f}s..."
+                )
+                time.sleep(delay_s)
+                continue
+            raise
 
-    _retry_with_backoff("client.is_ready()", _check_ready)
+    raise RuntimeError(
+        f"Weaviate not ready after {max_retries} retries (~{max_retries * delay_s:.0f}s). "
+        f"Last error was transient; re-run the embed job or check Weaviate cluster health."
+    )
 
 
 def clear_collection(weaviate_client):
