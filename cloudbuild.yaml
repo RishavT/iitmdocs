@@ -316,7 +316,7 @@ steps:
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
-          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE}"
 
 # Store images in Google Container Registry
 # Note: Only worker images are listed here since embed images are conditionally built
