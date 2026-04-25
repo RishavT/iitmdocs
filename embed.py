@@ -38,12 +38,73 @@ import psycopg
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+def _is_transient_weaviate_error(exc: Exception) -> bool:
+    """
+    Best-effort classifier for Weaviate transient startup/cluster issues.
+
+    In Weaviate Cloud (and sometimes self-hosted), the embed job can hit a brief
+    window where the cluster reports `leader not found` (raft leader election not
+    finished) and returns HTTP 500. These should be retried with backoff.
+    """
+
+    msg = str(exc).lower()
+    transient_markers = [
+        "leader not found",
+        "unexpected status code: 500",
+        "timed out",
+        "timeout",
+        "temporarily unavailable",
+        "connection reset",
+        "connection refused",
+        "service unavailable",
+    ]
+    return any(m in msg for m in transient_markers)
+
+
+def _retry_with_backoff(
+    label: str,
+    fn,
+    *,
+    max_attempts: int = 12,
+    base_sleep_s: float = 2.0,
+    max_sleep_s: float = 20.0,
+):
+    """
+    Retry a callable with exponential backoff for transient Weaviate errors.
+
+    We keep it generic so it can wrap any Weaviate client call (exists/get/delete).
+    """
+
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return fn()
+        except Exception as exc:
+            if attempt >= max_attempts or not _is_transient_weaviate_error(exc):
+                logger.exception(f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}); giving up.")
+                raise
+
+            sleep_s = min(max_sleep_s, base_sleep_s * (2 ** (attempt - 1)))
+            logger.warning(
+                f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}): {exc}. "
+                f"Retrying in {sleep_s:.1f}s..."
+            )
+            time.sleep(sleep_s)
+
 
 def clear_collection(weaviate_client):
     """Delete the Document collection if it exists"""
-    if weaviate_client.collections.exists("Document"):
+    exists = _retry_with_backoff(
+        "collections.exists(Document)",
+        lambda: weaviate_client.collections.exists("Document"),
+    )
+    if exists:
         logger.warning("CLEAR_DB=true: Deleting existing Document collection...")
-        weaviate_client.collections.delete("Document")
+        _retry_with_backoff(
+            "collections.delete(Document)",
+            lambda: weaviate_client.collections.delete("Document"),
+        )
         logger.info("Document collection deleted. Will recreate with fresh embeddings.")
     else:
         logger.info("No existing Document collection to clear.")
@@ -80,10 +141,18 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
         expected_vectorizer = "text2vec-openai"
 
     # Check if collection exists and validate vectorizer configuration
-    if weaviate_client.collections.exists("Document"):
+    exists = _retry_with_backoff(
+        "collections.exists(Document)",
+        lambda: weaviate_client.collections.exists("Document"),
+    )
+    if exists:
         try:
-            collection = weaviate_client.collections.get("Document")
-            existing_vectorizer = collection.config.get().vectorizer.value if hasattr(collection.config.get().vectorizer, 'value') else str(collection.config.get().vectorizer)
+            collection = _retry_with_backoff(
+                "collections.get(Document)",
+                lambda: weaviate_client.collections.get("Document"),
+            )
+            cfg = _retry_with_backoff("collection.config.get(Document)", lambda: collection.config.get())
+            existing_vectorizer = cfg.vectorizer.value if hasattr(cfg.vectorizer, "value") else str(cfg.vectorizer)
 
             # Only delete if vectorizer has changed
             if existing_vectorizer != expected_vectorizer:
@@ -92,13 +161,19 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
                     f"Deleting and recreating collection with {embedding_mode}/{embedding_provider} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
-                weaviate_client.collections.delete("Document")
+                _retry_with_backoff(
+                    "collections.delete(Document)",
+                    lambda: weaviate_client.collections.delete("Document"),
+                )
             else:
                 logger.info(f"Collection exists with correct vectorizer ({expected_vectorizer}). Reusing existing collection.")
                 return collection
         except Exception as e:
             logger.warning(f"Could not validate existing collection config: {e}. Recreating collection.")
-            weaviate_client.collections.delete("Document")
+            _retry_with_backoff(
+                "collections.delete(Document) (recreate path)",
+                lambda: weaviate_client.collections.delete("Document"),
+            )
 
     properties = [
         Property(name="filename", data_type=DataType.TEXT, description="Name of the source file"),
@@ -110,10 +185,13 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
     ]
 
     logger.info(f"Creating new Document collection with {embedding_mode} mode, {expected_vectorizer} (model: {model})")
-    return weaviate_client.collections.create(
-        name="Document",
-        vectorizer_config=vectorizer_config,
-        properties=properties,
+    return _retry_with_backoff(
+        "collections.create(Document)",
+        lambda: weaviate_client.collections.create(
+            name="Document",
+            vectorizer_config=vectorizer_config,
+            properties=properties,
+        ),
     )
 
 
@@ -715,7 +793,7 @@ def main():
                 )
             headers["X-OpenAI-Api-Key"] = openai_key
 
-        logger.info(f"Connecting to Weaviate Cloud with {embedding_provider} embeddings")
+        logger.info(f"Connecting to Weaviate Cloud at {os.getenv('WEAVIATE_URL')} with {embedding_provider} embeddings")
         client = weaviate.connect_to_weaviate_cloud(
             cluster_url=os.getenv("WEAVIATE_URL"),
             auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
