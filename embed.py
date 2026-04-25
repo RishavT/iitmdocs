@@ -21,6 +21,7 @@ import hashlib
 import json
 import logging
 import os
+import random
 import socket
 import time
 import urllib.error
@@ -51,6 +52,7 @@ def _is_transient_weaviate_error(exc: Exception) -> bool:
     transient_markers = [
         "leader not found",
         "unexpected status code: 500",
+        "not ready",
         "timed out",
         "timeout",
         "temporarily unavailable",
@@ -65,9 +67,9 @@ def _retry_with_backoff(
     label: str,
     fn,
     *,
-    max_attempts: int = 12,
-    base_sleep_s: float = 2.0,
-    max_sleep_s: float = 20.0,
+    max_attempts: int | None = None,
+    base_sleep_s: float | None = None,
+    max_sleep_s: float | None = None,
 ):
     """
     Retry a callable with exponential backoff for transient Weaviate errors.
@@ -75,6 +77,12 @@ def _retry_with_backoff(
     We keep it generic so it can wrap any Weaviate client call (exists/get/delete).
     """
 
+    # Allow tuning via env vars in Cloud Run without rebuilding the image.
+    max_attempts = int(os.getenv("WEAVIATE_RETRY_MAX_ATTEMPTS", str(max_attempts or 25)))
+    base_sleep_s = float(os.getenv("WEAVIATE_RETRY_BASE_SLEEP_S", str(base_sleep_s or 2.0)))
+    max_sleep_s = float(os.getenv("WEAVIATE_RETRY_MAX_SLEEP_S", str(max_sleep_s or 30.0)))
+
+    t0 = time.monotonic()
     attempt = 0
     while True:
         attempt += 1
@@ -85,16 +93,44 @@ def _retry_with_backoff(
                 logger.exception(f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}); giving up.")
                 raise
 
+            # Exponential backoff with small jitter to avoid synchronized retries.
             sleep_s = min(max_sleep_s, base_sleep_s * (2 ** (attempt - 1)))
+            sleep_s = sleep_s * random.uniform(0.8, 1.2)
+            elapsed_s = time.monotonic() - t0
             logger.warning(
                 f"[weaviate-retry] {label} failed (attempt {attempt}/{max_attempts}): {exc}. "
-                f"Retrying in {sleep_s:.1f}s..."
+                f"Retrying in {sleep_s:.1f}s (elapsed={elapsed_s:.1f}s)..."
             )
             time.sleep(sleep_s)
 
 
+def _wait_for_weaviate_ready(weaviate_client) -> None:
+    """
+    Wait until Weaviate reports "ready" (or at least stops throwing transient startup errors).
+
+    This reduces failures like:
+    - raft "leader not found" (HTTP 500) during cluster warm-up
+    """
+
+    is_ready_fn = getattr(weaviate_client, "is_ready", None)
+    if not callable(is_ready_fn):
+        # Older clients may not expose a ready helper. In that case our per-call
+        # retry wrappers still provide resilience.
+        logger.info("[weaviate-retry] Client has no is_ready(); skipping explicit readiness wait.")
+        return
+
+    def _check_ready():
+        ready = bool(is_ready_fn())
+        if not ready:
+            raise RuntimeError("Weaviate not ready yet")
+        return True
+
+    _retry_with_backoff("client.is_ready()", _check_ready)
+
+
 def clear_collection(weaviate_client):
     """Delete the Document collection if it exists"""
+    _wait_for_weaviate_ready(weaviate_client)
     exists = _retry_with_backoff(
         "collections.exists(Document)",
         lambda: weaviate_client.collections.exists("Document"),
@@ -114,6 +150,7 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
     logger.debug(f"EMBEDDING MODE: {embedding_mode}")
+    _wait_for_weaviate_ready(weaviate_client)
     if embedding_mode == "local":
         model = embedding_model or "bge-m3"
         logger.warning(f"EMBEDDING_MODEL: {embedding_model}")
