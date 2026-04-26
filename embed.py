@@ -125,12 +125,14 @@ def _wait_for_weaviate_ready(weaviate_client) -> None:
     max_retries = int(os.getenv("WEAVIATE_READY_MAX_RETRIES", "30"))
     delay_s = float(os.getenv("WEAVIATE_READY_DELAY_S", "3"))
 
+    last_exc: Exception | None = None
     for attempt in range(1, max_retries + 1):
         try:
             weaviate_client.collections.list_all()
             logger.info(f"[weaviate-ready] Weaviate is fully ready (attempt {attempt}/{max_retries})")
             return
         except Exception as exc:
+            last_exc = exc
             if _is_transient_weaviate_error(exc):
                 logger.info(
                     f"[weaviate-ready] Weaviate not ready yet (attempt {attempt}/{max_retries}): {type(exc).__name__}: {exc}. "
@@ -140,9 +142,10 @@ def _wait_for_weaviate_ready(weaviate_client) -> None:
                 continue
             raise
 
+    last_detail = f"{type(last_exc).__name__}: {last_exc}" if last_exc is not None else "no error captured"
     raise RuntimeError(
         f"Weaviate not ready after {max_retries} retries (~{max_retries * delay_s:.0f}s). "
-        f"Last error was transient; re-run the embed job or check Weaviate cluster health."
+        f"Last transient error: {last_detail}"
     )
 
 
@@ -750,115 +753,137 @@ def main():
     embedding_mode = os.getenv("EMBEDDING_MODE", "cloud").lower()
     logger.info(f"Embedding mode: {embedding_mode}")
 
-    # Optional: bootstrap managed Postgres FAQ DB during deploy (Cloud SQL).
-    # Opt-in so local/GCE runs keep behaving the same unless explicitly enabled.
-    maybe_bootstrap_cloudsql_faq_db(embedding_mode)
-
     if clear_db:
         logger.info("Will clear existing embeddings before re-embedding (set CLEAR_DB=false to disable)")
     else:
         logger.info("CLEAR_DB=false: Keeping existing embeddings, only updating changed files")
 
-    if embedding_mode == "local":
-        # Local mode: connect to local Weaviate (no auth needed)
-        weaviate_url = os.getenv("LOCAL_WEAVIATE_URL", "http://weaviate:8080")
-        embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
-
-        logger.info(f"Connecting to local Weaviate at {weaviate_url}")
-        client = weaviate.connect_to_local(
-            host=weaviate_url.replace("http://", "").split(":")[0],
-            port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080,
-            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
+    soft_fail_weaviate = _is_true(os.getenv("WEAVIATE_SOFT_FAIL"))
+    if soft_fail_weaviate:
+        logger.warning(
+            "WEAVIATE_SOFT_FAIL=true: transient Weaviate failures will be logged and ignored "
+            "(PG bootstrap stays successful; docs re-embed may be skipped)."
         )
-        if clear_db:
-            clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model)
-        client.close()
-    elif embedding_mode == "gce":
-        # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
-        weaviate_url = os.getenv("GCE_WEAVIATE_URL")
-        ollama_url = os.getenv("GCE_OLLAMA_URL")
-        embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
 
-        if not weaviate_url:
-            raise ValueError("GCE_WEAVIATE_URL is required for GCE mode")
-        if not ollama_url:
-            raise ValueError("GCE_OLLAMA_URL is required for GCE mode")
+    try:
+        if embedding_mode == "local":
+            # Local mode: connect to local Weaviate (no auth needed)
+            weaviate_url = os.getenv("LOCAL_WEAVIATE_URL", "http://weaviate:8080")
+            embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
 
-        logger.info(f"Connecting to GCE Weaviate at {weaviate_url}")
-        logger.info(f"Using GCE Ollama at {ollama_url}")
-
-        # Parse the URL to get host and port
-        url_parts = weaviate_url.replace("http://", "").replace("https://", "")
-        host = url_parts.split(":")[0]
-        port = int(url_parts.split(":")[1]) if ":" in url_parts else 8080
-
-        # Use connect_to_custom with skip_init_checks to use REST instead of gRPC
-        client = weaviate.connect_to_custom(
-            http_host=host,
-            http_port=port,
-            http_secure=False,
-            grpc_host=host,
-            grpc_port=50051,
-            grpc_secure=False,
-            skip_init_checks=True,
-            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
-        )
-        if clear_db:
-            clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
-        client.close()
-    else:
-        # Cloud mode: connect to Weaviate Cloud with API keys
-        required_vars = ["WEAVIATE_URL", "WEAVIATE_API_KEY"]
-        missing_vars = [var for var in required_vars if not os.getenv(var)]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables for cloud mode: {', '.join(missing_vars)}. "
-                f"Please set them in .env file."
+            logger.info(f"Connecting to local Weaviate at {weaviate_url}")
+            client = weaviate.connect_to_local(
+                host=weaviate_url.replace("http://", "").split(":")[0],
+                port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080,
+                additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
             )
+            try:
+                if clear_db:
+                    clear_collection(client)
+                embed_documents(client, "src", embedding_mode, None, embedding_model)
+            finally:
+                client.close()
+        elif embedding_mode == "gce":
+            # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
+            weaviate_url = os.getenv("GCE_WEAVIATE_URL")
+            ollama_url = os.getenv("GCE_OLLAMA_URL")
+            embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
 
-        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
-        embedding_model = os.getenv("EMBEDDING_MODEL")
+            if not weaviate_url:
+                raise ValueError("GCE_WEAVIATE_URL is required for GCE mode")
+            if not ollama_url:
+                raise ValueError("GCE_OLLAMA_URL is required for GCE mode")
 
-        # Validate embedding provider
-        valid_providers = ["openai", "cohere"]
-        if embedding_provider not in valid_providers:
-            raise ValueError(
-                f"Invalid EMBEDDING_PROVIDER: '{embedding_provider}'. "
-                f"Must be one of: {', '.join(valid_providers)}"
+            logger.info(f"Connecting to GCE Weaviate at {weaviate_url}")
+            logger.info(f"Using GCE Ollama at {ollama_url}")
+
+            # Parse the URL to get host and port
+            url_parts = weaviate_url.replace("http://", "").replace("https://", "")
+            host = url_parts.split(":")[0]
+            port = int(url_parts.split(":")[1]) if ":" in url_parts else 8080
+
+            # Use connect_to_custom with skip_init_checks to use REST instead of gRPC
+            client = weaviate.connect_to_custom(
+                http_host=host,
+                http_port=port,
+                http_secure=False,
+                grpc_host=host,
+                grpc_port=50051,
+                grpc_secure=False,
+                skip_init_checks=True,
+                additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
             )
-
-        # Configure headers based on embedding provider
-        headers = {}
-        if embedding_provider == "cohere":
-            cohere_key = os.getenv("COHERE_API_KEY")
-            if not cohere_key:
-                raise ValueError(
-                    "COHERE_API_KEY is required when EMBEDDING_PROVIDER=cohere. "
-                    "Please set it in .env file."
-                )
-            headers["X-Cohere-Api-Key"] = cohere_key
+            try:
+                if clear_db:
+                    clear_collection(client)
+                embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
+            finally:
+                client.close()
         else:
-            openai_key = os.getenv("OPENAI_API_KEY")
-            if not openai_key:
+            # Cloud mode: connect to Weaviate Cloud with API keys
+            required_vars = ["WEAVIATE_URL", "WEAVIATE_API_KEY"]
+            missing_vars = [var for var in required_vars if not os.getenv(var)]
+            if missing_vars:
                 raise ValueError(
-                    "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. "
-                    "Please set it in .env file."
+                    f"Missing required environment variables for cloud mode: {', '.join(missing_vars)}. "
+                    f"Please set them in .env file."
                 )
-            headers["X-OpenAI-Api-Key"] = openai_key
 
-        logger.info(f"Connecting to Weaviate Cloud at {os.getenv('WEAVIATE_URL')} with {embedding_provider} embeddings")
-        client = weaviate.connect_to_weaviate_cloud(
-            cluster_url=os.getenv("WEAVIATE_URL"),
-            auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-            headers=headers,
-            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
-        )
-        if clear_db:
-            clear_collection(client)
-        embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
-        client.close()
+            embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
+            embedding_model = os.getenv("EMBEDDING_MODEL")
+
+            # Validate embedding provider
+            valid_providers = ["openai", "cohere"]
+            if embedding_provider not in valid_providers:
+                raise ValueError(
+                    f"Invalid EMBEDDING_PROVIDER: '{embedding_provider}'. "
+                    f"Must be one of: {', '.join(valid_providers)}"
+                )
+
+            # Configure headers based on embedding provider
+            headers = {}
+            if embedding_provider == "cohere":
+                cohere_key = os.getenv("COHERE_API_KEY")
+                if not cohere_key:
+                    raise ValueError(
+                        "COHERE_API_KEY is required when EMBEDDING_PROVIDER=cohere. "
+                        "Please set it in .env file."
+                    )
+                headers["X-Cohere-Api-Key"] = cohere_key
+            else:
+                openai_key = os.getenv("OPENAI_API_KEY")
+                if not openai_key:
+                    raise ValueError(
+                        "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. "
+                        "Please set it in .env file."
+                    )
+                headers["X-OpenAI-Api-Key"] = openai_key
+
+            logger.info(f"Connecting to Weaviate Cloud at {os.getenv('WEAVIATE_URL')} with {embedding_provider} embeddings")
+            client = weaviate.connect_to_weaviate_cloud(
+                cluster_url=os.getenv("WEAVIATE_URL"),
+                auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
+                headers=headers,
+                additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
+            )
+            try:
+                if clear_db:
+                    clear_collection(client)
+                embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
+            finally:
+                client.close()
+    except Exception as exc:
+        if soft_fail_weaviate and _is_transient_weaviate_error(exc):
+            logger.exception(
+                "Transient Weaviate failure encountered, but WEAVIATE_SOFT_FAIL=true so proceeding without failing the job."
+            )
+            return
+        raise
+
+    # Optional: bootstrap managed Postgres FAQ DB during deploy (Cloud SQL).
+    # Run this after Weaviate phase so we keep the original embedding flow and avoid
+    # additional startup pressure on the Weaviate/Ollama VM before schema operations.
+    maybe_bootstrap_cloudsql_faq_db(embedding_mode)
 
 
 if __name__ == "__main__":
