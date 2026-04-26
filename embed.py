@@ -53,6 +53,9 @@ def _is_transient_weaviate_error(exc: Exception) -> bool:
         "leader not found",
         "unexpected status code: 500",
         "not ready",
+        "server disconnected",
+        "remoteprotocolerror",
+        "remote protocol error",
         "timed out",
         "timeout",
         "temporarily unavailable",
@@ -130,7 +133,7 @@ def _wait_for_weaviate_ready(weaviate_client) -> None:
         except Exception as exc:
             if _is_transient_weaviate_error(exc):
                 logger.info(
-                    f"[weaviate-ready] Weaviate not ready yet (attempt {attempt}/{max_retries}): {exc}. "
+                    f"[weaviate-ready] Weaviate not ready yet (attempt {attempt}/{max_retries}): {type(exc).__name__}: {exc}. "
                     f"Retrying in {delay_s:.1f}s..."
                 )
                 time.sleep(delay_s)
