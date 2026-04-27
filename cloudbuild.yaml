@@ -67,6 +67,30 @@ steps:
           echo "VPC connector already exists"
         fi
 
+  # Step 1.5: Optionally recreate the GCE VM for test-environment Weaviate reset
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'maybe-recreate-vm'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Checking whether VM recreation was requested..."
+        echo "TAG_NAME: $TAG_NAME"
+
+        if echo "$TAG_NAME" | grep -Eqi 'reset-weaviate|recreate-vm'; then
+          echo "VM recreation requested by tag."
+          if gcloud compute instances describe iitm-ollama-vm --zone=asia-south1-a >/dev/null 2>&1; then
+            echo "Deleting existing GCE VM iitm-ollama-vm so it can be recreated cleanly..."
+            gcloud compute instances delete iitm-ollama-vm \
+              --zone=asia-south1-a \
+              --quiet
+          else
+            echo "GCE VM does not exist, nothing to delete."
+          fi
+        else
+          echo "No VM recreation requested."
+        fi
+
   # Step 2: Create GCE VM (if not exists)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'create-vm'
