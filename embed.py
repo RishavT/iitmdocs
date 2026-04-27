@@ -14,6 +14,9 @@ Supports local (Ollama), cloud (Cohere/OpenAI), and gce (remote Ollama) modes vi
 import hashlib
 import logging
 import os
+import time
+import urllib.error
+import urllib.request
 import weaviate
 from dotenv import load_dotenv
 from pathlib import Path
@@ -26,11 +29,74 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
+def is_transient_weaviate_error(error: Exception) -> bool:
+    """Identify Weaviate errors that are worth retrying."""
+    message = str(error).lower()
+    transient_markers = [
+        "leader not found",
+        "unexpected status code: 500",
+        "unexpected status code: 503",
+        "connection refused",
+        "timed out",
+        "temporarily unavailable",
+    ]
+    return any(marker in message for marker in transient_markers)
+
+
+def run_with_weaviate_retry(operation_name, operation, attempts=12, delay_seconds=5):
+    """Retry transient Weaviate failures so startup survives short cluster elections."""
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return operation()
+        except Exception as error:
+            last_error = error
+            if not is_transient_weaviate_error(error) or attempt == attempts:
+                raise
+            logger.warning(
+                f"{operation_name} failed with transient Weaviate error on attempt "
+                f"{attempt}/{attempts}: {error}"
+            )
+            time.sleep(delay_seconds)
+    raise last_error
+
+
+def wait_for_weaviate_http_ready(base_url: str, timeout_seconds=120, interval_seconds=5) -> None:
+    """Poll Weaviate's readiness endpoint before touching schema/collections."""
+    ready_url = f"{base_url.rstrip('/')}/v1/.well-known/ready"
+    deadline = time.time() + timeout_seconds
+    last_error = None
+
+    while time.time() < deadline:
+        try:
+            with urllib.request.urlopen(ready_url, timeout=10) as response:
+                if 200 <= response.status < 300:
+                    logger.info(f"Weaviate readiness check passed at {ready_url}")
+                    return
+                last_error = RuntimeError(f"Unexpected readiness status: {response.status}")
+        except Exception as error:
+            last_error = error
+            logger.info(f"Weaviate not ready yet at {ready_url}: {error}")
+
+        time.sleep(interval_seconds)
+
+    raise RuntimeError(
+        f"Weaviate readiness check did not pass within {timeout_seconds}s at {ready_url}. "
+        f"Last error: {last_error}"
+    )
+
+
 def clear_collection(weaviate_client):
     """Delete the Document collection if it exists"""
-    if weaviate_client.collections.exists("Document"):
+    if run_with_weaviate_retry(
+        "Checking whether Document collection exists",
+        lambda: weaviate_client.collections.exists("Document"),
+    ):
         logger.warning("CLEAR_DB=true: Deleting existing Document collection...")
-        weaviate_client.collections.delete("Document")
+        run_with_weaviate_retry(
+            "Deleting Document collection",
+            lambda: weaviate_client.collections.delete("Document"),
+        )
         logger.info("Document collection deleted. Will recreate with fresh embeddings.")
     else:
         logger.info("No existing Document collection to clear.")
@@ -67,9 +133,15 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
         expected_vectorizer = "text2vec-openai"
 
     # Check if collection exists and validate vectorizer configuration
-    if weaviate_client.collections.exists("Document"):
+    if run_with_weaviate_retry(
+        "Checking whether Document collection exists",
+        lambda: weaviate_client.collections.exists("Document"),
+    ):
         try:
-            collection = weaviate_client.collections.get("Document")
+            collection = run_with_weaviate_retry(
+                "Loading Document collection metadata",
+                lambda: weaviate_client.collections.get("Document"),
+            )
             existing_vectorizer = collection.config.get().vectorizer.value if hasattr(collection.config.get().vectorizer, 'value') else str(collection.config.get().vectorizer)
 
             # Only delete if vectorizer has changed
@@ -79,13 +151,19 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
                     f"Deleting and recreating collection with {embedding_mode}/{embedding_provider} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
-                weaviate_client.collections.delete("Document")
+                run_with_weaviate_retry(
+                    "Deleting Document collection due to vectorizer mismatch",
+                    lambda: weaviate_client.collections.delete("Document"),
+                )
             else:
                 logger.info(f"Collection exists with correct vectorizer ({expected_vectorizer}). Reusing existing collection.")
                 return collection
         except Exception as e:
             logger.warning(f"Could not validate existing collection config: {e}. Recreating collection.")
-            weaviate_client.collections.delete("Document")
+            run_with_weaviate_retry(
+                "Deleting Document collection after config validation failure",
+                lambda: weaviate_client.collections.delete("Document"),
+            )
 
     properties = [
         Property(name="filename", data_type=DataType.TEXT, description="Name of the source file"),
@@ -97,10 +175,13 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
     ]
 
     logger.info(f"Creating new Document collection with {embedding_mode} mode, {expected_vectorizer} (model: {model})")
-    return weaviate_client.collections.create(
-        name="Document",
-        vectorizer_config=vectorizer_config,
-        properties=properties,
+    return run_with_weaviate_retry(
+        "Creating Document collection",
+        lambda: weaviate_client.collections.create(
+            name="Document",
+            vectorizer_config=vectorizer_config,
+            properties=properties,
+        ),
     )
 
 
@@ -206,6 +287,7 @@ def main():
             port=int(weaviate_url.split(":")[-1]) if ":" in weaviate_url.split("//")[-1] else 8080,
             additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
+        wait_for_weaviate_http_ready(weaviate_url)
         if clear_db:
             clear_collection(client)
         embed_documents(client, "src", embedding_mode, None, embedding_model)
@@ -240,6 +322,7 @@ def main():
             skip_init_checks=True,
             additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
+        wait_for_weaviate_http_ready(weaviate_url)
         if clear_db:
             clear_collection(client)
         embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
@@ -291,6 +374,7 @@ def main():
             headers=headers,
             additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
         )
+        wait_for_weaviate_http_ready(os.getenv("WEAVIATE_URL"))
         if clear_db:
             clear_collection(client)
         embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
