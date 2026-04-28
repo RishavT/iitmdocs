@@ -500,6 +500,37 @@ OpenAI/Cohere API ← for embeddings (via Weaviate Cloud)
 
 **Timeout**: 40 minutes (2400s) — needed for first-time setup when the GCE VM is created and bge-m3 is downloaded.
 
+### Important: repo config vs live VM config
+
+For GCE mode, the `docker-compose.yml` in this repo and the `docker-compose.yml` actually running on the VM are not automatically kept in sync.
+
+What happens in practice:
+
+- The repo files are the source blueprint.
+- When the GCE VM is first created, the startup script writes a compose file onto the VM.
+- After that, the VM keeps using its own local copy of that file.
+- If someone later updates the repo's `docker-compose.yml` or `scripts/gce-startup.sh`, the already-existing VM does **not** automatically pick up those changes.
+
+This means:
+
+- repo config and VM config may start aligned
+- but they can drift over time
+- fixing the repo alone does not change the currently running VM
+
+Operational implication:
+
+- if GCE behavior does not match the repo, check the live VM's compose file directly
+- to apply repo-side infra changes to GCE mode, you usually need one of:
+  - VM recreation
+  - a manual update on the VM
+  - startup logic that explicitly rewrites the VM file during deployment
+
+Simple way to think about it:
+
+- the repo file is the blueprint
+- the VM file is the actual built house
+- changing the blueprint later does not change the already-built house by itself
+
 ---
 
 ## 11. Logging and Analytics
@@ -671,6 +702,322 @@ EMBEDDING FAILED for filename.md
 | `CLEAR_DB` | embed.py | No | `true` | `true` to clear Weaviate before embedding |
 
 **Note on `.dev.vars`**: Wrangler (Cloudflare Workers dev server) reads secrets from `.dev.vars`, not `.env`. The Dockerfile.worker generates `.dev.vars` from environment variables at container startup.
+
+---
+
+# Local vs GCE Mode
+
+This project supports both `local` mode and `gce` mode, but they are not the same environment with a different URL. They are meaningfully different systems.
+
+The simplest way to think about it is:
+
+- `local` mode is a developer sandbox on one machine
+- `gce` mode is a split cloud setup using Cloud Run, a private VM, and Cloud Build
+
+If a developer does not understand this difference, they can easily misread infra issues as code issues.
+
+## 1. Where each service runs
+
+### Local mode
+
+In `local` mode, most services run together on the developer's machine using Docker Compose:
+
+- `worker` runs locally
+- `weaviate` runs locally
+- `ollama` runs locally
+- optionally `postgres` and `pg-faq-api` also run locally
+
+This means the whole system is mostly inside one Docker network on one machine.
+
+### GCE mode
+
+In `gce` mode, the system is split:
+
+- `worker` runs on Cloud Run
+- `embed.py` runs as a Cloud Run job
+- `weaviate` runs on a GCE VM
+- `ollama` runs on the same GCE VM
+- Cloud Build handles deployment
+
+So `gce` mode is not just "local but hosted in Google Cloud". The app is distributed across different services.
+
+## 2. How services talk to each other
+
+### Local mode
+
+Containers talk over the local Docker network using container names such as:
+
+- `http://weaviate:8080`
+- `http://ollama:11434`
+
+Everything stays on the developer machine.
+
+### GCE mode
+
+Cloud Run is not on the VM's Docker network. It reaches the VM over internal Google Cloud networking through a VPC connector.
+
+That means the URLs are private VM URLs such as:
+
+- `http://10.160.0.10:8080`
+- `http://10.160.0.10:11434`
+
+So:
+
+- local mode uses Docker service discovery
+- GCE mode uses private VM networking
+
+## 3. Who owns and controls the environment
+
+### Local mode
+
+The developer has direct control:
+
+- start containers with `docker compose up`
+- stop containers with `docker compose down`
+- inspect logs directly
+- delete local volumes when needed
+
+### GCE mode
+
+The environment is owned by multiple cloud layers:
+
+- Cloud Build for deployment
+- Cloud Run for worker and embed job execution
+- GCE VM for Weaviate and Ollama
+- IAM, VPC, and firewall rules for access control
+
+Because of that, debugging usually needs:
+
+- Cloud logs
+- `gcloud`
+- sometimes SSH into the VM
+
+## 4. Deployment behavior
+
+### Local mode
+
+There is usually no formal deployment. You edit code and rerun containers.
+
+If you change `docker-compose.yml`, your next local run uses that new file immediately.
+
+### GCE mode
+
+Deployment happens through `cloudbuild.yaml`, usually triggered by git tags.
+
+That process may:
+
+- build and push images
+- deploy the Cloud Run worker
+- create or run the embed job
+- create the VM if it does not already exist
+
+Important detail:
+
+- a code deployment does not automatically rebuild or reconfigure an already-existing VM
+
+## 5. Repo config vs live VM config
+
+This is one of the most important differences.
+
+### Local mode
+
+The `docker-compose.yml` in the repo is the same file being used when you run locally.
+
+So if you edit the repo file, your local environment uses that updated file on the next run.
+
+### GCE mode
+
+The repo contains a startup script, [scripts/gce-startup.sh](/home/rdpuser/Desktop/ICSR/iitmdocs/scripts/gce-startup.sh:1), which writes a `docker-compose.yml` onto the VM when the VM is first created.
+
+After that, the VM keeps using its own local file, for example:
+
+- `/opt/iitm-chatbot/docker-compose.yml`
+
+This means:
+
+- the repo file and the live VM file may start aligned
+- but they can drift over time
+- changing the repo later does not automatically update the already-running VM
+
+Simple way to think about it:
+
+- the repo file is the blueprint
+- the VM file is the built house
+- changing the blueprint later does not automatically rebuild the house
+
+## 6. Data persistence and reset behavior
+
+### Local mode
+
+Data is usually stored in Docker volumes on the developer machine, such as:
+
+- `weaviate_data`
+- `ollama_data`
+- `postgres_data`
+
+Resetting is easy:
+
+```bash
+docker compose --profile local down -v
+docker compose --profile local up -d
+```
+
+### GCE mode
+
+Data lives on the VM filesystem, for example:
+
+- `/opt/iitm-chatbot/weaviate_data`
+- `/opt/iitm-chatbot/ollama_data`
+
+That data survives normal code deployments if the VM is reused.
+
+This is why stale Weaviate state can survive across deployments and keep causing failures even when code changes.
+
+## 7. Embedding path differences
+
+### Local mode
+
+`embed.py` talks to local Weaviate, and Weaviate uses the local Ollama container through `text2vec-ollama`.
+
+Everything is close together on one machine.
+
+### GCE mode
+
+`embed.py` runs as a Cloud Run job, then:
+
+1. Cloud Run talks to Weaviate on the VM
+2. Weaviate on the VM talks to Ollama on the VM
+
+So the GCE embedding path crosses more boundaries and depends on more moving parts being healthy at the same time.
+
+## 8. Query-time behavior differences
+
+### Local mode
+
+The local setup is tightly coupled inside one Docker environment.
+
+### GCE mode
+
+At query time, the worker computes the query embedding by calling Ollama on the VM, then sends that vector to Weaviate for hybrid search.
+
+This means the worker can appear healthy as a Cloud Run service even if downstream VM services are degraded.
+
+In other words:
+
+- Cloud Run health does not prove Weaviate health
+- a working UI does not always mean the embed path is healthy
+
+## 9. Failure patterns are different
+
+### Local mode
+
+Local failures are often simple:
+
+- model not pulled
+- env var missing
+- local container not started
+- local volume needs reset
+
+These are usually easy to inspect and fix.
+
+### GCE mode
+
+GCE failures are often more operational:
+
+- stale Weaviate state
+- live VM config drift
+- VPC or firewall problems
+- Weaviate readiness failures
+- Weaviate-to-Ollama timeout issues
+- Cloud Run can reach the VM, but the service on the VM is unhealthy
+
+These are harder to diagnose because the code may be correct while the environment is wrong.
+
+## 10. Observability and debugging
+
+### Local mode
+
+Debugging is direct:
+
+- `docker compose ps`
+- `docker compose logs`
+- `curl localhost:8080`
+- inspect files on your machine
+
+### GCE mode
+
+Debugging is layered:
+
+- Cloud Run logs
+- Cloud Build logs
+- `gcloud run services describe`
+- `gcloud run jobs describe`
+- SSH into the VM
+- Docker logs on the VM
+
+So GCE debugging is slower and often needs extra permissions.
+
+## 11. Security and access model
+
+### Local mode
+
+The local setup is mainly optimized for convenience.
+
+### GCE mode
+
+The cloud setup depends on:
+
+- IAM permissions
+- service account permissions
+- VPC connector setup
+- firewall rules
+- SSH access if VM inspection is needed
+
+That is why fixing a VM-side issue required access to your GCP account and then access to the VM itself.
+
+## 12. Why local success does not guarantee GCE success
+
+A successful local-from-zero run proves:
+
+- the code path works
+- the services can work together in a clean environment
+
+It does **not** prove:
+
+- the live VM is healthy
+- the VM config matches the repo
+- the persisted Weaviate state is clean
+- Cloud Run to VM networking is healthy
+- the live Weaviate and Ollama timeouts are correct
+
+This exact difference mattered during the Weaviate debugging work:
+
+- local worked
+- GCE still failed
+- the real issue was stale VM state and outdated live VM config
+
+## 13. Practical rule of thumb
+
+When something breaks, ask this first:
+
+Is this a code-path problem, or a live environment problem?
+
+Good rule:
+
+- if local-from-zero also fails, suspect code or intended config
+- if local-from-zero works but GCE fails, strongly suspect VM state, config drift, cloud networking, or service startup behavior
+
+That rule saves a lot of time.
+
+## 14. Final summary
+
+### Local mode in one line
+
+Everything important runs on the developer machine, the repo config is the live config, and resets are easy.
+
+### GCE mode in one line
+
+The worker runs on Cloud Run, Weaviate and Ollama run on a private VM, the VM keeps its own state and config, and cloud debugging is required when infra problems happen.
 
 ---
 
