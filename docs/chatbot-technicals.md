@@ -33,6 +33,8 @@ For a non-technical overview of the pipeline, see `docs/chatbot-101.md`.
 | Backend runtime | Cloudflare Workers (via Wrangler) | Handles HTTP requests, runs the RAG pipeline |
 | Vector database | Weaviate v1.27.0 | Stores document embeddings, runs hybrid search |
 | Embedding model | bge-m3 (via Ollama) | Converts text to vectors for semantic search |
+| FAQ database | Postgres + pgvector | Stores FAQ rows + embedding vectors for semantic FAQ lookup |
+| FAQ search API | PG FAQ API (FastAPI) | Semantic FAQ search + direct FAQ lookup (powers “Did you mean?” + `faq_id`) |
 | Query rewriting LLM | gpt-4o-mini (via OpenAI-compatible API) | Rewrites user queries for better retrieval |
 | Answer generation LLM | Configurable via `CHAT_MODEL` env var (default: gpt-4o-mini) | Generates answers from retrieved context |
 | Fact-check LLM | gpt-4o-mini (hardcoded) | Verifies answer accuracy against context |
@@ -45,8 +47,9 @@ For a non-technical overview of the pipeline, see `docs/chatbot-101.md`.
 ### Key files
 
 ```
-worker.js          → All backend logic (single file, ~1735 lines)
-embed.py           → Embedding script (Python, ~300 lines)
+worker.js          → All backend logic (single file)
+embed.py           → Embedding script (Python)
+pg/faq_api/main.py → PG FAQ API service (FastAPI) for FAQ search
 static/qa.js       → Frontend chat logic
 static/chatbot.js  → Embeddable widget (iframe-based)
 static/qa.html     → Chat interface HTML
@@ -73,7 +76,6 @@ wrangler.toml      → Cloudflare Workers config
 
 **Trade-offs:**
 
-- In `cloud` mode (Weaviate Cloud), the embedding is done by Weaviate's built-in vectorizer (OpenAI or Cohere), not bge-m3. This means cloud mode uses a different embedding space than GCE/local mode. You cannot mix embeddings from different providers — switching requires re-embedding everything.
 - bge-m3 produces 1024-dimensional vectors, which is larger than some alternatives. This increases storage but improves quality.
 - The Ollama instance needs ~2GB RAM for bge-m3.
 
@@ -83,7 +85,6 @@ wrangler.toml      → Cloudflare Workers config
 |---|---|---|
 | `local` | Ollama (local Docker) → Weaviate text2vec-ollama | Weaviate handles it internally |
 | `gce` | Ollama (GCE VM) → Weaviate text2vec-ollama | worker.js calls Ollama API directly via `getOllamaEmbedding()`, then passes vector to Weaviate hybrid search |
-| `cloud` | Weaviate Cloud built-in vectorizer (OpenAI/Cohere) | Weaviate Cloud handles it internally |
 
 ---
 
@@ -104,8 +105,7 @@ Weaviate stores a single collection called `Document` with these properties:
 
 Each document is stored as **one object** in Weaviate — the entire file content, not chunked. This is a deliberate decision:
 
-- The `src/` files are relatively small (1-10KB each, 19 files total).
-- Chunking would break FAQ Q&A pairs across chunks, hurting retrieval quality.
+- The `src/` files are relatively small (1-10KB each, 16 files total).
 - Whole-document retrieval gives the LLM full context for each topic.
 
 ### Vectorizer configuration
@@ -113,7 +113,7 @@ Each document is stored as **one object** in Weaviate — the entire file conten
 The vectorizer module is set at collection creation time and **cannot be changed** without deleting and recreating the collection. `embed.py` detects vectorizer mismatches and handles them:
 
 ```python
-# If switching from OpenAI to Ollama (or vice versa), collection is deleted and recreated
+# If the existing collection uses a different vectorizer module, it is deleted and recreated
 if existing_vectorizer != expected_vectorizer:
     weaviate_client.collections.delete("Document")
 ```
@@ -184,7 +184,7 @@ This is why **Tags at the bottom of each `src/` file matter** — they add keywo
 
 ### How vector scoring works
 
-The query text is converted to a 1024-dimensional vector (using bge-m3 or the cloud provider's model), and documents are scored by cosine similarity with the query vector. This captures semantic meaning — "how much does it cost" and "fee structure" will match even though they share no keywords.
+The query text is converted to a 1024-dimensional vector (using bge-m3), and documents are scored by cosine similarity with the query vector. This captures semantic meaning — "how much does it cost" and "fee structure" will match even though they share no keywords.
 
 ### GCE mode: manual embedding
 
@@ -207,7 +207,15 @@ graphqlQuery = `{
 }`;
 ```
 
-In local/cloud mode, Weaviate computes the query vector internally.
+In local mode, Weaviate computes the query vector internally.
+
+### FAQ retrieval: PG FAQ API (separate from Weaviate docs)
+
+In addition to document retrieval from Weaviate, the worker also queries the **PG FAQ API**:
+- `POST /search` to get the closest FAQ questions for the user query (used for “Did you mean?” suggestions, and also included as extra FAQ context during answer generation)
+- `GET /faq/:id` for direct lookup when the user clicks a suggestion (the frontend sends `faq_id`)
+
+This FAQ path is independent of Weaviate’s `Document` collection: it is backed by Postgres+pgvector and is designed specifically for matching short FAQ-style questions.
 
 ### Relevance threshold
 
@@ -254,7 +262,7 @@ temperature: 0,        // Deterministic — same query always gives same rewrite
 max_tokens: 100,       // Short output — just keywords, not sentences
 ```
 
-The LLM receives `KNOWLEDGE_BASE_SUMMARY` (a compact list of 19 topics with 8-12 keywords each) as context. This tells the LLM what topics exist so it can map the user's question to the right domain.
+The LLM receives `KNOWLEDGE_BASE_SUMMARY` (a compact list of 16 topics with 8-12 keywords each) as context. This tells the LLM what topics exist so it can map the user's question to the right domain.
 
 **Why gpt-4o-mini for rewriting?** It's fast (~200ms), cheap, and the task is simple — keyword expansion, not complex reasoning. Using a larger model would add latency without meaningful quality improvement.
 
@@ -273,7 +281,7 @@ The LLM appends a `[LANG:xxx]` tag to the rewritten query. This tag is:
 | **Location** | `worker.js` constant | Bottom of each `src/*.md` file |
 | **Goal** | Help LLM route query to right topic | Help search engine find right document |
 | **Keyword strategy** | 8-12 **discriminating** keywords per topic (what makes this topic unique) | Many keywords including synonyms, variations, abbreviations (more = better recall) |
-| **Why different counts** | LLM needs to distinguish between 19 topics — too many overlapping keywords confuse it | BM25 benefits from more keyword surface area — partial matches add up |
+| **Why different counts** | LLM needs to distinguish between 16 topics — too many overlapping keywords confuse it | BM25 benefits from more keyword surface area — partial matches add up |
 
 ---
 
@@ -385,14 +393,16 @@ This is a deliberate trade-off: it's better to occasionally show an unchecked an
 services:
   embed:    # Python - runs embed.py, exits when done (profile: embed)
   worker:   # Node.js - runs Wrangler dev server on port 8787
+  postgres: # Postgres + pgvector for FAQ storage (profile: local)
+  pg-faq-api: # FastAPI service that queries the FAQ DB (profile: local)
   weaviate: # Weaviate v1.27.0 vector DB on port 8080 (profile: local)
   ollama:   # Ollama LLM server on port 11434 (profile: local)
 ```
 
 ### Docker profiles
 
-- **No profile** (`docker compose up worker`): Only starts the worker. Used when Weaviate and Ollama are running elsewhere (cloud or GCE).
-- **`local` profile** (`docker compose --profile local up`): Starts Weaviate + Ollama locally alongside the worker.
+- **No profile** (`docker compose up worker`): Only starts the worker. Used when Weaviate/Ollama (and optionally the FAQ services) are running elsewhere (e.g., on a GCE VM).
+- **`local` profile** (`docker compose --profile local up`): Starts the local stack (Weaviate + Ollama + Postgres + PG FAQ API) alongside the worker.
 - **`embed` profile** (`docker compose --profile embed up embed`): Runs the embedding script (one-shot).
 
 ### Dockerfiles
@@ -431,6 +441,8 @@ Developer machine
 │   ├── worker (port 8787) ← runs Wrangler dev server
 │   ├── weaviate (port 8080) ← local vector DB
 │   └── ollama (port 11434) ← local embedding model
+│   ├── postgres (port 5433) ← FAQ DB (pgvector)
+│   └── pg-faq-api (port 8001) ← FAQ search API
 └── Browser → http://localhost:8787
 ```
 
@@ -457,17 +469,11 @@ Google Cloud
 - Communication between Cloud Run and GCE VM is **internal-only** via VPC connector — the VM has no public IP.
 - At query time, worker.js calls the Ollama API on the GCE VM to compute query embeddings, then passes them to Weaviate's hybrid search with an explicit vector.
 
-### Cloud mode (`EMBEDDING_MODE=cloud`)
+### FAQ system note (GCE)
 
-```
-Weaviate Cloud (managed) ← vector DB + built-in embeddings
-Worker (Cloud Run or Cloudflare Workers)
-OpenAI/Cohere API ← for embeddings (via Weaviate Cloud)
-```
-
-- Weaviate is fully managed on Weaviate Cloud.
-- Embeddings are handled by Weaviate Cloud's built-in vectorizer (OpenAI `text-embedding-3-small` or Cohere `embed-multilingual-v3.0`).
-- Worker authenticates to Weaviate Cloud with `WEAVIATE_API_KEY` and passes the embedding provider's API key via headers.
+- The Cloud Build pipeline bootstraps the FAQ database during embedding (`ENABLE_PG_FAQ_BOOTSTRAP=true` in the embed job env vars).
+- However, **Cloud Build does not build/deploy the PG FAQ API service** by default.
+- Operationally this means FAQ suggestions/direct lookups are available in local Docker Compose by default, and in GCE only if you deploy the PG FAQ API + Postgres/Cloud SQL service separately and set `PG_FAQ_API_URL` for the worker.
 
 ### Cloudflare Workers mode (wrangler deploy)
 
@@ -656,7 +662,12 @@ Error: Weaviate error: ...
 
 - **Local**: Is the Weaviate container running? `docker ps | grep weaviate`
 - **GCE**: Can Cloud Run reach the GCE VM? Check VPC connector status and firewall rules. The VM should allow TCP 8080 and 11434 from 10.0.0.0/8.
-- **Cloud**: Is `WEAVIATE_URL` correct? Is the API key valid? Is the cluster active?
+
+### PG FAQ API failures (optional)
+
+- **Local**: Is `pg-faq-api` running? `docker compose ps` and check port `8001`. Is `postgres` running?
+- **Worker config**: Is `PG_FAQ_API_URL` set correctly (or using the default `http://pg-faq-api:8000` on the Docker network)?
+- Behavior: if the PG FAQ API is unreachable, the worker should continue to answer normally, but “Did you mean?” suggestions will be empty.
 
 ### Embedding failures
 
@@ -685,21 +696,27 @@ EMBEDDING FAILED for filename.md
 
 | Variable | Used by | Required | Default | Purpose |
 |---|---|---|---|---|
-| `EMBEDDING_MODE` | embed.py, worker.js | No | `cloud` | `local`, `gce`, or `cloud` |
+| `EMBEDDING_MODE` | embed.py, worker.js | No | `local` | `local` or `gce` |
 | `LOCAL_WEAVIATE_URL` | embed.py, worker.js | For local mode | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | embed.py, worker.js | For GCE mode | — | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | embed.py, worker.js | For GCE mode | — | GCE VM Ollama URL |
-| `WEAVIATE_URL` | embed.py, worker.js | For cloud mode | — | Weaviate Cloud cluster URL |
-| `WEAVIATE_API_KEY` | embed.py, worker.js | For cloud mode | — | Weaviate Cloud API key |
-| `OPENAI_API_KEY` | worker.js, embed.py | Yes (cloud) | — | OpenAI API key (embeddings + LLM fallback) |
-| `COHERE_API_KEY` | embed.py, worker.js | If Cohere | — | Cohere API key (alternative embeddings) |
-| `EMBEDDING_PROVIDER` | embed.py, worker.js | No | `openai` | `openai` or `cohere` (cloud mode only) |
-| `EMBEDDING_MODEL` | embed.py | No | Varies by provider | Override embedding model name |
+| `PG_FAQ_API_URL` | worker.js | No | `http://pg-faq-api:8000` | Base URL for the PG FAQ API (semantic FAQ search + direct FAQ lookup) |
+| `OPENAI_API_KEY` | worker.js | Yes (unless `CHAT_API_KEY` set) | — | API key for the chat endpoint (rewrite + answer + fact-check) when using OpenAI |
 | `OLLAMA_MODEL` | embed.py, worker.js | No | `bge-m3` | Ollama embedding model |
 | `CHAT_API_ENDPOINT` | worker.js | No | `https://api.openai.com/v1/chat/completions` | LLM API endpoint |
 | `CHAT_API_KEY` | worker.js | No | Falls back to `OPENAI_API_KEY` | API key for chat endpoint |
 | `CHAT_MODEL` | worker.js | No | `gpt-4o-mini` | LLM model for answer generation |
 | `CLEAR_DB` | embed.py | No | `true` | `true` to clear Weaviate before embedding |
+| `ENABLE_PG_FAQ_BOOTSTRAP` | embed.py | No | — | Enable FAQ DB bootstrap/backfill during embedding |
+| `FAQ_SEED_PATH` | embed.py | No | `pg/seed/faqs.json` | Path to FAQ seed JSON (in the embed container) |
+| `FAQ_SQL_DIR` | embed.py | No | `pg/init` | Directory containing SQL files to apply to Postgres |
+| `FAQ_EMBEDDING_DIMENSION` | embed.py | No | `1024` | Expected FAQ embedding dimension |
+| `FAQ_EMBEDDING_BATCH_SIZE` | embed.py | No | `50` | FAQ embedding backfill batch size |
+| `PGHOST` | embed.py, pg-faq-api | For FAQ DB | — | Postgres host |
+| `PGPORT` | embed.py, pg-faq-api | For FAQ DB | `5432` | Postgres port |
+| `PGDATABASE` | embed.py, pg-faq-api | For FAQ DB | — | Postgres database name |
+| `PGUSER` | embed.py, pg-faq-api | For FAQ DB | — | Postgres user |
+| `PGPASSWORD` | embed.py, pg-faq-api | For FAQ DB | — | Postgres password |
 
 **Note on `.dev.vars`**: Wrangler (Cloudflare Workers dev server) reads secrets from `.dev.vars`, not `.env`. The Dockerfile.worker generates `.dev.vars` from environment variables at container startup.
 

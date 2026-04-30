@@ -11,8 +11,9 @@ Keep this file updated whenever the bot's logic changes.
 | Folder / File | What it does |
 |---|---|
 | `worker.js` | The **brain of the chatbot**. Handles everything on the backend — receiving questions, rewriting queries, searching the knowledge base, generating answers, fact-checking, and streaming the response back. |
-| `src/` | Contains **19 markdown files** — one per topic (e.g., fees, eligibility, placements). This is the knowledge base. Each file has structured information, FAQs, and a `Tags` line at the bottom with keywords. |
+| `src/` | Contains topic markdown files (e.g., fees, eligibility, placements). This is the knowledge base. Each file has structured information and a `Tags` line at the bottom with keywords. |
 | `embed.py` | A Python script that reads all files from `src/` and pushes them into the vector database (Weaviate). You run this whenever you add or change a `src/` file. |
+| `pg/faq_api/` (PG FAQ API) | A small backend service that searches FAQs stored in a **Postgres database** (using embeddings) and returns the closest matching FAQ questions/answers. Used for **"Did you mean?" suggestions** and **direct FAQ answers** when the user clicks a suggestion. |
 | `static/chatbot.js` | The **frontend widget** — the floating "Need Help?" button that you see on the website. It creates the chat window (an iframe) and handles opening/closing/fullscreen. |
 | `static/qa.html` | The **chat interface** inside the iframe. Contains the input box, send button, consent overlay, and feedback buttons. |
 | `static/qa.js` | The **frontend logic** — sends the user's question to the backend, receives the streamed response, renders it with a typing animation, handles "Did you mean?" clicks, and manages feedback (thumbs up/down/report). |
@@ -58,7 +59,7 @@ This is where the chatbot figures out what the user actually wants and translate
 #### Slow path — LLM rewriting
 - If no synonym matches, the bot calls an LLM (gpt-4o-mini) to rewrite the query.
 - Before sending to the LLM, **common grammatical stopwords are removed** from the query (words like "what", "is", "the", "how", "please", etc.). This reduces phrasing variance so that "what is the fee structure" and "fee structure" produce the same rewrite. Domain-sensitive words like "may" (month name), "not", "no", "only", and "free" are **never removed** even though they look like stopwords — they carry meaning in this context.
-- The LLM receives `KNOWLEDGE_BASE_SUMMARY` — a compact list of all 19 topics with 8-12 discriminating keywords each — so it knows what topics exist and can map the user's question to the right keywords.
+- The LLM receives `KNOWLEDGE_BASE_SUMMARY` — a compact list of all 16 topics with 8-12 discriminating keywords each — so it knows what topics exist and can map the user's question to the right keywords.
 - The LLM also detects the user's **language** (English, Hindi, Tamil, or Hinglish) and appends a `[LANG:xxx]` tag to the rewritten query. This tag is stripped before search but used later to respond in the correct language.
 - The LLM also fixes **spelling mistakes** in education-related words (e.g., "qualifer" → "qualifier").
 - The rewritten query always combines the user's **original question** (with stopwords intact) with the LLM-added keywords — the original question is never thrown away. Stopword removal only affects what the LLM sees, not what goes into the final search query.
@@ -118,9 +119,9 @@ This is where the chatbot figures out what the user actually wants and translate
 ### Step 8: Response delivery
 
 - **If fact-check passes**: The answer is streamed back to the user as Server-Sent Events (SSE).
-- **If fact-check fails**: The user sees a "cannot answer" message in their detected language, along with **"Did you mean?" FAQ suggestions** — clickable questions extracted from the knowledge base that the bot is confident it can answer. Finding these suggestions is a two-step process:
-  1. **Hybrid search** (same `searchWeaviate()` used in the main pipeline — BM25 + vector, 50/50) finds the top 3 most relevant topic documents.
-  2. All `**Question**:`/`**Answer**:` FAQ pairs are extracted from those documents (only from content before the last `<!-- end of faqs -->` marker), then the individual FAQ questions are **ranked by keyword overlap** with the user's query using `scoreFAQMatch()` — it splits both the query and FAQ question into words, filters out short words and stopwords (`STOPWORDS`), and counts how many meaningful words they share. The top 3 are shown as suggestions.
+- **If fact-check fails**: The user sees a "cannot answer" message in their detected language, along with **"Did you mean?" FAQ suggestions**.
+  - These suggestions come from the **PG FAQ API**, which searches a Postgres FAQ database for the closest matching FAQ questions for the user's query.
+  - The backend formats the results as a short numbered list. Each suggestion includes an internal id like `[FAQID:123]` so the frontend can make it clickable.
 - Before the answer text, the bot also streams **document references** — links to the source files that were used, displayed as a collapsible "References" section in the UI.
 
 ### Step 9: Frontend rendering
@@ -132,9 +133,9 @@ This is where the chatbot figures out what the user actually wants and translate
 
 ### Step 10: "Did you mean?" FAQ direct lookup
 
-- When the user clicks a "Did you mean?" suggestion, the frontend sends the request with a `faq_file` parameter (the topic filename, e.g., `fees_and_payments.md`) and the question text.
-- The backend **skips the entire pipeline** (no query rewriting, no LLM answer generation, no fact-checking) and directly fetches the topic document from Weaviate.
-- It then extracts all FAQ pairs from the document content (using the `**Question**:`/`**Answer**:` format, only before the last `<!-- end of faqs -->` marker), finds the best matching Q&A pair using `scoreFAQMatch()` to compare question text, and returns it formatted — this is fast and guaranteed accurate.
+- When the user clicks a "Did you mean?" suggestion, the frontend sends the request with a `faq_id` parameter (the id inside `[FAQID:...]`) and the question text.
+- The backend **skips the entire pipeline** (no query rewriting, no LLM answer generation, no fact-checking).
+- It calls the **PG FAQ API** to fetch the FAQ by id and returns that question + answer directly — this is fast and guaranteed accurate (because it is a direct lookup).
 
 ---
 
@@ -168,7 +169,7 @@ These are things that are easy to get wrong when making changes. Read this secti
 
 ### 5. `embed.py` excludes `_knowledge_base_summary.md`
 
-- The file `src/_knowledge_base_summary.md` (if it exists) is explicitly excluded from embedding. It's only used as context for query rewriting — it should NOT be in the vector database.
+- The file `src/_knowledge_base_summary.md` (if it exists) is explicitly excluded from embedding. The query rewriter relies on the `KNOWLEDGE_BASE_SUMMARY` string constant in `worker.js` at runtime, rather than this markdown file.
 - The exclusion is controlled by the `EXCLUDED_FILES` list in `embed.py`.
 
 ### 6. Rejected responses are excluded from conversation history
@@ -195,7 +196,6 @@ These are things that are easy to get wrong when making changes. Read this secti
 
 1. Edit or add markdown files in `src/`. Each file should have:
    - Structured information at the top
-   - FAQs in `**Question**: ... / **Answer**: ...` format
    - A `Tags:` line at the very end with relevant keywords
 
 2. Run `embed.py` to push changes into Weaviate. The script is smart about updates — it only re-embeds files whose content has changed (based on SHA256 hash).
@@ -235,13 +235,12 @@ These are things that are easy to get wrong when making changes. Read this secti
 
 ## Deployment Modes
 
-The chatbot supports three modes for the vector database:
+The chatbot supports two modes for the vector database:
 
 | Mode | When to use | How it connects |
 |---|---|---|
 | `local` | Development on your machine | Docker Compose runs Weaviate + Ollama locally |
 | `gce` | Running on a Google Cloud VM | Connects to Weaviate and Ollama on the VM |
-| `cloud` | Production | Connects to Weaviate Cloud with API keys |
 
 The mode is set via the `EMBEDDING_MODE` environment variable and affects both `embed.py` and `worker.js`.
 
@@ -261,7 +260,7 @@ Sure. Here's how it all fits together:
   When a user asks a question, gpt-4o-mini rewrites it into a keyword-rich search query. To do this well, the LLM needs to know what topics
   exist so it can route the question to the right domain.
 
-  That's what KNOWLEDGE_BASE_SUMMARY in worker.js provides — a compact list of all 19 topics with 8-12 discriminating keywords each. The
+  That's what KNOWLEDGE_BASE_SUMMARY in worker.js provides — a compact list of all 16 topics with 8-12 discriminating keywords each. The
   goal here is precision — help the LLM tell topics apart. Too many overlapping keywords across topics would confuse it.
 
   Example: User asks "how much does it cost?" → LLM reads KNOWLEDGE_BASE_SUMMARY, sees fees_and_payments has keywords like "fee structure,

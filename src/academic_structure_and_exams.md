@@ -1,6 +1,6 @@
 ---
-title: Academic Structure and Exams
-description: Covers refund policies, fee rules, and key considerations before registering for the IIT Madras BS program.
+title: Refund Policy and Fee Rules
+description: Covers refund and non-refund rules for qualifier and course fees, along with key considerations before making payments for the IIT Madras BS program.
 covers:
   - Application and reattempt fee refund rules
   - Non-refundable fee conditions

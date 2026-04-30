@@ -59,14 +59,15 @@ scripts/set-secrets.sh
 # Analysis folder (contains sensitive config dumps)
 analysis/
 
-# Temp folder
-temp/
+temp/ # Temp folder
 TEMP-DELETE/
 debug/
 ollama_data/
 tmp/
 weaviate_data/
 docs/
+!docs/chatbot-101.md
+!docs/chatbot-technicals.md
 
 # Any source pdf folders
 src_pdf/
