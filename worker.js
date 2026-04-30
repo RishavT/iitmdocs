@@ -976,9 +976,15 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
 async function searchWeaviate(query, limit, env) {
   console.log('[DEBUG] searchWeaviate() called, query:', query);
 
-  // Determine embedding mode: 'local', 'gce', or 'cloud'
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  // Determine embedding mode: 'local' or 'gce'
+  const embeddingMode = env.EMBEDDING_MODE || "local";
   console.log('[DEBUG] Embedding mode:', embeddingMode);
+
+  if (embeddingMode !== "local" && embeddingMode !== "gce") {
+    throw new Error(
+      `Unsupported EMBEDDING_MODE='${embeddingMode}'. Supported values: local, gce.`
+    );
+  }
 
   // Configure Weaviate URL and headers based on mode
   let weaviateUrl;
@@ -993,20 +999,10 @@ async function searchWeaviate(query, limit, env) {
   } else if (embeddingMode === "gce") {
     // GCE mode: connect to remote Weaviate on GCE VM
     weaviateUrl = env.GCE_WEAVIATE_URL;
-    console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
-  } else {
-    // Cloud mode: connect to Weaviate Cloud with API keys
-    weaviateUrl = env.WEAVIATE_URL;
-    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-
-    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
-    console.log('[DEBUG] Embedding provider:', embeddingProvider);
-
-    if (embeddingProvider === "cohere") {
-      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
-    } else {
-      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
+    if (!weaviateUrl) {
+      throw new Error("GCE_WEAVIATE_URL is required for EMBEDDING_MODE=gce");
     }
+    console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
   }
 
   // Escape special characters in query to prevent GraphQL injection
@@ -1027,6 +1023,10 @@ async function searchWeaviate(query, limit, env) {
     const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
 
     console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
+
+    if (!ollamaUrl) {
+      throw new Error("GCE_OLLAMA_URL is required for EMBEDDING_MODE=gce");
+    }
 
     const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
     const vectorStr = `[${queryVector.join(",")}]`;
@@ -1049,7 +1049,7 @@ async function searchWeaviate(query, limit, env) {
       }
     }`;
   } else {
-    // Local/Cloud mode: use hybrid search (Weaviate handles embedding for vector part)
+    // Local mode: use hybrid search (Weaviate handles embedding for vector part)
     // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
     graphqlQuery = `{
       Get {
