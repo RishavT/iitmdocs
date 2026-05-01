@@ -1,20 +1,18 @@
 ---
 title: Course Registration Process
-description: Step-by-step course registration for Foundation level and beyond — selecting courses, choosing exam cities, prerequisites, payment, same term vs subsequent term registration, add/drop policy, and required documents.
+description: Explains the step-by-step course registration process, including course selection, exam city choice, prerequisites, payment, and Foundation level registration rules.
 covers:
-  - Registration steps (courses, exam cities, prerequisites, payment)
-  - Foundation registration in same term vs subsequent term
-  - Qualifier score counted as Quiz 1 (same term only)
-  - Maximum 4 courses per term
-  - Required documents for Foundation registration
-  - Add/drop course policy and deadlines
+  - Step-by-step course registration process
+  - Exam city selection during registration
+  - Prerequisite requirements for courses
+  - Foundation registration in same and later terms
+  - Maximum course load per term
 sample_queries:
-  - How many courses can I take per term?
-  - How do I register for Foundation level courses after clearing the qualifier?
-  - What documents do I need for Foundation registration?
-  - Can I add or drop a course after registration?
-  - What is the difference between same term and subsequent term registration?
-  - Do I need to resubmit category certificates for Foundation registration?
+  - How do I register for courses after clearing the qualifier?
+  - How many courses can I take in one term?
+  - Can I choose my exam city during registration?
+  - What happens if I register in a later term?
+  - What documents are required for registration?
 ---
 
 ## Registration Process
@@ -101,40 +99,6 @@ If you have U grade (failed) in a subject like Math 1, you must:
 - Pay course fee again
 - Cannot take Math 2 if Math 1 has U grade
 
-# FAQs
-
-**Question**: How many courses can I complete in a year?
-**Answer**: There are 3 terms in a year. Learner may be allowed to register for a maximum of 4 courses in a term depending on their preferred pace of learning.
-
-If a student is taking a maximum of 4 courses, a student can complete 12 theory courses in a year plus projects which they register.
-
-
-
-**Question**: What is the registration process for the Foundational Level?
-**Answer**: Once you clear the Qualifier Exam, you will be allowed to access the Course Registration Form from your dashboard upon logging in. In the Course Registration Form, you will need to fill the required details, upload necessary documents and pay the course fee to register for the first term of your Foundational Level. You may choose to register for maximum of 4 Foundational Level courses.
-Note that there will be an added Exam Fee applicable for learners opting to write their quizzes and end term exams outside India.
-
-
-
-**Question**: What are the documents / files that are required to be uploaded while registering for the Foundational Level?
-**Answer**: It is mandatory to upload any one of these documents while registering for Foundational Level:
-* 12th or equivalent mark sheet OR
-* Degree Certificate OR
-* Certificate of the highest level of education
-* Aadhaar Card / PAN Card (identification document)
-
-
-
-**Question**: I have already submitted my category certificate while applying for the Qualifier Process. Do I need to submit them again while registering for the Foundational Level?
-**Answer**: No, not required to submit again. However, the EWS / OBC-NCL certificate need to be submitted again if the previously submitted certificate is not valid until the end of the current financial year.
-
-
-
-**Question**: What is the procedure to add / drop a course?
-**Answer**: Once the registration window closes in any term, adding courses will not be allowed. Dropping a course will be allowed within 4 weeks of the term start.
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: course registration, how to register courses, semester registration, registration steps, add drop courses, course enrollment, registration deadline, missed registration, late registration, change course, drop course after registration, select exam cities, maximum 4 courses per term, online payment only, qualifier score as Quiz 1, same term registration, subsequent term registration, week 5 continuation, defer joining, CCC credit clearing capability, foundation courses, Rs 6000 per course, class 12 documentation upload, U grade re-registration, cannot register across levels, exam city list, Quiz 1 mandatory subsequent term
+Tags: course registration process, registration steps, select courses, choose exam cities, prerequisite check, course payment online, foundation registration same term, subsequent term registration, qualifier score quiz 1 same term, maximum 4 courses per term, course load planning, class 12 document upload, registration deadline, student portal registration, exam city selection, credit based registration, u grade re registration rules

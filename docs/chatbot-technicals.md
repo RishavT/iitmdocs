@@ -33,6 +33,8 @@ For a non-technical overview of the pipeline, see `docs/chatbot-101.md`.
 | Backend runtime | Cloudflare Workers (via Wrangler) | Handles HTTP requests, runs the RAG pipeline |
 | Vector database | Weaviate v1.27.0 | Stores document embeddings, runs hybrid search |
 | Embedding model | bge-m3 (via Ollama) | Converts text to vectors for semantic search |
+| FAQ database | Postgres + pgvector | Stores FAQ rows + embedding vectors for semantic FAQ lookup |
+| FAQ search API | PG FAQ API (FastAPI) | Semantic FAQ search + direct FAQ lookup (powers “Did you mean?” + `faq_id`) |
 | Query rewriting LLM | gpt-4o-mini (via OpenAI-compatible API) | Rewrites user queries for better retrieval |
 | Answer generation LLM | Configurable via `CHAT_MODEL` env var (default: gpt-4o-mini) | Generates answers from retrieved context |
 | Fact-check LLM | gpt-4o-mini (hardcoded) | Verifies answer accuracy against context |
@@ -45,8 +47,9 @@ For a non-technical overview of the pipeline, see `docs/chatbot-101.md`.
 ### Key files
 
 ```
-worker.js          → All backend logic (single file, ~1735 lines)
-embed.py           → Embedding script (Python, ~300 lines)
+worker.js          → All backend logic (single file)
+embed.py           → Embedding script (Python)
+pg/faq_api/main.py → PG FAQ API service (FastAPI) for FAQ search
 static/qa.js       → Frontend chat logic
 static/chatbot.js  → Embeddable widget (iframe-based)
 static/qa.html     → Chat interface HTML
@@ -73,7 +76,6 @@ wrangler.toml      → Cloudflare Workers config
 
 **Trade-offs:**
 
-- In `cloud` mode (Weaviate Cloud), the embedding is done by Weaviate's built-in vectorizer (OpenAI or Cohere), not bge-m3. This means cloud mode uses a different embedding space than GCE/local mode. You cannot mix embeddings from different providers — switching requires re-embedding everything.
 - bge-m3 produces 1024-dimensional vectors, which is larger than some alternatives. This increases storage but improves quality.
 - The Ollama instance needs ~2GB RAM for bge-m3.
 
@@ -83,7 +85,6 @@ wrangler.toml      → Cloudflare Workers config
 |---|---|---|
 | `local` | Ollama (local Docker) → Weaviate text2vec-ollama | Weaviate handles it internally |
 | `gce` | Ollama (GCE VM) → Weaviate text2vec-ollama | worker.js calls Ollama API directly via `getOllamaEmbedding()`, then passes vector to Weaviate hybrid search |
-| `cloud` | Weaviate Cloud built-in vectorizer (OpenAI/Cohere) | Weaviate Cloud handles it internally |
 
 ---
 
@@ -104,8 +105,7 @@ Weaviate stores a single collection called `Document` with these properties:
 
 Each document is stored as **one object** in Weaviate — the entire file content, not chunked. This is a deliberate decision:
 
-- The `src/` files are relatively small (1-10KB each, 19 files total).
-- Chunking would break FAQ Q&A pairs across chunks, hurting retrieval quality.
+- The `src/` files are relatively small (1-10KB each, 16 files total).
 - Whole-document retrieval gives the LLM full context for each topic.
 
 ### Vectorizer configuration
@@ -113,7 +113,7 @@ Each document is stored as **one object** in Weaviate — the entire file conten
 The vectorizer module is set at collection creation time and **cannot be changed** without deleting and recreating the collection. `embed.py` detects vectorizer mismatches and handles them:
 
 ```python
-# If switching from OpenAI to Ollama (or vice versa), collection is deleted and recreated
+# If the existing collection uses a different vectorizer module, it is deleted and recreated
 if existing_vectorizer != expected_vectorizer:
     weaviate_client.collections.delete("Document")
 ```
@@ -184,7 +184,7 @@ This is why **Tags at the bottom of each `src/` file matter** — they add keywo
 
 ### How vector scoring works
 
-The query text is converted to a 1024-dimensional vector (using bge-m3 or the cloud provider's model), and documents are scored by cosine similarity with the query vector. This captures semantic meaning — "how much does it cost" and "fee structure" will match even though they share no keywords.
+The query text is converted to a 1024-dimensional vector (using bge-m3), and documents are scored by cosine similarity with the query vector. This captures semantic meaning — "how much does it cost" and "fee structure" will match even though they share no keywords.
 
 ### GCE mode: manual embedding
 
@@ -207,7 +207,15 @@ graphqlQuery = `{
 }`;
 ```
 
-In local/cloud mode, Weaviate computes the query vector internally.
+In local mode, Weaviate computes the query vector internally.
+
+### FAQ retrieval: PG FAQ API (separate from Weaviate docs)
+
+In addition to document retrieval from Weaviate, the worker also queries the **PG FAQ API**:
+- `POST /search` to get the closest FAQ questions for the user query (used for “Did you mean?” suggestions, and also included as extra FAQ context during answer generation)
+- `GET /faq/:id` for direct lookup when the user clicks a suggestion (the frontend sends `faq_id`)
+
+This FAQ path is independent of Weaviate’s `Document` collection: it is backed by Postgres+pgvector and is designed specifically for matching short FAQ-style questions.
 
 ### Relevance threshold
 
@@ -254,7 +262,7 @@ temperature: 0,        // Deterministic — same query always gives same rewrite
 max_tokens: 100,       // Short output — just keywords, not sentences
 ```
 
-The LLM receives `KNOWLEDGE_BASE_SUMMARY` (a compact list of 19 topics with 8-12 keywords each) as context. This tells the LLM what topics exist so it can map the user's question to the right domain.
+The LLM receives `KNOWLEDGE_BASE_SUMMARY` (a compact list of 16 topics with 8-12 keywords each) as context. This tells the LLM what topics exist so it can map the user's question to the right domain.
 
 **Why gpt-4o-mini for rewriting?** It's fast (~200ms), cheap, and the task is simple — keyword expansion, not complex reasoning. Using a larger model would add latency without meaningful quality improvement.
 
@@ -273,7 +281,7 @@ The LLM appends a `[LANG:xxx]` tag to the rewritten query. This tag is:
 | **Location** | `worker.js` constant | Bottom of each `src/*.md` file |
 | **Goal** | Help LLM route query to right topic | Help search engine find right document |
 | **Keyword strategy** | 8-12 **discriminating** keywords per topic (what makes this topic unique) | Many keywords including synonyms, variations, abbreviations (more = better recall) |
-| **Why different counts** | LLM needs to distinguish between 19 topics — too many overlapping keywords confuse it | BM25 benefits from more keyword surface area — partial matches add up |
+| **Why different counts** | LLM needs to distinguish between 16 topics — too many overlapping keywords confuse it | BM25 benefits from more keyword surface area — partial matches add up |
 
 ---
 
@@ -385,14 +393,16 @@ This is a deliberate trade-off: it's better to occasionally show an unchecked an
 services:
   embed:    # Python - runs embed.py, exits when done (profile: embed)
   worker:   # Node.js - runs Wrangler dev server on port 8787
+  postgres: # Postgres + pgvector for FAQ storage (profile: local)
+  pg-faq-api: # FastAPI service that queries the FAQ DB (profile: local)
   weaviate: # Weaviate v1.27.0 vector DB on port 8080 (profile: local)
   ollama:   # Ollama LLM server on port 11434 (profile: local)
 ```
 
 ### Docker profiles
 
-- **No profile** (`docker compose up worker`): Only starts the worker. Used when Weaviate and Ollama are running elsewhere (cloud or GCE).
-- **`local` profile** (`docker compose --profile local up`): Starts Weaviate + Ollama locally alongside the worker.
+- **No profile** (`docker compose up worker`): Only starts the worker. Used when Weaviate/Ollama (and optionally the FAQ services) are running elsewhere (e.g., on a GCE VM).
+- **`local` profile** (`docker compose --profile local up`): Starts the local stack (Weaviate + Ollama + Postgres + PG FAQ API) alongside the worker.
 - **`embed` profile** (`docker compose --profile embed up embed`): Runs the embedding script (one-shot).
 
 ### Dockerfiles
@@ -431,6 +441,8 @@ Developer machine
 │   ├── worker (port 8787) ← runs Wrangler dev server
 │   ├── weaviate (port 8080) ← local vector DB
 │   └── ollama (port 11434) ← local embedding model
+│   ├── postgres (port 5433) ← FAQ DB (pgvector)
+│   └── pg-faq-api (port 8001) ← FAQ search API
 └── Browser → http://localhost:8787
 ```
 
@@ -457,17 +469,11 @@ Google Cloud
 - Communication between Cloud Run and GCE VM is **internal-only** via VPC connector — the VM has no public IP.
 - At query time, worker.js calls the Ollama API on the GCE VM to compute query embeddings, then passes them to Weaviate's hybrid search with an explicit vector.
 
-### Cloud mode (`EMBEDDING_MODE=cloud`)
+### FAQ system note (GCE)
 
-```
-Weaviate Cloud (managed) ← vector DB + built-in embeddings
-Worker (Cloud Run or Cloudflare Workers)
-OpenAI/Cohere API ← for embeddings (via Weaviate Cloud)
-```
-
-- Weaviate is fully managed on Weaviate Cloud.
-- Embeddings are handled by Weaviate Cloud's built-in vectorizer (OpenAI `text-embedding-3-small` or Cohere `embed-multilingual-v3.0`).
-- Worker authenticates to Weaviate Cloud with `WEAVIATE_API_KEY` and passes the embedding provider's API key via headers.
+- The Cloud Build pipeline bootstraps the FAQ database during embedding (`ENABLE_PG_FAQ_BOOTSTRAP=true` in the embed job env vars).
+- However, **Cloud Build does not build/deploy the PG FAQ API service** by default.
+- Operationally this means FAQ suggestions/direct lookups are available in local Docker Compose by default, and in GCE only if you deploy the PG FAQ API + Postgres/Cloud SQL service separately and set `PG_FAQ_API_URL` for the worker.
 
 ### Cloudflare Workers mode (wrangler deploy)
 
@@ -499,6 +505,37 @@ OpenAI/Cohere API ← for embeddings (via Weaviate Cloud)
 **Key: Embedding is conditional.** Only runs if the git tag contains "embed". Normal code-only deploys skip embedding entirely.
 
 **Timeout**: 40 minutes (2400s) — needed for first-time setup when the GCE VM is created and bge-m3 is downloaded.
+
+### Important: repo config vs live VM config
+
+For GCE mode, the `docker-compose.yml` in this repo and the `docker-compose.yml` actually running on the VM are not automatically kept in sync.
+
+What happens in practice:
+
+- The repo files are the source blueprint.
+- When the GCE VM is first created, the startup script writes a compose file onto the VM.
+- After that, the VM keeps using its own local copy of that file.
+- If someone later updates the repo's `docker-compose.yml` or `scripts/gce-startup.sh`, the already-existing VM does **not** automatically pick up those changes.
+
+This means:
+
+- repo config and VM config may start aligned
+- but they can drift over time
+- fixing the repo alone does not change the currently running VM
+
+Operational implication:
+
+- if GCE behavior does not match the repo, check the live VM's compose file directly
+- to apply repo-side infra changes to GCE mode, you usually need one of:
+  - VM recreation
+  - a manual update on the VM
+  - startup logic that explicitly rewrites the VM file during deployment
+
+Simple way to think about it:
+
+- the repo file is the blueprint
+- the VM file is the actual built house
+- changing the blueprint later does not change the already-built house by itself
 
 ---
 
@@ -625,7 +662,12 @@ Error: Weaviate error: ...
 
 - **Local**: Is the Weaviate container running? `docker ps | grep weaviate`
 - **GCE**: Can Cloud Run reach the GCE VM? Check VPC connector status and firewall rules. The VM should allow TCP 8080 and 11434 from 10.0.0.0/8.
-- **Cloud**: Is `WEAVIATE_URL` correct? Is the API key valid? Is the cluster active?
+
+### PG FAQ API failures (optional)
+
+- **Local**: Is `pg-faq-api` running? `docker compose ps` and check port `8001`. Is `postgres` running?
+- **Worker config**: Is `PG_FAQ_API_URL` set correctly (or using the default `http://pg-faq-api:8000` on the Docker network)?
+- Behavior: if the PG FAQ API is unreachable, the worker should continue to answer normally, but “Did you mean?” suggestions will be empty.
 
 ### Embedding failures
 
@@ -654,23 +696,345 @@ EMBEDDING FAILED for filename.md
 
 | Variable | Used by | Required | Default | Purpose |
 |---|---|---|---|---|
-| `EMBEDDING_MODE` | embed.py, worker.js | No | `cloud` | `local`, `gce`, or `cloud` |
+| `EMBEDDING_MODE` | embed.py, worker.js | No | `local` | `local` or `gce` |
 | `LOCAL_WEAVIATE_URL` | embed.py, worker.js | For local mode | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | embed.py, worker.js | For GCE mode | — | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | embed.py, worker.js | For GCE mode | — | GCE VM Ollama URL |
-| `WEAVIATE_URL` | embed.py, worker.js | For cloud mode | — | Weaviate Cloud cluster URL |
-| `WEAVIATE_API_KEY` | embed.py, worker.js | For cloud mode | — | Weaviate Cloud API key |
-| `OPENAI_API_KEY` | worker.js, embed.py | Yes (cloud) | — | OpenAI API key (embeddings + LLM fallback) |
-| `COHERE_API_KEY` | embed.py, worker.js | If Cohere | — | Cohere API key (alternative embeddings) |
-| `EMBEDDING_PROVIDER` | embed.py, worker.js | No | `openai` | `openai` or `cohere` (cloud mode only) |
-| `EMBEDDING_MODEL` | embed.py | No | Varies by provider | Override embedding model name |
+| `PG_FAQ_API_URL` | worker.js | No | `http://pg-faq-api:8000` | Base URL for the PG FAQ API (semantic FAQ search + direct FAQ lookup) |
+| `OPENAI_API_KEY` | worker.js | Yes (unless `CHAT_API_KEY` set) | — | API key for the chat endpoint (rewrite + answer + fact-check) when using OpenAI |
 | `OLLAMA_MODEL` | embed.py, worker.js | No | `bge-m3` | Ollama embedding model |
 | `CHAT_API_ENDPOINT` | worker.js | No | `https://api.openai.com/v1/chat/completions` | LLM API endpoint |
 | `CHAT_API_KEY` | worker.js | No | Falls back to `OPENAI_API_KEY` | API key for chat endpoint |
 | `CHAT_MODEL` | worker.js | No | `gpt-4o-mini` | LLM model for answer generation |
 | `CLEAR_DB` | embed.py | No | `true` | `true` to clear Weaviate before embedding |
+| `ENABLE_PG_FAQ_BOOTSTRAP` | embed.py | No | — | Enable FAQ DB bootstrap/backfill during embedding |
+| `FAQ_SEED_PATH` | embed.py | No | `pg/seed/faqs.json` | Path to FAQ seed JSON (in the embed container) |
+| `FAQ_SQL_DIR` | embed.py | No | `pg/init` | Directory containing SQL files to apply to Postgres |
+| `FAQ_EMBEDDING_DIMENSION` | embed.py | No | `1024` | Expected FAQ embedding dimension |
+| `FAQ_EMBEDDING_BATCH_SIZE` | embed.py | No | `50` | FAQ embedding backfill batch size |
+| `PGHOST` | embed.py, pg-faq-api | For FAQ DB | — | Postgres host |
+| `PGPORT` | embed.py, pg-faq-api | For FAQ DB | `5432` | Postgres port |
+| `PGDATABASE` | embed.py, pg-faq-api | For FAQ DB | — | Postgres database name |
+| `PGUSER` | embed.py, pg-faq-api | For FAQ DB | — | Postgres user |
+| `PGPASSWORD` | embed.py, pg-faq-api | For FAQ DB | — | Postgres password |
 
 **Note on `.dev.vars`**: Wrangler (Cloudflare Workers dev server) reads secrets from `.dev.vars`, not `.env`. The Dockerfile.worker generates `.dev.vars` from environment variables at container startup.
+
+---
+
+# Local vs GCE Mode
+
+This project supports both `local` mode and `gce` mode, but they are not the same environment with a different URL. They are meaningfully different systems.
+
+The simplest way to think about it is:
+
+- `local` mode is a developer sandbox on one machine
+- `gce` mode is a split cloud setup using Cloud Run, a private VM, and Cloud Build
+
+If a developer does not understand this difference, they can easily misread infra issues as code issues.
+
+## 1. Where each service runs
+
+### Local mode
+
+In `local` mode, most services run together on the developer's machine using Docker Compose:
+
+- `worker` runs locally
+- `weaviate` runs locally
+- `ollama` runs locally
+- optionally `postgres` and `pg-faq-api` also run locally
+
+This means the whole system is mostly inside one Docker network on one machine.
+
+### GCE mode
+
+In `gce` mode, the system is split:
+
+- `worker` runs on Cloud Run
+- `embed.py` runs as a Cloud Run job
+- `weaviate` runs on a GCE VM
+- `ollama` runs on the same GCE VM
+- Cloud Build handles deployment
+
+So `gce` mode is not just "local but hosted in Google Cloud". The app is distributed across different services.
+
+## 2. How services talk to each other
+
+### Local mode
+
+Containers talk over the local Docker network using container names such as:
+
+- `http://weaviate:8080`
+- `http://ollama:11434`
+
+Everything stays on the developer machine.
+
+### GCE mode
+
+Cloud Run is not on the VM's Docker network. It reaches the VM over internal Google Cloud networking through a VPC connector.
+
+That means the URLs are private VM URLs such as:
+
+- `http://10.160.0.10:8080`
+- `http://10.160.0.10:11434`
+
+So:
+
+- local mode uses Docker service discovery
+- GCE mode uses private VM networking
+
+## 3. Who owns and controls the environment
+
+### Local mode
+
+The developer has direct control:
+
+- start containers with `docker compose up`
+- stop containers with `docker compose down`
+- inspect logs directly
+- delete local volumes when needed
+
+### GCE mode
+
+The environment is owned by multiple cloud layers:
+
+- Cloud Build for deployment
+- Cloud Run for worker and embed job execution
+- GCE VM for Weaviate and Ollama
+- IAM, VPC, and firewall rules for access control
+
+Because of that, debugging usually needs:
+
+- Cloud logs
+- `gcloud`
+- sometimes SSH into the VM
+
+## 4. Deployment behavior
+
+### Local mode
+
+There is usually no formal deployment. You edit code and rerun containers.
+
+If you change `docker-compose.yml`, your next local run uses that new file immediately.
+
+### GCE mode
+
+Deployment happens through `cloudbuild.yaml`, usually triggered by git tags.
+
+That process may:
+
+- build and push images
+- deploy the Cloud Run worker
+- create or run the embed job
+- create the VM if it does not already exist
+
+Important detail:
+
+- a code deployment does not automatically rebuild or reconfigure an already-existing VM
+
+## 5. Repo config vs live VM config
+
+This is one of the most important differences.
+
+### Local mode
+
+The `docker-compose.yml` in the repo is the same file being used when you run locally.
+
+So if you edit the repo file, your local environment uses that updated file on the next run.
+
+### GCE mode
+
+The repo contains a startup script, [scripts/gce-startup.sh](/home/rdpuser/Desktop/ICSR/iitmdocs/scripts/gce-startup.sh:1), which writes a `docker-compose.yml` onto the VM when the VM is first created.
+
+After that, the VM keeps using its own local file, for example:
+
+- `/opt/iitm-chatbot/docker-compose.yml`
+
+This means:
+
+- the repo file and the live VM file may start aligned
+- but they can drift over time
+- changing the repo later does not automatically update the already-running VM
+
+Simple way to think about it:
+
+- the repo file is the blueprint
+- the VM file is the built house
+- changing the blueprint later does not automatically rebuild the house
+
+## 6. Data persistence and reset behavior
+
+### Local mode
+
+Data is usually stored in Docker volumes on the developer machine, such as:
+
+- `weaviate_data`
+- `ollama_data`
+- `postgres_data`
+
+Resetting is easy:
+
+```bash
+docker compose --profile local down -v
+docker compose --profile local up -d
+```
+
+### GCE mode
+
+Data lives on the VM filesystem, for example:
+
+- `/opt/iitm-chatbot/weaviate_data`
+- `/opt/iitm-chatbot/ollama_data`
+
+That data survives normal code deployments if the VM is reused.
+
+This is why stale Weaviate state can survive across deployments and keep causing failures even when code changes.
+
+## 7. Embedding path differences
+
+### Local mode
+
+`embed.py` talks to local Weaviate, and Weaviate uses the local Ollama container through `text2vec-ollama`.
+
+Everything is close together on one machine.
+
+### GCE mode
+
+`embed.py` runs as a Cloud Run job, then:
+
+1. Cloud Run talks to Weaviate on the VM
+2. Weaviate on the VM talks to Ollama on the VM
+
+So the GCE embedding path crosses more boundaries and depends on more moving parts being healthy at the same time.
+
+## 8. Query-time behavior differences
+
+### Local mode
+
+The local setup is tightly coupled inside one Docker environment.
+
+### GCE mode
+
+At query time, the worker computes the query embedding by calling Ollama on the VM, then sends that vector to Weaviate for hybrid search.
+
+This means the worker can appear healthy as a Cloud Run service even if downstream VM services are degraded.
+
+In other words:
+
+- Cloud Run health does not prove Weaviate health
+- a working UI does not always mean the embed path is healthy
+
+## 9. Failure patterns are different
+
+### Local mode
+
+Local failures are often simple:
+
+- model not pulled
+- env var missing
+- local container not started
+- local volume needs reset
+
+These are usually easy to inspect and fix.
+
+### GCE mode
+
+GCE failures are often more operational:
+
+- stale Weaviate state
+- live VM config drift
+- VPC or firewall problems
+- Weaviate readiness failures
+- Weaviate-to-Ollama timeout issues
+- Cloud Run can reach the VM, but the service on the VM is unhealthy
+
+These are harder to diagnose because the code may be correct while the environment is wrong.
+
+## 10. Observability and debugging
+
+### Local mode
+
+Debugging is direct:
+
+- `docker compose ps`
+- `docker compose logs`
+- `curl localhost:8080`
+- inspect files on your machine
+
+### GCE mode
+
+Debugging is layered:
+
+- Cloud Run logs
+- Cloud Build logs
+- `gcloud run services describe`
+- `gcloud run jobs describe`
+- SSH into the VM
+- Docker logs on the VM
+
+So GCE debugging is slower and often needs extra permissions.
+
+## 11. Security and access model
+
+### Local mode
+
+The local setup is mainly optimized for convenience.
+
+### GCE mode
+
+The cloud setup depends on:
+
+- IAM permissions
+- service account permissions
+- VPC connector setup
+- firewall rules
+- SSH access if VM inspection is needed
+
+That is why fixing a VM-side issue required access to your GCP account and then access to the VM itself.
+
+## 12. Why local success does not guarantee GCE success
+
+A successful local-from-zero run proves:
+
+- the code path works
+- the services can work together in a clean environment
+
+It does **not** prove:
+
+- the live VM is healthy
+- the VM config matches the repo
+- the persisted Weaviate state is clean
+- Cloud Run to VM networking is healthy
+- the live Weaviate and Ollama timeouts are correct
+
+This exact difference mattered during the Weaviate debugging work:
+
+- local worked
+- GCE still failed
+- the real issue was stale VM state and outdated live VM config
+
+## 13. Practical rule of thumb
+
+When something breaks, ask this first:
+
+Is this a code-path problem, or a live environment problem?
+
+Good rule:
+
+- if local-from-zero also fails, suspect code or intended config
+- if local-from-zero works but GCE fails, strongly suspect VM state, config drift, cloud networking, or service startup behavior
+
+That rule saves a lot of time.
+
+## 14. Final summary
+
+### Local mode in one line
+
+Everything important runs on the developer machine, the repo config is the live config, and resets are easy.
+
+### GCE mode in one line
+
+The worker runs on Cloud Run, Weaviate and Ollama run on a private VM, the VM keeps its own state and config, and cloud debugging is required when infra problems happen.
 
 ---
 

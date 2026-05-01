@@ -133,9 +133,9 @@ docker-compose up worker
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│  Docker Compose Environment                 │
-│                                             │
+┌────────────────────────────────────────────┐
+│  Docker Compose Environment                │
+│                                            │
 │  ┌────────────────┐                        │
 │  │  embed service │                        │
 │  │  (Python)      │                        │

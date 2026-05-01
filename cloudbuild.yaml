@@ -180,7 +180,20 @@ steps:
       - 'Dockerfile.worker'
       - '.'
 
-  # Step 8: Push embed image (only if src/ changed)
+  # Step 8: Build PG FAQ API image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-pg-faq-api'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:latest'
+      - '-f'
+      - 'Dockerfile.pgfaq'
+      - '.'
+
+  # Step 9: Push embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-embed'
     entrypoint: 'bash'
@@ -207,7 +220,7 @@ steps:
         fi
         docker push gcr.io/$PROJECT_ID/iitm-embed:latest
 
-  # Step 9: Push worker image
+  # Step 10: Push worker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-worker'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA']
@@ -216,7 +229,16 @@ steps:
     id: 'push-worker-latest'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest']
 
-  # Step 10: Create/Update Cloud Run Job for embedding (only if src/ changed)
+  # Step 11: Push PG FAQ API image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-pg-faq-api'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-pg-faq-api-latest'
+    args: ['push', 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:latest']
+
+  # Step 12: Create/Update Cloud Run Job for embedding (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'create-embed-job'
     entrypoint: 'bash'
@@ -234,10 +256,10 @@ steps:
 
         # Set CLEAR_DB=true if files were deleted
         if [ "$$EMBED_MODE" = "delete" ]; then
-          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,CLEAR_DB=true"
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,CLEAR_DB=true,ENABLE_PG_FAQ_BOOTSTRAP=true,FAQ_SEED_PATH=pg/seed/faqs.json,FAQ_SQL_DIR=pg/init,FAQ_EMBEDDING_DIMENSION=1024,FAQ_EMBEDDING_BATCH_SIZE=50,PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE}"
           echo ">>> CLEAR_DB=true (files were deleted)"
         else
-          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434"
+          ENV_VARS="EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,ENABLE_PG_FAQ_BOOTSTRAP=true,FAQ_SEED_PATH=pg/seed/faqs.json,FAQ_SQL_DIR=pg/init,FAQ_EMBEDDING_DIMENSION=1024,FAQ_EMBEDDING_BATCH_SIZE=50,PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE}"
         fi
 
         gcloud run jobs deploy iitm-embed-job \
@@ -249,7 +271,7 @@ steps:
           --task-timeout=60m \
           --max-retries=1
 
-  # Step 11: Execute the embed job and stream logs (only if src/ changed)
+  # Step 13: Execute the embed job and stream logs (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'run-embed-job'
     entrypoint: 'bash'
@@ -298,7 +320,33 @@ steps:
           sleep 5
         done
 
-  # Step 12: Deploy Cloud Run service
+  # Step 14: Deploy PG FAQ API Cloud Run service
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-pg-faq-api'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        IP=$$(cat /workspace/gce_internal_ip.txt)
+        echo "Deploying PG FAQ API Cloud Run service..."
+        gcloud run deploy iitm-pg-faq-api \
+          --image gcr.io/$PROJECT_ID/iitm-pg-faq-api:$COMMIT_SHA \
+          --region asia-south1 \
+          --platform managed \
+          --allow-unauthenticated \
+          --no-invoker-iam-check \
+          --port 8000 \
+          --vpc-connector iitm-vpc-connector \
+          --vpc-egress private-ranges-only \
+          --set-env-vars "PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},OLLAMA_URL=http://$$IP:11434,OLLAMA_MODEL=bge-m3,EMBEDDING_DIMENSION=1024"
+
+        PG_FAQ_API_URL=$$(gcloud run services describe iitm-pg-faq-api \
+          --region asia-south1 \
+          --format='value(status.url)')
+        echo "PG FAQ API URL: $$PG_FAQ_API_URL"
+        echo "$$PG_FAQ_API_URL" > /workspace/pg_faq_api_url.txt
+
+  # Step 15: Deploy Cloud Run worker service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloudrun'
     entrypoint: 'bash'
@@ -306,6 +354,7 @@ steps:
       - '-c'
       - |
         IP=$$(cat /workspace/gce_internal_ip.txt)
+        PG_FAQ_API_URL=$$(cat /workspace/pg_faq_api_url.txt)
         echo "Deploying Cloud Run service with VPC connector..."
         gcloud run deploy iitm-chatbot-worker \
           --image gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA \
@@ -316,13 +365,15 @@ steps:
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
-          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL}"
+          --set-env-vars "EMBEDDING_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},PG_FAQ_API_URL=$$PG_FAQ_API_URL"
 
 # Store images in Google Container Registry
-# Note: Only worker images are listed here since embed images are conditionally built
+# Note: embed images are conditionally built, but worker and PG FAQ API images are always built
 images:
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest'
+  - 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/iitm-pg-faq-api:latest'
 
 # Substitutions for environment variables
 substitutions:

@@ -1,18 +1,20 @@
 ---
 title: Working Professionals and Parallel Study
-description: Information for working professionals and students pursuing parallel degrees — time commitment (10 hours per week per course), flexible online learning with pre-recorded lectures, in-person exam requirements, and expected completion timeline (4-6 years).
+description: Explains how working professionals and students can pursue the IIT Madras BS program alongside jobs or other degrees, including time commitment and learning flexibility.
 covers:
-  - Working professionals eligibility (no special approval needed)
-  - Pursuing alongside another degree or job
-  - Time commitment (10 hours per week per course)
-  - Online flexibility (pre-recorded lectures, learn at own pace)
-  - In-person exam attendance required
+  - Eligibility for working professionals
+  - Parallel study with another degree or job
+  - Weekly time commitment expectations
+  - Flexible online learning structure
+  - In-person exam requirements
+  - Breaks and course registration flexibility
 sample_queries:
-  - Can I do this program while working a full-time job?
-  - Can I pursue this degree alongside another college degree?
-  - How long does the BS program take for working professionals?
-  - How many hours per week do I need to study?
+  - Can I do this program while working full-time?
+  - Can I study this alongside another degree?
+  - How many hours per week are required per course?
   - Are lectures live or pre-recorded?
+  - Do I need to attend exams in person?
+  - Can I take breaks during the program?
 ---
 
 # Working Professionals and Parallel Study
@@ -55,19 +57,6 @@ Available through student communities:
 ## Study Groups
 Student communities exist for peer support but program does not mandate group study.
 
-# FAQs
-
-**Question**: How long will it take to complete the online degree program if I am working?
-**Answer**: We expect full time students (students who are pursuing BS Degree as Sole Degree) to complete the BS degree within 4 years while those pursuing the BS degree in parallel with another physical college degree program or while working can comfortably complete the BS degree in 5-6 years.
-
-While this is the estimated time till BS degree, a diploma can potentially be obtained around 2 years. Check the Academics page to better understand the program structure.
-
-
-
-**Question**: How much time do I need to spend on a course per day?
-**Answer**: The expected effort to do well in one course is about 10 hours per week.
-
-<!-- end of faqs --> 
 ---
 
-Tags: working professionals, job along with degree, parallel study, part time study, flexible learning, self paced learning, work study balance, full time job, office hours conflict, workload for working professionals, no special approval needed, 10 hours per week per course, pre-recorded video lectures, YouTube accessible, learn at own pace, in-person exam mandatory, select convenient exam cities, can defer 3 terms, can pursue alongside another degree, self study materials, no coaching needed, student communities peer support
+Tags: working professionals, parallel study, job with degree, flexible learning, part time study, self paced learning, 10 hours per week per course, pre recorded lectures, youtube lectures, learn at own pace, in person exams required, exam cities selection, pursue alongside degree, no special approval needed, study with job, course load flexibility, 1 to 4 courses per term, qualifier 4 week study, take breaks between terms, defer foundation registration, rejoin later terms, self study sufficient, no coaching required, student communities, peer support

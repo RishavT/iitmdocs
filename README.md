@@ -199,11 +199,11 @@ Views use `JSON_VALUE()` extraction which returns `NULL` for missing fields. Thi
 
 ## Configuration
 
-Choose one of three deployment modes:
+Choose one of two deployment modes:
 
 ### Option 1: Local Development (Recommended for development)
 
-Uses Docker Compose with local Weaviate + Ollama containers.
+Uses Docker Compose with local Weaviate + Ollama, plus a local Postgres-backed FAQ search service.
 
 **Environment Variables (`.env` and `.dev.vars`):**
 ```bash
@@ -219,11 +219,18 @@ OPENAI_API_KEY=sk-...
 ```
 
 **Setup:**
-1. Start Weaviate + Ollama: `docker compose --profile local up -d`
+1. Start the local stack: `docker compose --profile local up -d`
 2. Wait for Ollama to pull the model (~2 min first time)
-3. Run embeddings: `docker compose --profile local --profile embed run --rm embed`
-4. Start worker: `docker compose up worker`
-5. Test at `http://localhost:8787`
+3. Run embeddings: `docker compose --profile embed run --rm embed`
+4. Test at `http://localhost:8787`
+
+**Smoke tests (simple checks):**
+- Worker reachable (expect `200`):
+  - `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8787/`
+- Weaviate has documents (expect a non-zero count):
+  - `curl -sS -X POST http://localhost:8080/v1/graphql -H 'Content-Type: application/json' -d '{"query":"{ Aggregate { Document { meta { count } } } }"}'`
+- End-to-end answer stream works:
+  - `curl -N http://localhost:8787/answer -H 'Content-Type: application/json' -d '{"q":"How do I register for courses?","ndocs":3}'`
 
 ### Option 2: GCE (Production - currently used)
 
@@ -245,39 +252,11 @@ OPENAI_API_KEY=sk-...
 
 **Cost:** ~$25/month for GCE VM (`e2-medium`), Cloud Run scales to zero.
 
-### Option 3: Cloud (Alternative - not used in production)
-
-Uses Weaviate Cloud for vector storage + OpenAI/Cohere APIs for embeddings.
-
-**Environment Variables:**
-```bash
-EMBEDDING_MODE=cloud
-WEAVIATE_URL=https://your-cluster.weaviate.cloud
-WEAVIATE_API_KEY=your_weaviate_key
-
-# Embedding API (choose one)
-EMBEDDING_PROVIDER=openai  # or cohere
-OPENAI_API_KEY=sk-...      # if using OpenAI for embeddings
-COHERE_API_KEY=...         # if using Cohere for embeddings
-
-# Chat API (required)
-OPENAI_API_KEY=sk-...
-```
-
-**⚠️ CRITICAL: Embedding Provider Compatibility**
-
-The embedding provider used during ingestion MUST match the worker configuration. OpenAI and Cohere embeddings are NOT compatible - queries will fail silently if mismatched.
-
-**To switch providers:**
-1. Update `EMBEDDING_PROVIDER` in `.env` and `.dev.vars`
-2. Re-run embeddings to recreate with new provider
-3. Restart the worker
-
 ### Environment Variable Reference
 
 | Variable | Modes | Default | Description |
 |----------|-------|---------|-------------|
-| `EMBEDDING_MODE` | All | `local` | `local`, `gce`, or `cloud` |
+| `EMBEDDING_MODE` | All | `local` | `local` or `gce` |
 | `OPENAI_API_KEY` | All | - | OpenAI API key for chat |
 | `CHAT_API_ENDPOINT` | All | OpenAI URL | Custom chat endpoint |
 | `CHAT_MODEL` | All | `gpt-4o-mini` | Chat model |
@@ -285,10 +264,7 @@ The embedding provider used during ingestion MUST match the worker configuration
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
-| `WEAVIATE_URL` | Cloud | - | Weaviate Cloud URL |
-| `WEAVIATE_API_KEY` | Cloud | - | Weaviate Cloud API key |
-| `EMBEDDING_PROVIDER` | Cloud | `openai` | `openai` or `cohere` |
-| `COHERE_API_KEY` | Cloud | - | Cohere API key |
+| `PG_FAQ_API_URL` | All | `http://pg-faq-api:8000` | PG FAQ API base URL (FAQ suggestions + direct `faq_id` lookups) |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
 ## Query Rewriting & Search Optimization
@@ -304,7 +280,7 @@ Before searching, user queries are expanded using an LLM to add relevant keyword
 - **Hinglish support**: "fee kitna hai" → adds "cost structure payment"
 - **Short queries**: "OPPE" → adds "programming exam proctored online"
 
-The query rewriter uses a knowledge base summary (`src/_knowledge_base_summary.md`) as context. This file lists all topics, keywords, and 100 example queries.
+The query rewriter uses the `KNOWLEDGE_BASE_SUMMARY` constant defined in `worker.js` as context. This constant lists all topics and their main keywords.
 
 ### Regenerating the Knowledge Base Summary
 
@@ -364,20 +340,6 @@ You can query the documents using Weaviate's GraphQL API or Python client.
 ```python
 import weaviate
 client = weaviate.connect_to_local(host="localhost", port=8080)  # or GCE VM IP
-collection = client.collections.get("Document")
-print(collection.query.hybrid(query="admission process", limit=3))
-client.close()
-```
-
-**Cloud mode:**
-```python
-import os
-import weaviate
-client = weaviate.connect_to_weaviate_cloud(
-    cluster_url=os.getenv("WEAVIATE_URL"),
-    auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-    headers={"X-OpenAI-Api-Key": os.getenv("OPENAI_API_KEY")},  # or Cohere
-)
 collection = client.collections.get("Document")
 print(collection.query.hybrid(query="admission process", limit=3))
 client.close()

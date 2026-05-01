@@ -4,22 +4,34 @@
 # dependencies = [
 #     "weaviate-client>=4.4.0",
 #     "python-dotenv>=1.0.0",
+#     "psycopg[binary]>=3.1.0",
 # ]
 # ///
+
+# TODO: The file is now too large. Consider splitting into multiple modules (e.g. `weaviate_utils.py`, `pg_bootstrap.py`) for better organization and maintainability. We can also just move the helper functions to seperate files and keep the main embedding logic in `embed.py` to keep it as the single entry point for the embedding process.
 """
 Script to embed all files from src/ directory into Weaviate.
-Supports local (Ollama), cloud (Cohere/OpenAI), and gce (remote Ollama) modes via EMBEDDING_MODE env var.
+Supports local (Ollama) and gce (remote Ollama) modes via EMBEDDING_MODE env var.
 """
 
+from __future__ import annotations
+
 import hashlib
+import json
 import logging
 import os
+import socket
+import time
+import urllib.error
+import urllib.request
 import weaviate
 from dotenv import load_dotenv
 from pathlib import Path
 from weaviate.classes.config import Configure, Property, DataType
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
+
+import psycopg
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -36,7 +48,7 @@ def clear_collection(weaviate_client):
         logger.info("No existing Document collection to clear.")
 
 
-def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None):
+def create_schema(weaviate_client, embedding_mode="local", embedding_model=None, ollama_endpoint=None):
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
     logger.debug(f"EMBEDDING MODE: {embedding_mode}")
@@ -57,14 +69,10 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
             api_endpoint=ollama_url
         )
         expected_vectorizer = "text2vec-ollama"
-    elif embedding_provider == "cohere":
-        model = embedding_model or "embed-multilingual-v3.0"
-        vectorizer_config = Configure.Vectorizer.text2vec_cohere(model=model)
-        expected_vectorizer = "text2vec-cohere"
     else:
-        model = embedding_model or "text-embedding-3-small"
-        vectorizer_config = Configure.Vectorizer.text2vec_openai(model=model)
-        expected_vectorizer = "text2vec-openai"
+        raise ValueError(
+            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Supported values: local, gce."
+        )
 
     # Check if collection exists and validate vectorizer configuration
     if weaviate_client.collections.exists("Document"):
@@ -76,7 +84,7 @@ def create_schema(weaviate_client, embedding_mode="cloud", embedding_provider="o
             if existing_vectorizer != expected_vectorizer:
                 logger.warning(
                     f"Vectorizer mismatch! Existing: {existing_vectorizer}, Expected: {expected_vectorizer}. "
-                    f"Deleting and recreating collection with {embedding_mode}/{embedding_provider} embeddings. "
+                    f"Deleting and recreating collection with {embedding_mode} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
                 weaviate_client.collections.delete("Document")
@@ -110,9 +118,466 @@ EXCLUDED_FILES = [
 ]
 
 
-def embed_documents(weaviate_client, src_directory: str, embedding_mode="cloud", embedding_provider="openai", embedding_model=None, ollama_endpoint=None) -> bool:
+def _is_true(value: str | None) -> bool:
+    """Return True if the string represents a truthy value (env-var friendly)."""
+    return (value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _split_sql_statements(sql_text: str) -> list[str]:
+    """
+    Split SQL text into executable statements.
+
+    We cannot naively split on ';' because PL/pgSQL functions contain semicolons
+    inside dollar-quoted blocks (e.g. `$$ ... $$`).
+    """
+
+    statements: list[str] = []
+    buf: list[str] = []
+
+    in_single = False
+    in_double = False
+    dollar_tag: str | None = None
+
+    i = 0
+    n = len(sql_text)
+
+    def flush() -> None:
+        s = "".join(buf).strip()
+        if s:
+            statements.append(s)
+        buf.clear()
+
+    while i < n:
+        ch = sql_text[i]
+        nxt = sql_text[i + 1] if i + 1 < n else ""
+
+        if dollar_tag is None and not in_single and not in_double:
+            if ch == "-" and nxt == "-":
+                # Line comment: consume until newline.
+                while i < n and sql_text[i] != "\n":
+                    i += 1
+                continue
+            if ch == "/" and nxt == "*":
+                # Block comment: consume until closing */.
+                i += 2
+                while i + 1 < n and not (sql_text[i] == "*" and sql_text[i + 1] == "/"):
+                    i += 1
+                i += 2
+                continue
+
+        if dollar_tag is None and not in_double and ch == "'" and not in_single:
+            in_single = True
+            buf.append(ch)
+            i += 1
+            continue
+        if dollar_tag is None and in_single:
+            buf.append(ch)
+            if ch == "'" and nxt == "'":
+                buf.append(nxt)
+                i += 2
+                continue
+            if ch == "'":
+                in_single = False
+            i += 1
+            continue
+
+        if dollar_tag is None and not in_single and ch == '"':
+            in_double = not in_double
+            buf.append(ch)
+            i += 1
+            continue
+
+        if dollar_tag is None and not in_single and not in_double and ch == "$":
+            # Dollar-quote: $tag$ ... $tag$
+            j = i + 1
+            while j < n and (sql_text[j].isalnum() or sql_text[j] == "_"):
+                j += 1
+            if j < n and sql_text[j] == "$":
+                dollar_tag = sql_text[i : j + 1]
+                buf.append(dollar_tag)
+                i = j + 1
+                continue
+
+        if dollar_tag is not None:
+            if sql_text.startswith(dollar_tag, i):
+                buf.append(dollar_tag)
+                i += len(dollar_tag)
+                dollar_tag = None
+                continue
+            buf.append(ch)
+            i += 1
+            continue
+
+        if not in_single and not in_double and dollar_tag is None and ch == ";":
+            flush()
+            i += 1
+            continue
+
+        buf.append(ch)
+        i += 1
+
+    flush()
+    return statements
+
+
+def _log_pg_env_summary() -> None:
+    # Log presence only (never values for secrets).
+    keys = ["PGHOST", "PGPORT", "PGDATABASE", "PGUSER", "PGPASSWORD", "PGSSLMODE"]
+    summary = {k: ("set" if os.getenv(k) else "unset") for k in keys}
+    logger.info(f"[pg-bootstrap] PG env summary: {summary}")
+
+
+def _pg_connect_from_env() -> psycopg.Connection:
+    """Connect to Postgres using `PG*` environment variables (Cloud SQL)."""
+
+    host = os.getenv("PGHOST")
+    port = int(os.getenv("PGPORT", "5432"))
+    db = os.getenv("PGDATABASE")
+    user = os.getenv("PGUSER")
+    password = os.getenv("PGPASSWORD")
+    sslmode = os.getenv("PGSSLMODE")
+    connect_timeout = int(os.getenv("PGCONNECT_TIMEOUT", "10"))
+
+    missing = [k for k, v in [("PGHOST", host), ("PGDATABASE", db), ("PGUSER", user), ("PGPASSWORD", password)] if not v]
+    if missing:
+        _log_pg_env_summary()
+        raise ValueError(f"Missing required Postgres env vars: {', '.join(missing)}")
+
+    logger.info(f"[pg-bootstrap] Connecting to Postgres: host={host} port={port} db={db} user={user} sslmode={sslmode or '<default>'} timeout={connect_timeout}s")
+
+    # DNS resolution logging is extremely helpful for debugging Cloud SQL private IP / VPC issues.
+    try:
+        addrs = socket.getaddrinfo(host, port, proto=socket.IPPROTO_TCP)
+        uniq = sorted({a[4][0] for a in addrs})
+        logger.info(f"[pg-bootstrap] PGHOST resolved to: {uniq}")
+    except Exception as exc:
+        logger.warning(f"[pg-bootstrap] Could not resolve PGHOST={host}: {exc}")
+
+    try:
+        conn = psycopg.connect(  # type: ignore[misc]
+            host=host,
+            port=port,
+            dbname=db,
+            user=user,
+            password=password,
+            sslmode=sslmode,
+            connect_timeout=connect_timeout,
+        )
+    except Exception:
+        logger.exception("[pg-bootstrap] Postgres connection failed.")
+        raise
+
+    # Emit a lightweight “we are really connected” banner without leaking anything sensitive.
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_database(), current_user, version();")
+            row = cur.fetchone()
+        logger.info(f"[pg-bootstrap] Connected. current_database={row[0]!r} current_user={row[1]!r}")
+    except Exception as exc:
+        logger.warning(f"[pg-bootstrap] Connected but failed to run smoke query: {exc}")
+
+    return conn
+
+
+def _pg_apply_sql_file(conn: psycopg.Connection, path: str) -> None:
+    """Execute a SQL file by splitting it into statements safely."""
+
+    t0 = time.monotonic()
+    with open(path, "r", encoding="utf-8") as f:
+        sql_text = f.read()
+
+    statements = _split_sql_statements(sql_text)
+    if not statements:
+        logger.info(f"[pg-bootstrap] SQL file is empty, skipping: {path}")
+        return
+
+    logger.info(f"[pg-bootstrap] Applying SQL: {path} (statements={len(statements)})")
+    with conn.cursor() as cur:
+        for idx, stmt in enumerate(statements, 1):
+            try:
+                cur.execute(stmt)
+            except Exception:
+                snippet = stmt.strip().replace("\n", " ")
+                if len(snippet) > 220:
+                    snippet = snippet[:220] + "…"
+                logger.exception(f"[pg-bootstrap] SQL failed in {path} at statement {idx}/{len(statements)}: {snippet}")
+                raise
+    conn.commit()
+    logger.info(f"[pg-bootstrap] Applied SQL OK: {path} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
+
+
+def _load_seed_faqs(path: str) -> list[dict]:
+    """Load `pg/seed/faqs.json` and validate minimal shape."""
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if not isinstance(data, list):
+        raise ValueError(f"Seed file must be a JSON array: {path}")
+
+    for i, row in enumerate(data):
+        if not isinstance(row, dict):
+            raise ValueError(f"Seed row {i} must be an object")
+        for key in ("topic_filename", "question", "answer"):
+            if not (row.get(key) or "").strip():
+                raise ValueError(f"Seed row {i} missing/empty {key}")
+    return data
+
+
+def _pg_upsert_seed_faqs(conn: psycopg.Connection, rows: list[dict]) -> int:
+    """
+    Upsert FAQs using uniqueness ONLY on `question`.
+
+    We avoid no-op updates so we don't unnecessarily set `embedding = NULL` via trigger.
+    """
+
+    if not rows:
+        return 0
+
+    sql = """
+    INSERT INTO faqs (topic_filename, question, answer)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (question) DO UPDATE
+    SET
+      topic_filename = EXCLUDED.topic_filename,
+      answer = EXCLUDED.answer
+    WHERE
+      faqs.topic_filename IS DISTINCT FROM EXCLUDED.topic_filename
+      OR faqs.answer IS DISTINCT FROM EXCLUDED.answer;
+    """
+
+    payload = [(r["topic_filename"], r["question"], r["answer"]) for r in rows]
+    with conn.cursor() as cur:
+        cur.executemany(sql, payload)
+    conn.commit()
+    return len(rows)
+
+
+def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[float]:
+    """
+    Request a single embedding vector from Ollama for the given text.
+
+    Calls `POST {ollama_url}/api/embeddings` with JSON payload:
+    `{"model": <model>, "prompt": <text>}` and returns the `embedding` list.
+    """
+    payload = json.dumps({"model": model, "prompt": text}).encode("utf-8")
+    req = urllib.request.Request(
+        f"{ollama_url.rstrip('/')}/api/embeddings",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            body = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        err = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Ollama HTTP {exc.code}: {err}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Failed to reach Ollama at {ollama_url}: {exc}") from exc
+
+    parsed = json.loads(body)
+    embedding = parsed.get("embedding")
+    if not isinstance(embedding, list) or not embedding:
+        raise RuntimeError("Ollama returned invalid embedding payload")
+    return [float(v) for v in embedding]
+
+
+def _vector_literal(values: list[float]) -> str:
+    """Convert a float list to a compact pgvector literal string (e.g. `[0.1,0.2,...]`)."""
+    # Keep payload small while preserving enough precision for cosine similarity.
+    return "[" + ",".join(format(v, ".12g") for v in values) + "]"
+
+
+def _pg_backfill_faq_embeddings(
+    conn: psycopg.Connection,
+    *,
+    ollama_url: str,
+    model: str,
+    dimension: int,
+    batch_size: int,
+) -> int:
+    """
+    Backfill missing FAQ embeddings in Postgres in small batches.
+
+    This function looks for rows in the `faqs` table where `embedding` is NULL,
+    requests an embedding vector for each row's `question` from Ollama, and then
+    writes the vector back to Postgres (as a `vector` column, via pgvector).
+
+    It repeats until no rows remain with NULL embeddings.
+
+    Parameters
+    ----------
+    conn:
+        An open psycopg connection to the target Postgres database.
+    ollama_url:
+        Base URL of the Ollama server (e.g. `http://ollama:11434`).
+    model:
+        Ollama embedding model name (e.g. `bge-m3`).
+    dimension:
+        Expected embedding vector length. If Ollama returns a different length,
+        the function fails fast to avoid mixing incompatible vector sizes.
+    batch_size:
+        Maximum number of FAQ rows to embed per iteration.
+
+    Returns
+    -------
+    int
+        Total number of FAQ rows updated with embeddings.
+    """
+    updated = 0
+    batch_num = 0
+    while True:
+        # Fetch a deterministic batch of FAQ questions that still need embeddings.
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, question FROM faqs WHERE embedding IS NULL ORDER BY id LIMIT %s;",
+                (batch_size,),
+            )
+            rows = cur.fetchall()
+
+        if not rows:
+            break
+
+        batch_num += 1
+        # Build a list of `(vector_literal, id)` updates, then write them in a
+        # single executemany call for efficiency.
+        updates: list[tuple[str, int]] = []
+        for faq_id, question in rows:
+            # Ask Ollama for the embedding for this FAQ's question text.
+            emb = _request_ollama_embedding(question, ollama_url, model)
+            # pgvector columns require consistent dimensions across all rows.
+            if len(emb) != dimension:
+                raise RuntimeError(
+                    f"Embedding dimension mismatch for id={faq_id}: expected {dimension}, got {len(emb)}"
+                )
+            # Convert the Python list into a compact pgvector literal string.
+            updates.append((_vector_literal(emb), int(faq_id)))
+
+        with conn.cursor() as cur:
+            # `::vector` casts the literal into the pgvector column type.
+            cur.executemany("UPDATE faqs SET embedding = %s::vector WHERE id = %s;", updates)
+        # Commit each batch so progress is saved even if a later batch fails.
+        conn.commit()
+
+        updated += len(updates)
+        logger.info(f"[pg-bootstrap] Backfill batch {batch_num}: embedded {len(updates)} rows (total updated: {updated})")
+    return updated
+
+
+def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
+    """
+    Optional Cloud SQL bootstrap for Postgres-backed FAQ search.
+
+    This is opt-in so local and GCE mode keep behaving the same unless explicitly enabled.
+    """
+
+    if not _is_true(os.getenv("ENABLE_PG_FAQ_BOOTSTRAP")):
+        logger.info("PG FAQ bootstrap disabled (ENABLE_PG_FAQ_BOOTSTRAP not set to true).")
+        return
+
+    seed_path = os.getenv("FAQ_SEED_PATH", "pg/seed/faqs.json")
+    schema_dir = os.getenv("FAQ_SQL_DIR", "pg/init")
+
+    model = os.getenv("OLLAMA_MODEL", "bge-m3")
+    dimension = int(os.getenv("FAQ_EMBEDDING_DIMENSION", os.getenv("EMBEDDING_DIMENSION", "1024")))
+    batch_size = int(os.getenv("FAQ_EMBEDDING_BATCH_SIZE", "50"))
+
+    if embedding_mode == "gce":
+        ollama_url = os.getenv("OLLAMA_URL") or os.getenv("GCE_OLLAMA_URL")
+    else:
+        ollama_url = os.getenv("OLLAMA_URL") or "http://ollama:11434"
+
+    if not ollama_url:
+        raise ValueError("Ollama URL missing: set OLLAMA_URL (or GCE_OLLAMA_URL for EMBEDDING_MODE=gce)")
+
+    logger.info("[pg-bootstrap] Starting Cloud SQL FAQ bootstrap...")
+    logger.info(f"[pg-bootstrap] Seed: {seed_path}")
+    logger.info(f"[pg-bootstrap] SQL dir: {schema_dir}")
+    logger.info(f"[pg-bootstrap] Embedding: model={model}, dim={dimension}, batch={batch_size}, ollama_url={ollama_url}")
+
+    t_all = time.monotonic()
+
+    # Step 1: load seed.
+    try:
+        t0 = time.monotonic()
+        rows = _load_seed_faqs(seed_path)
+        logger.info(f"[pg-bootstrap] Loaded seed FAQs: rows={len(rows)} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
+    except Exception:
+        logger.exception(f"[pg-bootstrap] Failed to load seed file: {seed_path}")
+        raise
+
+    # Step 2: quick Ollama health check before touching the DB.
+    try:
+        t0 = time.monotonic()
+        req = urllib.request.Request(f"{ollama_url.rstrip('/')}/api/tags", method="GET")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            _ = resp.read(256)
+        logger.info(f"[pg-bootstrap] Ollama reachable at {ollama_url} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
+    except Exception:
+        logger.exception(f"[pg-bootstrap] Ollama is not reachable at {ollama_url}. Aborting PG bootstrap.")
+        raise
+
+    # Step 3: connect + migrate + upsert + backfill.
+    with _pg_connect_from_env() as conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM pg_extension WHERE extname='vector';")
+                has_vector = bool(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] Precheck: pgvector extension present={has_vector}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Precheck failed (extension query): {exc}")
+
+        # Existing schema SQL in the repo (idempotent; safe to re-run).
+        _pg_apply_sql_file(conn, os.path.join(schema_dir, "001_faq_schema.sql"))
+        _pg_apply_sql_file(conn, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
+        _pg_apply_sql_file(conn, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs;")
+                before_total = int(cur.fetchone()[0])
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                before_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] DB state before upsert/backfill: faqs_total={before_total} faqs_embedding_null={before_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read pre-upsert counts: {exc}")
+
+        upserted = _pg_upsert_seed_faqs(conn, rows)
+        logger.info(f"[pg-bootstrap] Seed upsert executed for {upserted} input rows (uniqueness=question).")
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs;")
+                after_total = int(cur.fetchone()[0])
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                after_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] DB state after upsert (before backfill): faqs_total={after_total} faqs_embedding_null={after_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read post-upsert counts: {exc}")
+
+        backfilled = _pg_backfill_faq_embeddings(
+            conn,
+            ollama_url=ollama_url,
+            model=model,
+            dimension=dimension,
+            batch_size=batch_size,
+        )
+        logger.info(f"[pg-bootstrap] Backfill complete. Newly embedded rows: {backfilled}.")
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
+                final_null = int(cur.fetchone()[0])
+            logger.info(f"[pg-bootstrap] Final DB state: faqs_embedding_null={final_null}")
+        except Exception as exc:
+            logger.warning(f"[pg-bootstrap] Could not read final counts: {exc}")
+
+    logger.info(f"[pg-bootstrap] Cloud SQL FAQ bootstrap finished OK (elapsed_ms={int((time.monotonic() - t_all) * 1000)})")
+
+
+def embed_documents(weaviate_client, src_directory: str, embedding_mode="local", embedding_model=None, ollama_endpoint=None) -> bool:
     """Embed all documents from the src directory into Weaviate"""
-    collection = create_schema(weaviate_client, embedding_mode, embedding_provider, embedding_model, ollama_endpoint)
+    collection = create_schema(weaviate_client, embedding_mode, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
 
     # Exclude internal files that shouldn't be in vector search
@@ -187,9 +652,20 @@ def main():
     # Set CLEAR_DB=false to keep existing embeddings and only update changed files
     clear_db = os.getenv("CLEAR_DB", "true").lower() == "true"
 
-    # Determine embedding mode: 'local', 'gce', or 'cloud'
-    embedding_mode = os.getenv("EMBEDDING_MODE", "cloud").lower()
+    # Determine embedding mode: 'local' or 'gce'
+    embedding_mode = os.getenv("EMBEDDING_MODE", "local").lower()
     logger.info(f"Embedding mode: {embedding_mode}")
+
+    supported_modes = {"local", "gce"}
+    if embedding_mode not in supported_modes:
+        raise ValueError(
+            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Supported values: local, gce."
+        )
+
+    # Optional: bootstrap managed Postgres FAQ DB during deploy (Cloud SQL).
+    # Opt-in so local/GCE runs keep behaving the same unless explicitly enabled.
+    maybe_bootstrap_cloudsql_faq_db(embedding_mode)
+
     if clear_db:
         logger.info("Will clear existing embeddings before re-embedding (set CLEAR_DB=false to disable)")
     else:
@@ -208,7 +684,7 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model)
+        embed_documents(client, "src", embedding_mode, embedding_model)
         client.close()
     elif embedding_mode == "gce":
         # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
@@ -242,58 +718,7 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, None, embedding_model, ollama_url)
-        client.close()
-    else:
-        # Cloud mode: connect to Weaviate Cloud with API keys
-        required_vars = ["WEAVIATE_URL", "WEAVIATE_API_KEY"]
-        missing_vars = [var for var in required_vars if not os.getenv(var)]
-        if missing_vars:
-            raise ValueError(
-                f"Missing required environment variables for cloud mode: {', '.join(missing_vars)}. "
-                f"Please set them in .env file."
-            )
-
-        embedding_provider = os.getenv("EMBEDDING_PROVIDER", "openai").lower()
-        embedding_model = os.getenv("EMBEDDING_MODEL")
-
-        # Validate embedding provider
-        valid_providers = ["openai", "cohere"]
-        if embedding_provider not in valid_providers:
-            raise ValueError(
-                f"Invalid EMBEDDING_PROVIDER: '{embedding_provider}'. "
-                f"Must be one of: {', '.join(valid_providers)}"
-            )
-
-        # Configure headers based on embedding provider
-        headers = {}
-        if embedding_provider == "cohere":
-            cohere_key = os.getenv("COHERE_API_KEY")
-            if not cohere_key:
-                raise ValueError(
-                    "COHERE_API_KEY is required when EMBEDDING_PROVIDER=cohere. "
-                    "Please set it in .env file."
-                )
-            headers["X-Cohere-Api-Key"] = cohere_key
-        else:
-            openai_key = os.getenv("OPENAI_API_KEY")
-            if not openai_key:
-                raise ValueError(
-                    "OPENAI_API_KEY is required when EMBEDDING_PROVIDER=openai. "
-                    "Please set it in .env file."
-                )
-            headers["X-OpenAI-Api-Key"] = openai_key
-
-        logger.info(f"Connecting to Weaviate Cloud with {embedding_provider} embeddings")
-        client = weaviate.connect_to_weaviate_cloud(
-            cluster_url=os.getenv("WEAVIATE_URL"),
-            auth_credentials=weaviate.AuthApiKey(os.getenv("WEAVIATE_API_KEY")),
-            headers=headers,
-            additional_config=AdditionalConfig(timeout=Timeout(init=600, query=600, insert=600))
-        )
-        if clear_db:
-            clear_collection(client)
-        embed_documents(client, "src", embedding_mode, embedding_provider, embedding_model)
+        embed_documents(client, "src", embedding_mode, embedding_model, ollama_url)
         client.close()
 
 

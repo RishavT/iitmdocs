@@ -387,29 +387,27 @@ const COMPILED_SYNONYMS = QUERY_SYNONYMS.map(([patterns, canonical]) => [
 ]);
 
 // Condensed knowledge base summary for query rewriting context.
-// This is a compact version of src/_knowledge_base_summary.md (the detailed reference).
+// This is a compact version of src/_knowledge_base_summary.md (the detailed reference [WE DON'T USE THIS md FILE NOW, we generate the KNOWLEDGE_BASE_SUMMARY directly using LLMs]).
 // When the source documents change significantly, update both this constant and the full summary file.
 // See generate-summary-prompt.txt for regeneration instructions.
 const KNOWLEDGE_BASE_SUMMARY = `Topics available in knowledge base:
-1. About IIT Madras BS Program: program overview, four BS programmes offered, exit points (certificate/diploma/BSc/BS/MTech), online learning mode, BTech vs BS, degree validity and recognition, cannot apply multiple programs
-2. Academic Structure and Exams: term structure (16 weeks), quiz and end-term exam pattern, OPPE programming exam, grading weightage, I grade incomplete, make-up examination, academic calendar
-3. Academic Level Progression and Rules: level progression (Foundation→Diploma→Degree), credit requirements (114 BSc / 142 BS), U grade re-registration, cannot take courses across levels, course access revocation
-4. Course Registration Process: registration steps, select exam cities, same-term vs subsequent-term registration, qualifier score as Quiz 1, maximum 4 courses per term, defer joining, prerequisites
-5. Fees and Payments: fee structure, qualifier application fee, reattempt fee, category-wise fees (SC/ST/PwD/OBC), fee waiver, refund policy, international facilitation fee, online payment only
-6. JEE Based Entry: JEE Advanced direct admission, skip qualifier, CCC of 4, JEE proof upload, which JEE years valid per term, cannot switch entry type, SAT/AP/IB not accepted
-7. Qualifier Exam Overview: 4-week qualifier process, qualifier subjects (DS/MG vs ES/AE courses), week-wise content release, preparation difficulty, self-study sufficient, 10 hours per week
-8. Qualifier Eligibility: who can apply, Class 10 Maths/English (DS/MG), Class 12 Physics/Maths (ES/AE), NIOS pathway, two-stage eligibility (apply vs proceed to foundation), Class 11 students, cannot apply multiple programs
-9. Qualifier Assignments and Cutoff: assignment scores graded out of 100, category-wise cutoff (General 40%/OBC 35%/SC-ST 30%), first 2 weeks average, best 2 of 3 weeks, hall ticket eligibility
-10. Qualifier Results and Validity: score validity (3 terms), Class 12 validity (3 terms or 6 terms whichever earlier), admission letter, qualifier score as Quiz 1 (same term only), program choice locked
-11. Qualifier Reattempts: second attempt same term, reattempt fee, absent or failed reattempt, no repeat assignments, unlimited attempts across terms, fresh application new term
-12. Qualifier Exam Format and Centers: exam cities (select 2), 4 hours duration, MCQ/MSQ/numerical format, in-person India / remote international, hall ticket and ID proof, no negative marking, calculator enabled
-13. Working Professionals and Parallel Study: job alongside degree, flexible schedule, pre-recorded lectures, 10 hours per week, no special approval, in-person exam mandatory, can defer 3 terms
-14. International Students Information: remote proctored exam, Rs 2000 facilitation fee per subject, IST exam timing, residence/ID proof documents, global entry email, exam city availability abroad
-15. Placements: placement portal, minimum diploma level required, salary and companies, internship opportunities, BS Electronic Systems placement, same portal all programs
-16. BS Electronic Systems Program: ES program details, difference from DS, Physics/Maths Class 12 required, ES qualifier subjects (Electronic Systems Thinking and Circuits, C Programming), cannot switch programs
-17. Contact and Support Information: program-specific support emails (DS/ES/AE/MG), phone number, office address, qualifier support email, PwD accommodation, what support helps with
-18. Paradox Event: annual offline event, May-June dates, valid student ID required, qualifier-cleared students eligible
-19. Independent FAQs: laptop/hostel/VPN not provided, campus visit rules, student ID and email issuance, SCT compatibility test, recorded lectures, English language, online-only application and payment`;
+1. About IIT Madras BS Program: program overview, four BS programmes (DS, ES, MG, AE), online learning with in-person exams, programme levels, exit points, certificates and degrees, official website and contact details
+2. JEE-Based Entry: admission pathways, direct entry using JEE Advanced eligibility, validity period, application process, proof upload, benefits like skipping qualifier, CCC of 4, entry type restrictions
+3. Academic Level Progression and Rules: Foundation, Diploma, Degree progression, credit requirements (32, 59, 86, 114, 142, 162, 182), cannot take courses across levels, U grade, re-registration, prerequisites, CGPA impact, exit pathways
+4. Qualifier Assignments and Cutoff: assignment grading rules, minimum assignment scores by category, qualifier exam cutoffs, category-wise relaxations, hall ticket eligibility, first and second attempt eligibility rules
+5. Academic Structure and Exams: quizzes and end-term exams, exam structure, eligibility requirements, attendance through assignments, exam rules, refund policy, non-refundable fees, academic guidelines
+6. Qualifier Eligibility: eligibility for DS, MG, ES, AE programs, Class 10 Maths and English, Class 12 requirements, Physics and Mathematics for ES/AE, Class 11 eligibility, NIOS pathway, no age restriction
+7. BS in Electronic Systems Program: ES program overview, eligibility requirements, qualifier subjects, registration process, differences from Data Science, restriction on switching programs
+8. Qualifier Exam Format and Centers: exam format (MCQ, MSQ, numerical, short answer), 4-hour duration, no negative marking, exam cities, in-person India exams, remote proctored international exams, required documents
+9. Contact and Support Information: support emails for DS, ES, AE, MG, qualifier support, Global Entry contact, phone number, office address, when to contact support, chatbot scope and limitations
+10. Qualifier Exam Overview: 4-week qualifier process, weekly content release, videos, tutorials, graded assignments, sample Week-1 access, self-paced learning structure
+11. Course Registration Process: course selection steps, exam city selection, prerequisite checks, payment process, same-term and subsequent-term registration rules, maximum 4 courses, qualifier score usage
+12. Qualifier Reattempts: attempts within a term, eligibility for reattempt, reattempt process, fee structure by category, assignment carry-forward rules, reattempt in future terms
+13. Fees and Payments: qualifier fees, reattempt fees, per-course fees, total program cost by level, online payment rules, fee waivers, international facilitation fees, refund rules
+14. Qualifier Results and Validity: result communication via portal/email/WhatsApp, admission letter, validity for 3 terms, Class 12 special rule, expiry rules, registration after qualifying
+15. International Students Information: eligibility for foreign students, remote proctored exams, IST timing, additional fees, required documents, payment issues, Global Entry support
+16. Working Professionals and Parallel Study: studying alongside job or degree, flexible schedule, pre-recorded lectures, weekly time commitment, in-person exams, taking breaks, self-study approach
+`
 
 // Words that look like stopwords but must NEVER be removed (domain-specific or ambiguous)
 const STOPWORDS_TO_IGNORE = new Set([
@@ -597,7 +595,7 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions, rewriteQueryWithSource };
+export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource };
 
 export default {
   async fetch(request, env) {
@@ -635,10 +633,10 @@ export default {
 };
 
 /**
- * Handles direct FAQ lookup without LLM call.
- * Used when user clicks on a "Did you mean?" suggestion.
+ * Handles direct FAQ lookup by id without LLM call.
+ * Used when user clicks on a "Did you mean?" suggestion backed by the Postgres FAQ DB.
  */
-async function handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env) {
+async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env) {
   const logContext = {
     session_id: sessionId || "anonymous",
     conversation_id: conversationId,
@@ -646,9 +644,9 @@ async function handleDirectFAQLookup(faqFile, question, sessionId, conversationI
     username: username || null,
     question: question,
     rewritten_query: null,
-    query_source: "faq_direct",
+    query_source: "faq_direct_id",
     rejection_reason: null,
-    documents: [{ filename: faqFile, relevance: "1" }],
+    documents: [{ id: String(faqId), relevance: "1" }],
     response: null,
     fact_check_passed: true,
     contains_raahat: false,
@@ -659,66 +657,27 @@ async function handleDirectFAQLookup(faqFile, question, sessionId, conversationI
   };
 
   try {
-    // Fetch the FAQ document from Weaviate
-    const doc = await fetchFAQDocument(faqFile, env);
-
-    if (!doc) {
-      console.log('[DEBUG] FAQ document not found:', faqFile);
-      logContext.error = "FAQ document not found";
+    const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
+      logContext.error = `PG FAQ lookup failed: ${response.status}`;
       logContext.response = getCannotAnswerMessage("english");
       logContext.latency_ms = Date.now() - startTime;
       structuredLog("INFO", "conversation_turn", logContext);
       return createSSEResponse(logContext.response, { rejected: true });
     }
 
-    // Format the FAQ content nicely
-    const formattedContent = formatFAQContent(doc.content, question);
+    const faq = await response.json();
+    const formattedContent = `### ${faq.question}\n\n${faq.answer}`;
     logContext.response = formattedContent;
     logContext.latency_ms = Date.now() - startTime;
     structuredLog("INFO", "conversation_turn", logContext);
 
-    // Return the FAQ content directly as SSE (with document reference)
-    const encoder = new TextEncoder();
-    const repoUrl = "https://github.com/RishavT/iitmdocs";
-    const docRef = `data: ${JSON.stringify({
-      role: "assistant",
-      choices: [{
-        delta: {
-          tool_calls: [{
-            function: {
-              name: "document",
-              arguments: JSON.stringify({
-                relevance: "1",
-                name: faqFile.replace(/\.md$/, ""),
-                link: `${repoUrl}/blob/main/src/${faqFile}`,
-              }),
-            },
-          }],
-        },
-      }],
-    })}\n\n`;
-
-    const contentData = `data: ${JSON.stringify({
-      choices: [{ delta: { content: formattedContent } }]
-    })}\n\ndata: [DONE]\n\n`;
-
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(encoder.encode(docRef));
-        controller.enqueue(encoder.encode(contentData));
-        controller.close();
-      }
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    return createSSEResponse(formattedContent);
   } catch (error) {
-    console.error('[DEBUG] FAQ lookup error:', error.message);
-    logContext.error = error.message;
+    console.error("[DEBUG] PG FAQ id lookup error:", error?.message || String(error));
+    logContext.error = error?.message || String(error);
     logContext.response = getCannotAnswerMessage("english");
     logContext.latency_ms = Date.now() - startTime;
     structuredLog("ERROR", "conversation_turn", logContext);
@@ -726,48 +685,47 @@ async function handleDirectFAQLookup(faqFile, question, sessionId, conversationI
   }
 }
 
-/**
- * Fetches a specific FAQ document from Weaviate by filename.
- */
-async function fetchFAQDocument(filename, env) {
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
-  let weaviateUrl;
-  const headers = { "Content-Type": "application/json" };
+function getPgFaqApiUrl(env) {
+  return env.PG_FAQ_API_URL || "http://pg-faq-api:8000";
+}
 
-  if (embeddingMode === "local") {
-    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
-  } else if (embeddingMode === "gce") {
-    weaviateUrl = env.GCE_WEAVIATE_URL;
-  } else {
-    weaviateUrl = env.WEAVIATE_URL;
-    headers.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-  }
-
-  const graphqlQuery = `{
-    Get {
-      Document(
-        where: {
-          path: ["filename"],
-          operator: Equal,
-          valueText: "${filename}"
-        }
-        limit: 1
-      ) {
-        filename
-        content
-      }
+async function fetchPgFaqs(query, k, env) {
+  try {
+    const url = `${getPgFaqApiUrl(env)}/search`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ q: query, k }),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
+      return [];
     }
-  }`;
+    const data = await response.json();
+    return Array.isArray(data?.results) ? data.results : [];
+  } catch (e) {
+    console.error("[DEBUG] PG FAQ API /search error:", e?.message || String(e));
+    return [];
+  }
+}
 
-  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query: graphqlQuery }),
-  });
+function formatDbFaqSuggestions(dbFaqs, language = "english") {
+  if (!dbFaqs || !dbFaqs.length) return "";
 
-  const data = await response.json();
-  const docs = data?.data?.Get?.Document || [];
-  return docs.length > 0 ? docs[0] : null;
+  const didYouMean = {
+    english: "**Did you mean:**",
+    hindi: "**क्या आपका मतलब था:**",
+    tamil: "**நீங்கள் கருதுவது:**",
+    hinglish: "**Kya aap ye poochna chahte the:**",
+  };
+
+  const header = didYouMean[language] || didYouMean.english;
+  const suggestions = dbFaqs
+    .slice(0, 5)
+    .map((faq, i) => `${i + 1}. ${faq.question} [FAQID:${faq.id}]`)
+    .join("\n");
+  return `\n\n${header}\n\n${suggestions}`;
 }
 
 /**
@@ -775,47 +733,33 @@ async function fetchFAQDocument(filename, env) {
  * Extracts the matching Q&A pair from the document using the new
  * **Question**:/**Answer**: format and returns it formatted.
  */
-function formatFAQContent(content, question) {
-  if (!content) return "FAQ content not available.";
-
-  const faqs = extractFAQs(content);
-  if (!faqs.length) return "FAQ content not available.";
-
-  // Find the best matching FAQ by comparing question text
-  const questionLower = question.toLowerCase();
-  let bestMatch = faqs[0];
-  let bestScore = -1;
-
-  for (const faq of faqs) {
-    const score = scoreFAQMatch(questionLower, faq.question.toLowerCase());
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = faq;
-    }
-  }
-
-  return `### ${bestMatch.question}\n\n${bestMatch.answer}`;
-}
-
 async function answer(request, env) {
   const startTime = Date.now();
   const conversationId = generateUUID();
 
   console.log('\n[DEBUG] answer() called');
-  const { q: question, ndocs = 2, history: rawHistory = [], session_id: sessionId, username, message_id: messageId, faq_file: faqFile } = await request.json();
+  const {
+    q: question,
+    ndocs = 2,
+    history: rawHistory = [],
+    session_id: sessionId,
+    username,
+    message_id: messageId,
+    faq_id: faqId,
+  } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
-  console.log('[DEBUG] FAQ file:', faqFile || 'not provided');
+  console.log('[DEBUG] FAQ id:', faqId || 'not provided');
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
-  // Direct FAQ lookup - skip LLM if faq_file is provided
-  if (faqFile) {
-    console.log('[DEBUG] Direct FAQ lookup for:', faqFile);
-    return await handleDirectFAQLookup(faqFile, question, sessionId, conversationId, messageId, username, startTime, env);
+  // Direct FAQ lookup by id - skip LLM if faq_id is provided
+  if (faqId) {
+    console.log('[DEBUG] Direct FAQ id lookup for:', faqId);
+    return await handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env);
   }
 
   // Validate ndocs to prevent resource exhaustion
@@ -882,9 +826,9 @@ async function answer(request, env) {
           logContext.fact_check_passed = false;
           let rejectMessage = getCannotAnswerMessage("english");
 
-          // Add "Did you mean?" FAQ suggestions
-          const faqSuggestions = await getFAQSuggestions(question, env, "english");
-          rejectMessage += faqSuggestions;
+          // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
+          const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+          rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
 
@@ -909,11 +853,17 @@ async function answer(request, env) {
 
         // Search Weaviate for relevant documents using clean query (without language tag)
         const documents = await searchWeaviate(cleanQuery, numDocs, env);
+        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
           filename: doc.filename,
           relevance: doc.relevance,
+        }));
+        logContext.db_faqs = (dbFaqs || []).map((faq) => ({
+          id: faq.id,
+          topic_filename: faq.topic_filename,
+          cosine_similarity: faq.cosine_similarity,
         }));
 
         // Stream documents first (single enqueue)
@@ -951,7 +901,7 @@ async function answer(request, env) {
 
         // Generate AI answer using documents as context (with fact-checking)
         // Pass logContext to collect response data, and detected language for responses
-        const answerResponse = await generateAnswer(question, documents, history, env, logContext, detectedLanguage);
+        const answerResponse = await generateAnswer(question, documents, dbFaqs, history, env, logContext, detectedLanguage);
         // Pipe the SSE response to the client
         await answerResponse.body.pipeTo(
           new WritableStream({
@@ -1026,9 +976,15 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
 async function searchWeaviate(query, limit, env) {
   console.log('[DEBUG] searchWeaviate() called, query:', query);
 
-  // Determine embedding mode: 'local', 'gce', or 'cloud'
-  const embeddingMode = env.EMBEDDING_MODE || "cloud";
+  // Determine embedding mode: 'local' or 'gce'
+  const embeddingMode = env.EMBEDDING_MODE || "local";
   console.log('[DEBUG] Embedding mode:', embeddingMode);
+
+  if (embeddingMode !== "local" && embeddingMode !== "gce") {
+    throw new Error(
+      `Unsupported EMBEDDING_MODE='${embeddingMode}'. Supported values: local, gce.`
+    );
+  }
 
   // Configure Weaviate URL and headers based on mode
   let weaviateUrl;
@@ -1043,20 +999,10 @@ async function searchWeaviate(query, limit, env) {
   } else if (embeddingMode === "gce") {
     // GCE mode: connect to remote Weaviate on GCE VM
     weaviateUrl = env.GCE_WEAVIATE_URL;
-    console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
-  } else {
-    // Cloud mode: connect to Weaviate Cloud with API keys
-    weaviateUrl = env.WEAVIATE_URL;
-    embeddingHeaders.Authorization = `Bearer ${env.WEAVIATE_API_KEY}`;
-
-    const embeddingProvider = env.EMBEDDING_PROVIDER || "openai";
-    console.log('[DEBUG] Embedding provider:', embeddingProvider);
-
-    if (embeddingProvider === "cohere") {
-      embeddingHeaders["X-Cohere-Api-Key"] = env.COHERE_API_KEY;
-    } else {
-      embeddingHeaders["X-OpenAI-Api-Key"] = env.OPENAI_API_KEY;
+    if (!weaviateUrl) {
+      throw new Error("GCE_WEAVIATE_URL is required for EMBEDDING_MODE=gce");
     }
+    console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
   }
 
   // Escape special characters in query to prevent GraphQL injection
@@ -1077,6 +1023,10 @@ async function searchWeaviate(query, limit, env) {
     const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
 
     console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
+
+    if (!ollamaUrl) {
+      throw new Error("GCE_OLLAMA_URL is required for EMBEDDING_MODE=gce");
+    }
 
     const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
     const vectorStr = `[${queryVector.join(",")}]`;
@@ -1099,7 +1049,7 @@ async function searchWeaviate(query, limit, env) {
       }
     }`;
   } else {
-    // Local/Cloud mode: use hybrid search (Weaviate handles embedding for vector part)
+    // Local mode: use hybrid search (Weaviate handles embedding for vector part)
     // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
     graphqlQuery = `{
       Get {
@@ -1145,134 +1095,7 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
-/**
- * Extracts all FAQ Q&A pairs from document content.
- * FAQ format: "**Question**: <text>\n**Answer**: <text>"
- * Only extracts from content before the last <!-- end of faqs --> marker.
- * @param {string} content - The document content
- * @returns {Array<{question: string, answer: string}>} - Array of FAQ pairs
- */
-function extractFAQs(content) {
-  if (!content) return [];
-
-  // Only look at content before the last <!-- end of faqs --> marker
-  const endMarkerIndex = content.lastIndexOf('<!-- end of faqs -->');
-  const searchContent = endMarkerIndex !== -1 ? content.substring(0, endMarkerIndex) : content;
-
-  const faqs = [];
-  // Split on **Question**: to get each FAQ block
-  const parts = searchContent.split(/\*\*Question\*\*:\s*/);
-
-  // First part is content before the first FAQ — skip it
-  for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    // Split on **Answer**: to separate question from answer
-    const answerSplit = part.split(/\*\*Answer\*\*:\s*/);
-    if (answerSplit.length >= 2) {
-      const question = answerSplit[0].trim();
-      // Answer runs until the next **Question**: or end of this part
-      const answer = answerSplit[1].trim();
-      if (question) {
-        faqs.push({ question, answer });
-      }
-    }
-  }
-
-  return faqs;
-}
-
-/**
- * Scores how well a FAQ question matches the user's query using word overlap.
- * @param {string} query - The user's query (lowercased)
- * @param {string} faqQuestion - The FAQ question text (lowercased)
- * @returns {number} - Overlap score (higher = better match)
- */
-function scoreFAQMatch(query, faqQuestion) {
-  const queryWords = new Set(query.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
-  const faqWords = new Set(faqQuestion.split(/\s+/).filter(w => STOPWORDS_TO_IGNORE.has(w) || (w.length > 2 && !STOPWORDS.has(w))));
-  let overlap = 0;
-  for (const word of queryWords) {
-    if (faqWords.has(word)) overlap++;
-  }
-  return overlap;
-}
-
-/**
- * Searches Weaviate for documents and extracts relevant FAQ suggestions.
- * Uses the existing searchWeaviate() for retrieval, then extracts and ranks
- * individual FAQ Q&A pairs from the returned documents.
- * @param {string} query - The search query
- * @param {number} limit - Maximum number of FAQ suggestions to return
- * @param {Object} env - Environment variables
- * @returns {Promise<Array>} - Array of {filename, question} objects
- */
-async function searchFAQs(query, limit, env) {
-  console.log('[DEBUG] searchFAQs() called, query:', query);
-
-  try {
-    // Reuse the main search function — no need for separate Weaviate logic
-    const documents = await searchWeaviate(query, 3, env);
-    console.log('[DEBUG] FAQ search: searchWeaviate returned', documents.length, 'documents');
-
-    // Extract all FAQ pairs from each document
-    const allFAQs = [];
-    for (const doc of documents) {
-      const faqs = extractFAQs(doc.content);
-      for (const faq of faqs) {
-        allFAQs.push({ filename: doc.filename, question: faq.question });
-      }
-    }
-    console.log('[DEBUG] FAQ search: extracted', allFAQs.length, 'total FAQ pairs');
-
-    if (!allFAQs.length) return [];
-
-    // Rank FAQs by keyword overlap with the user's query
-    const queryLower = query.toLowerCase();
-    const scored = allFAQs.map(faq => ({
-      ...faq,
-      score: scoreFAQMatch(queryLower, faq.question.toLowerCase())
-    }));
-    scored.sort((a, b) => b.score - a.score);
-
-    return scored.slice(0, limit);
-  } catch (error) {
-    console.error('[DEBUG] FAQ search failed:', error.message);
-    return [];
-  }
-}
-
-/**
- * Gets FAQ suggestions formatted for "Did you mean?" display.
- * @param {string} query - The user's original query
- * @param {Object} env - Environment variables
- * @param {string} language - The detected language
- * @returns {Promise<string>} - Formatted suggestions string, or empty string if none
- */
-async function getFAQSuggestions(query, env, language = 'english') {
-  try {
-    const faqs = await searchFAQs(query, 3, env);
-    if (!faqs.length) return '';
-
-    const didYouMean = {
-      english: "**Did you mean:**",
-      hindi: "**क्या आपका मतलब था:**",
-      tamil: "**நீங்கள் கருதுவது:**",
-      hinglish: "**Kya aap ye poochna chahte the:**"
-    };
-
-    const header = didYouMean[language] || didYouMean.english;
-    // Include filename in a parseable format for direct FAQ lookup
-    const suggestions = faqs.map((faq, i) => `${i + 1}. ${faq.question} [FAQ:${faq.filename}]`).join('\n');
-
-    // Need blank line between header and list for proper markdown parsing
-    return `\n\n${header}\n\n${suggestions}`;
-  } catch (error) {
-    console.error('[DEBUG] Failed to get FAQ suggestions:', error.message);
-    return '';
-  }
-}
-
-async function generateAnswer(question, documents, history, env, logContext = null, language = 'english') {
+async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
   // STEP 2
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
@@ -1286,7 +1109,11 @@ Instagram: @wellness.society_iitmbs
 RAAHAT provides support for emotional, psychological, interpersonal, and financial distress.
 </document>`;
 
-  const context = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n") + "\n\n" + RAAHAT_INFO;
+  const docContext = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
+  const faqContext = (dbFaqs || [])
+    .map((faq) => `<faq id="${faq.id}" topic_filename="${faq.topic_filename || ""}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
+    .join("\n\n");
+  const context = [docContext, faqContext, RAAHAT_INFO].filter(Boolean).join("\n\n");
 
   // Don't add negative context notes that might make the LLM more hesitant to answer
   let contextNote = "";
@@ -1458,9 +1285,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       // Get "cannot answer" message in the detected language (no API call needed)
       finalAnswer = getCannotAnswerMessage(language);
 
-      // Add "Did you mean?" FAQ suggestions
-      const faqSuggestions = await getFAQSuggestions(question, env, language);
-      finalAnswer += faqSuggestions;
+      // Show the same FAQs that were already retrieved from the DB for this request.
+      finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
 
       if (logContext) {
         logContext.rejection_reason = "fact_check_failed";

@@ -11,10 +11,15 @@ COPY src ./src
 
 # Create a requirements file for the dependencies
 RUN echo "weaviate-client>=4.4.0" > requirements.txt && \
-    echo "python-dotenv>=1.0.0" >> requirements.txt
+    echo "python-dotenv>=1.0.0" >> requirements.txt && \
+    echo "packaging>=23.0" >> requirements.txt && \
+    echo "psycopg[binary]>=3.2.0" >> requirements.txt
 
 # Install dependencies
 RUN uv pip install --system -r requirements.txt
+
+# Copy Postgres FAQ bootstrap assets (seed + SQL)
+COPY pg ./pg
 
 # Default command: run the embedding script
 CMD ["python", "embed.py"]

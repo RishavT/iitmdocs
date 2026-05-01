@@ -1,20 +1,20 @@
 ---
 title: Qualifier Results and Validity
-description: Qualifier exam results — announcement channels (email, WhatsApp, portal), score validity period (3 terms), special validity for Class 12 students, registration steps after clearing, qualifier score as Quiz 1, and delaying Foundation registration.
+description: Describes how qualifier results are communicated, validity period of scores, special cases, and steps for registration after qualifying.
 covers:
-  - Results announcement (email, WhatsApp, student portal)
-  - Qualifier score validity (3 terms, expires automatically)
-  - Special validity for Class 12 students (3 terms after Class 12 or 6 terms after exam)
-  - Steps after clearing (registration, documents, exam cities, payment)
-  - Qualifier score counted as Quiz 1 (same term only)
-  - Delaying registration within validity period
+  - Result communication channels and notifications
+  - Display of marks on portal
+  - Qualifier score validity period rules
+  - Special validity rules for Class 12 students
+  - Registration options after qualifying
+  - Rules for delaying registration
 sample_queries:
-  - When and where are qualifier results announced?
+  - How are qualifier results communicated?
+  - Where can I check my qualifier marks?
   - How long is the qualifier score valid?
-  - What happens when my qualifier validity expires?
-  - What should I do after clearing the qualifier exam?
-  - Can I delay Foundation registration after clearing the qualifier?
-  - Is my qualifier score counted as Quiz 1 for Foundation courses?
+  - What happens after I clear the qualifier?
+  - Can I delay registration after passing?
+  - What if my qualifier validity expires?
 ---
 
 # Qualifier Results Communication
@@ -87,151 +87,6 @@ For students who have not yet passed Class 12 (and are currently studying for Cl
 - Candidates who qualify in the second attempt can register only from the subsequent term
 - Registration is possible while the qualifier score remains valid
 
-# FAQs
-
-
-**Question**: When are qualifier results announced?
-**Answer**: Qualifier results are announced on the student dashboard.
-Learners are notified on their registered email ID when results are released.
-For specific result dates, check the academic calendar: https://study.iitm.ac.in/ds/admissions.html#AD0
-
-
-
-**Question**: Where can I check my qualifier result?
-**Answer**: Qualifier results can be checked on the student dashboard after logging in.
-
-
-
-**Question**: What does “qualifier cleared” status mean?
-**Answer**: “Qualifier cleared” means the learner has successfully passed the qualifier exam and is eligible to proceed to Foundation-level registration.
-
-
-
-**Question**: How long is the qualifier result valid?
-**Answer**: The qualifier exam score can be used to apply for 3 terms after the qualifier exam date. The score becomes invalid from the 4th term onwards.
-
-For students who have not yet passed Class 12: the validity is 3 terms after passing Class 12, OR 6 terms after the qualifier exam date — whichever is earlier.
-
-
-
-**Question**: Does qualifier validity expire automatically?
-**Answer**: Yes.
-Qualifier validity expires automatically after the validity period ends.
-
-
-
-**Question**: What happens if qualifier validity expires?
-**Answer**: If validity expires:
-
-* The qualifier score becomes invalid
-* The learner must redo the entire qualifier process, including:
-
-  * 4 weeks of coursework
-  * Weekly graded assignments
-  * Retaking the qualifier exam
-
-
-
-**Question**: Can qualifier validity be extended?
-**Answer**: No.
-Qualifier validity cannot be extended under any circumstances.
-
-
-
-**Question**: Can I use the same qualifier result for future terms?
-**Answer**: No.
-Qualifier results cannot be reused beyond the validity period.
-
-
-
-**Question**: Will I receive a certificate for clearing the qualifier?
-**Answer**: Learners who clear the qualifier receive an admission letter.
-The admission letter specifies the terms for which the qualifier score is valid.
-
-
-
-**Question**: What should I do after clearing the qualifier?
-**Answer**: After clearing the qualifier:
-
-1. Check dashboard/email for results
-2. Access the Course Registration Form
-3. Select 1–4 Foundation courses (based on score)
-4. Upload required documents (Class 12 / category)
-5. Choose exam cities
-6. Pay course fees
-7. Submit before the deadline
-
-
-
-**Question**: How soon can I register for Foundation courses?
-**Answer**:
-
-* Regular-entry learners: after passing the qualifier exam
-* JEE-based entry learners: immediately after document verification
-
-
-
-**Question**: Is course registration automatic after clearing the qualifier?
-**Answer**: No.
-Learners must manually complete course registration through the portal.
-
-
-
-**Question**: Can I delay registration after clearing the qualifier?
-**Answer**: Yes.
-Registration can be delayed within the qualifier validity period (3 terms).
-
-
-
-**Question**: What happens if I clear the qualifier but don’t register?
-**Answer**: If registration is not completed within the validity period:
-
-* The qualifier result expires
-* The learner must redo the entire qualifier process
-
-
-
-**Question**: Will I lose my seat if I delay registration?
-**Answer**: No.
-The qualifier status remains valid until the validity period ends.
-
-
-
-**Question**: Can I take a break after clearing the qualifier?
-**Answer**: Yes.
-Learners may take a break and register later within the validity period.
-
-
-
-**Question**: Does clearing the qualifier lock my program choice?
-**Answer**: Yes.
-Clearing the qualifier for:
-
-* Data Science locks eligibility for the Data Science program
-* Electronic Systems locks eligibility for the Electronic Systems program
-* Management and Data Science locks eligibility for the Management and Data Science program
-* Aeronautics and Space Technology locks eligibility for the Aeronautics and Space Technology program
-
-The learner must join within the validity period.
-
-
-
-**Question**: How long is the qualifier exam result valid for? Can I join the program at a later term if I clear the qualifier exam now?
-**Answer**: The Qualifier Exam result is valid for a period of 3 terms (or 1 year). So, a learner may choose to not register for Foundational Level immediately after clearing the Qualifier Exam and register for the Foundational level in the second or third term following the Qualifier Exam.
-
-
-
-**Question**: Will my Qualifier Exam Score be considered in the subsequent term?
-**Answer**: The Qualifier Exam Score will be counted as Quiz 1 Score for the courses registered in the Foundation level in the same term of the qualifier exam only. It will not be considered as Quiz 1 score for courses registered in subsequent terms.
-
-**Question**: When does the May 2026 qualifier application start?
-**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
-
-**Question**: When is the last date to apply for the May 2026 qualifier?
-**Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: qualifier results, result date, score validity, validity period, result announcement, qualifier score expiration, validity of qualifier score, email WhatsApp portal notification, admission letter, marks on portal, 3 terms validity, invalid 4th term onwards, class 12 validity 3 terms or 6 terms whichever earlier, cannot reattempt during validity, first attempt same term registration, qualifier score as Quiz 1, second attempt subsequent term, results on dashboard, validity expires automatically, cannot extend validity, program choice locked after clearing, registration not automatic, delay registration within validity
+Tags: qualifier results, result communication, email whatsapp portal alerts, marks display portal, admission letter, qualifier score validity, 3 terms validity, invalid after 4th term, validity examples, class 12 special validity, 6 terms rule, redo qualifier after expiry, cannot reattempt during validity, registration after qualifying, first attempt same term registration, second attempt next term, qualifier score as quiz 1, delay registration allowed, registration within validity, validity expiry rules
