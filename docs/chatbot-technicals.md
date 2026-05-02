@@ -54,7 +54,7 @@ static/qa.js       → Frontend chat logic
 static/chatbot.js  → Embeddable widget (iframe-based)
 static/qa.html     → Chat interface HTML
 docker-compose.yml → Local dev services
-cloudbuild.yaml    → CI/CD pipeline (12 steps)
+cloudbuild.yaml    → CI/CD pipeline (builds/deploys worker, PG FAQ API, and optional embed job)
 wrangler.toml      → Cloudflare Workers config
 ```
 
@@ -457,7 +457,11 @@ Developer machine
 Google Cloud
 ├── Cloud Run (worker) ← deployed as a container
 │   ├── VPC Connector → internal network
-│   └── Calls OpenAI API for LLM
+│   ├── Calls OpenAI API for LLM
+│   └── Calls PG FAQ API for FAQ suggestions/direct lookup
+├── Cloud Run (pg-faq-api) ← FastAPI FAQ search service
+│   ├── Calls Postgres/Cloud SQL for FAQ rows + vectors
+│   └── Calls GCE Ollama for query embeddings
 ├── GCE VM (e2-medium, no public IP)
 │   ├── Weaviate (port 8080)
 │   └── Ollama (port 11434, bge-m3 model)
@@ -465,15 +469,18 @@ Google Cloud
 ```
 
 - Worker runs on Cloud Run (serverless, auto-scales).
+- PG FAQ API also runs on Cloud Run and is deployed from `Dockerfile.pgfaq`.
 - Weaviate + Ollama run on a single GCE VM (e2-medium, ~$25/month).
 - Communication between Cloud Run and GCE VM is **internal-only** via VPC connector — the VM has no public IP.
 - At query time, worker.js calls the Ollama API on the GCE VM to compute query embeddings, then passes them to Weaviate's hybrid search with an explicit vector.
+- For FAQ search, worker.js calls the deployed PG FAQ API URL. The PG FAQ API calls Postgres for FAQ rows and GCE Ollama for query embeddings.
 
 ### FAQ system note (GCE)
 
 - The Cloud Build pipeline bootstraps the FAQ database during embedding (`ENABLE_PG_FAQ_BOOTSTRAP=true` in the embed job env vars).
-- However, **Cloud Build does not build/deploy the PG FAQ API service** by default.
-- Operationally this means FAQ suggestions/direct lookups are available in local Docker Compose by default, and in GCE only if you deploy the PG FAQ API + Postgres/Cloud SQL service separately and set `PG_FAQ_API_URL` for the worker.
+- Cloud Build also builds and deploys the PG FAQ API service as `iitm-pg-faq-api`.
+- After deploying PG FAQ API, Cloud Build reads its Cloud Run URL and passes it to the worker as `PG_FAQ_API_URL`.
+- Operationally this means FAQ suggestions/direct lookups are available in GCE when the configured Postgres database is reachable, the FAQ rows have embeddings, and the deployed PG FAQ API can reach GCE Ollama.
 
 ### Cloudflare Workers mode (wrangler deploy)
 
@@ -486,7 +493,7 @@ Google Cloud
 
 ## 10. Cloud Build CI/CD Pipeline
 
-`cloudbuild.yaml` defines a 12-step pipeline triggered by git tags:
+`cloudbuild.yaml` defines the CI/CD pipeline. The current pipeline builds/deploys the worker, builds/deploys the PG FAQ API, and conditionally builds/runs the embed job when the build tag asks for embedding:
 
 | Step | What it does |
 |---|---|
@@ -495,14 +502,19 @@ Google Cloud
 | 2. create-vm | Creates the GCE VM (e2-medium) with startup script that installs Docker, Weaviate, Ollama, and pulls bge-m3 |
 | 3. update-firewall | Restricts VM access to VPC internal IPs only (10.0.0.0/8) |
 | 4. wait-services | Waits 60s for Weaviate + Ollama to be ready |
-| 5. check-embed-trigger | If the git tag contains "embed", marks embedding as needed |
-| 6-8. build/push embed | Builds and pushes embed Docker image (conditional) |
-| 7/9. build/push worker | Builds and pushes worker Docker image |
-| 10. create-embed-job | Creates/updates a Cloud Run Job for embedding |
-| 11. run-embed-job | Executes the embed job and streams logs |
-| 12. deploy-cloudrun | Deploys the worker to Cloud Run with env vars |
+| 5. check-embed-trigger | If `TAG_NAME` contains `embed`, marks embedding as needed |
+| 6. build-embed | Builds embed Docker image (conditional) |
+| 7. build-worker | Builds worker Docker image |
+| 8. build-pg-faq-api | Builds PG FAQ API Docker image |
+| 9. push-embed | Pushes embed image (conditional) |
+| 10. push-worker | Pushes worker image |
+| 11. push-pg-faq-api | Pushes PG FAQ API image |
+| 12. create-embed-job | Creates/updates a Cloud Run Job for embedding (conditional) |
+| 13. run-embed-job | Executes the embed job and streams logs (conditional) |
+| 14. deploy-pg-faq-api | Deploys PG FAQ API to Cloud Run and writes its service URL |
+| 15. deploy-cloudrun | Deploys the worker to Cloud Run with env vars, including `PG_FAQ_API_URL` |
 
-**Key: Embedding is conditional.** Only runs if the git tag contains "embed". Normal code-only deploys skip embedding entirely.
+**Key: Embedding is conditional.** The embed image, embed job creation, and embed job execution are skipped unless `TAG_NAME` contains `embed`. The worker and PG FAQ API images are still built/pushed, and both Cloud Run services are deployed.
 
 **Timeout**: 40 minutes (2400s) — needed for first-time setup when the GCE VM is created and bge-m3 is downloaded.
 

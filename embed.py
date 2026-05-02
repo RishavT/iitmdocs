@@ -5,6 +5,8 @@
 #     "weaviate-client>=4.4.0",
 #     "python-dotenv>=1.0.0",
 #     "psycopg[binary]>=3.1.0",
+#     "SQLAlchemy>=2.0.0",
+#     "pgvector>=0.3.0",
 # ]
 # ///
 
@@ -32,6 +34,14 @@ from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 
 import psycopg
+from pg.faq_api.orm import create_pg_engine, create_session_factory, session_scope
+from pg.faq_api.repository import (
+    count_faqs,
+    count_faqs_missing_embeddings,
+    get_faqs_missing_embeddings,
+    update_faq_embedding,
+    upsert_seed_faqs,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -323,35 +333,6 @@ def _load_seed_faqs(path: str) -> list[dict]:
     return data
 
 
-def _pg_upsert_seed_faqs(conn: psycopg.Connection, rows: list[dict]) -> int:
-    """
-    Upsert FAQs using uniqueness ONLY on `question`.
-
-    We avoid no-op updates so we don't unnecessarily set `embedding = NULL` via trigger.
-    """
-
-    if not rows:
-        return 0
-
-    sql = """
-    INSERT INTO faqs (topic_filename, question, answer)
-    VALUES (%s, %s, %s)
-    ON CONFLICT (question) DO UPDATE
-    SET
-      topic_filename = EXCLUDED.topic_filename,
-      answer = EXCLUDED.answer
-    WHERE
-      faqs.topic_filename IS DISTINCT FROM EXCLUDED.topic_filename
-      OR faqs.answer IS DISTINCT FROM EXCLUDED.answer;
-    """
-
-    payload = [(r["topic_filename"], r["question"], r["answer"]) for r in rows]
-    with conn.cursor() as cur:
-        cur.executemany(sql, payload)
-    conn.commit()
-    return len(rows)
-
-
 def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[float]:
     """
     Request a single embedding vector from Ollama for the given text.
@@ -382,14 +363,8 @@ def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[fl
     return [float(v) for v in embedding]
 
 
-def _vector_literal(values: list[float]) -> str:
-    """Convert a float list to a compact pgvector literal string (e.g. `[0.1,0.2,...]`)."""
-    # Keep payload small while preserving enough precision for cosine similarity.
-    return "[" + ",".join(format(v, ".12g") for v in values) + "]"
-
-
 def _pg_backfill_faq_embeddings(
-    conn: psycopg.Connection,
+    session_factory,
     *,
     ollama_url: str,
     model: str,
@@ -407,8 +382,8 @@ def _pg_backfill_faq_embeddings(
 
     Parameters
     ----------
-    conn:
-        An open psycopg connection to the target Postgres database.
+    session_factory:
+        SQLAlchemy session factory connected to the target Postgres database.
     ollama_url:
         Base URL of the Ollama server (e.g. `http://ollama:11434`).
     model:
@@ -427,40 +402,30 @@ def _pg_backfill_faq_embeddings(
     updated = 0
     batch_num = 0
     while True:
-        # Fetch a deterministic batch of FAQ questions that still need embeddings.
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, question FROM faqs WHERE embedding IS NULL ORDER BY id LIMIT %s;",
-                (batch_size,),
-            )
-            rows = cur.fetchall()
+        with session_factory() as session:
+            rows = get_faqs_missing_embeddings(session, batch_size)
 
         if not rows:
             break
 
         batch_num += 1
-        # Build a list of `(vector_literal, id)` updates, then write them in a
-        # single executemany call for efficiency.
-        updates: list[tuple[str, int]] = []
-        for faq_id, question in rows:
+        embedded_rows: list[tuple[int, list[float]]] = []
+        for row in rows:
             # Ask Ollama for the embedding for this FAQ's question text.
-            emb = _request_ollama_embedding(question, ollama_url, model)
+            emb = _request_ollama_embedding(row.question, ollama_url, model)
             # pgvector columns require consistent dimensions across all rows.
             if len(emb) != dimension:
                 raise RuntimeError(
-                    f"Embedding dimension mismatch for id={faq_id}: expected {dimension}, got {len(emb)}"
+                    f"Embedding dimension mismatch for id={row.id}: expected {dimension}, got {len(emb)}"
                 )
-            # Convert the Python list into a compact pgvector literal string.
-            updates.append((_vector_literal(emb), int(faq_id)))
+            embedded_rows.append((row.id, emb))
 
-        with conn.cursor() as cur:
-            # `::vector` casts the literal into the pgvector column type.
-            cur.executemany("UPDATE faqs SET embedding = %s::vector WHERE id = %s;", updates)
-        # Commit each batch so progress is saved even if a later batch fails.
-        conn.commit()
+        with session_scope(session_factory) as session:
+            for faq_id, emb in embedded_rows:
+                update_faq_embedding(session, faq_id, emb)
 
-        updated += len(updates)
-        logger.info(f"[pg-bootstrap] Backfill batch {batch_num}: embedded {len(updates)} rows (total updated: {updated})")
+        updated += len(embedded_rows)
+        logger.info(f"[pg-bootstrap] Backfill batch {batch_num}: embedded {len(embedded_rows)} rows (total updated: {updated})")
     return updated
 
 
@@ -532,31 +497,30 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         _pg_apply_sql_file(conn, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
         _pg_apply_sql_file(conn, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
 
+        session_factory = create_session_factory(create_pg_engine())
+
         try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT count(*) FROM faqs;")
-                before_total = int(cur.fetchone()[0])
-                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
-                before_null = int(cur.fetchone()[0])
+            with session_scope(session_factory) as session:
+                before_total = count_faqs(session)
+                before_null = count_faqs_missing_embeddings(session)
             logger.info(f"[pg-bootstrap] DB state before upsert/backfill: faqs_total={before_total} faqs_embedding_null={before_null}")
         except Exception as exc:
             logger.warning(f"[pg-bootstrap] Could not read pre-upsert counts: {exc}")
 
-        upserted = _pg_upsert_seed_faqs(conn, rows)
+        with session_scope(session_factory) as session:
+            upserted = upsert_seed_faqs(session, rows)
         logger.info(f"[pg-bootstrap] Seed upsert executed for {upserted} input rows (uniqueness=question).")
 
         try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT count(*) FROM faqs;")
-                after_total = int(cur.fetchone()[0])
-                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
-                after_null = int(cur.fetchone()[0])
+            with session_scope(session_factory) as session:
+                after_total = count_faqs(session)
+                after_null = count_faqs_missing_embeddings(session)
             logger.info(f"[pg-bootstrap] DB state after upsert (before backfill): faqs_total={after_total} faqs_embedding_null={after_null}")
         except Exception as exc:
             logger.warning(f"[pg-bootstrap] Could not read post-upsert counts: {exc}")
 
         backfilled = _pg_backfill_faq_embeddings(
-            conn,
+            session_factory,
             ollama_url=ollama_url,
             model=model,
             dimension=dimension,
@@ -565,9 +529,8 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         logger.info(f"[pg-bootstrap] Backfill complete. Newly embedded rows: {backfilled}.")
 
         try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT count(*) FROM faqs WHERE embedding IS NULL;")
-                final_null = int(cur.fetchone()[0])
+            with session_scope(session_factory) as session:
+                final_null = count_faqs_missing_embeddings(session)
             logger.info(f"[pg-bootstrap] Final DB state: faqs_embedding_null={final_null}")
         except Exception as exc:
             logger.warning(f"[pg-bootstrap] Could not read final counts: {exc}")
