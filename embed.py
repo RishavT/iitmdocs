@@ -33,7 +33,6 @@ from weaviate.classes.config import Configure, Property, DataType
 from weaviate.classes.init import AdditionalConfig, Timeout
 from weaviate.classes.query import Filter
 
-import psycopg
 from pg.faq_api.orm import create_pg_engine, create_session_factory, session_scope
 from pg.faq_api.repository import (
     count_faqs,
@@ -237,8 +236,8 @@ def _log_pg_env_summary() -> None:
     logger.info(f"[pg-bootstrap] PG env summary: {summary}")
 
 
-def _pg_connect_from_env() -> psycopg.Connection:
-    """Connect to Postgres using `PG*` environment variables (Cloud SQL)."""
+def _create_pg_bootstrap_engine():
+    """Create a SQLAlchemy engine after validating bootstrap Postgres env vars."""
 
     host = os.getenv("PGHOST")
     port = int(os.getenv("PGPORT", "5432"))
@@ -264,32 +263,23 @@ def _pg_connect_from_env() -> psycopg.Connection:
         logger.warning(f"[pg-bootstrap] Could not resolve PGHOST={host}: {exc}")
 
     try:
-        conn = psycopg.connect(  # type: ignore[misc]
-            host=host,
-            port=port,
-            dbname=db,
-            user=user,
-            password=password,
-            sslmode=sslmode,
-            connect_timeout=connect_timeout,
-        )
+        engine = create_pg_engine()
     except Exception:
-        logger.exception("[pg-bootstrap] Postgres connection failed.")
+        logger.exception("[pg-bootstrap] Failed to create SQLAlchemy engine.")
         raise
 
-    # Emit a lightweight “we are really connected” banner without leaking anything sensitive.
+    # Emit a lightweight "we are really connected" banner without leaking anything sensitive.
     try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT current_database(), current_user, version();")
-            row = cur.fetchone()
-        logger.info(f"[pg-bootstrap] Connected. current_database={row[0]!r} current_user={row[1]!r}")
+        with engine.connect() as conn:
+            conn.close()
+        logger.info(f"[pg-bootstrap] Connected. current_database={db!r} current_user={user!r}")
     except Exception as exc:
-        logger.warning(f"[pg-bootstrap] Connected but failed to run smoke query: {exc}")
+        logger.warning(f"[pg-bootstrap] Engine created but connection check failed: {exc}")
 
-    return conn
+    return engine
 
 
-def _pg_apply_sql_file(conn: psycopg.Connection, path: str) -> None:
+def _pg_apply_sql_file(engine, path: str) -> None:
     """Execute a SQL file by splitting it into statements safely."""
 
     t0 = time.monotonic()
@@ -302,17 +292,16 @@ def _pg_apply_sql_file(conn: psycopg.Connection, path: str) -> None:
         return
 
     logger.info(f"[pg-bootstrap] Applying SQL: {path} (statements={len(statements)})")
-    with conn.cursor() as cur:
+    with engine.begin() as conn:
         for idx, stmt in enumerate(statements, 1):
             try:
-                cur.execute(stmt)
+                conn.exec_driver_sql(stmt)
             except Exception:
                 snippet = stmt.strip().replace("\n", " ")
                 if len(snippet) > 220:
                     snippet = snippet[:220] + "…"
                 logger.exception(f"[pg-bootstrap] SQL failed in {path} at statement {idx}/{len(statements)}: {snippet}")
                 raise
-    conn.commit()
     logger.info(f"[pg-bootstrap] Applied SQL OK: {path} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
 
 
@@ -483,21 +472,14 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         raise
 
     # Step 3: connect + migrate + upsert + backfill.
-    with _pg_connect_from_env() as conn:
-        try:
-            with conn.cursor() as cur:
-                cur.execute("SELECT count(*) FROM pg_extension WHERE extname='vector';")
-                has_vector = bool(cur.fetchone()[0])
-            logger.info(f"[pg-bootstrap] Precheck: pgvector extension present={has_vector}")
-        except Exception as exc:
-            logger.warning(f"[pg-bootstrap] Precheck failed (extension query): {exc}")
-
+    engine = _create_pg_bootstrap_engine()
+    try:
         # Existing schema SQL in the repo (idempotent; safe to re-run).
-        _pg_apply_sql_file(conn, os.path.join(schema_dir, "001_faq_schema.sql"))
-        _pg_apply_sql_file(conn, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
-        _pg_apply_sql_file(conn, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
+        _pg_apply_sql_file(engine, os.path.join(schema_dir, "001_faq_schema.sql"))
+        _pg_apply_sql_file(engine, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
+        _pg_apply_sql_file(engine, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
 
-        session_factory = create_session_factory(create_pg_engine())
+        session_factory = create_session_factory(engine)
 
         try:
             with session_scope(session_factory) as session:
@@ -534,6 +516,8 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
             logger.info(f"[pg-bootstrap] Final DB state: faqs_embedding_null={final_null}")
         except Exception as exc:
             logger.warning(f"[pg-bootstrap] Could not read final counts: {exc}")
+    finally:
+        engine.dispose()
 
     logger.info(f"[pg-bootstrap] Cloud SQL FAQ bootstrap finished OK (elapsed_ms={int((time.monotonic() - t_all) * 1000)})")
 
