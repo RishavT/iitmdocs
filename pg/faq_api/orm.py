@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Iterator, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, DateTime, Index, Text, UniqueConstraint, create_engine, func
+from sqlalchemy import BigInteger, DateTime, Text, create_engine, func
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -19,10 +19,6 @@ class Faq(Base):
     """ORM model for the Postgres `faqs` table."""
 
     __tablename__ = "faqs"
-    __table_args__ = (
-        UniqueConstraint("question", name="faqs_question_uniq"),
-        Index("faqs_topic_filename_idx", "topic_filename"),
-    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     topic_filename: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

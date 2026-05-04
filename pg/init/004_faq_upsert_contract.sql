@@ -1,33 +1,16 @@
--- Step: FAQ upsert contract for managed Postgres deployments (GCP Cloud SQL).
---
--- Purpose:
--- - Define what "the same FAQ row" means for upsert.
--- - Ensure embeddings are invalidated automatically when FAQ content changes.
+-- Step: Remove legacy FAQ upsert/invalidation contract.
 --
 -- Current project decision:
--- - Uniqueness is ONLY on `question`.
---   (If duplicate questions exist, this index creation will fail and you must dedupe.)
-
--- 1) Unique key for upsert
-CREATE UNIQUE INDEX IF NOT EXISTS faqs_question_uniq
-ON faqs (question);
-
--- 2) Invalidate derived embeddings when FAQ content changes
-CREATE OR REPLACE FUNCTION faqs_null_embedding_on_change()
-RETURNS trigger AS $$
-BEGIN
-  IF (NEW.topic_filename IS DISTINCT FROM OLD.topic_filename)
-     OR (NEW.question IS DISTINCT FROM OLD.question)
-     OR (NEW.answer IS DISTINCT FROM OLD.answer) THEN
-    NEW.embedding := NULL;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- - `pg/seed/faqs.json` is the FAQ source of truth.
+-- - FAQ bootstrap clears existing FAQ rows and reloads all seed rows.
+-- - Embeddings are regenerated for the newly loaded rows.
+--
+-- Because of that replace-all flow, we no longer need:
+-- - uniqueness on question for upsert conflict handling
+-- - a trigger to null embeddings on UPDATE
+-- - a topic_filename index for a table with at most a few hundred rows
 
 DROP TRIGGER IF EXISTS faqs_null_embedding_on_change_trg ON faqs;
-CREATE TRIGGER faqs_null_embedding_on_change_trg
-BEFORE UPDATE ON faqs
-FOR EACH ROW
-EXECUTE FUNCTION faqs_null_embedding_on_change();
-
+DROP FUNCTION IF EXISTS faqs_null_embedding_on_change();
+DROP INDEX IF EXISTS faqs_question_uniq;
+DROP INDEX IF EXISTS faqs_topic_filename_idx;

@@ -12,5 +12,3 @@ CREATE TABLE IF NOT EXISTS faqs (
   source_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
-CREATE INDEX IF NOT EXISTS faqs_topic_filename_idx ON faqs (topic_filename);

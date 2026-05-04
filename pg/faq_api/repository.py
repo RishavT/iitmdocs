@@ -3,8 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from pg.faq_api.orm import Faq
@@ -71,40 +70,20 @@ def search_faqs_by_embedding(
     return results
 
 
-def upsert_seed_faqs(session: Session, rows: Sequence[dict]) -> int:
-    """
-    Upsert seed FAQs using uniqueness on `question`.
+def replace_seed_faqs(session: Session, rows: Sequence[dict]) -> int:
+    """Replace all FAQ rows with the seed FAQ rows."""
 
-    No-op updates are avoided so the DB trigger does not unnecessarily set
-    `embedding = NULL` for unchanged rows.
-    """
+    session.execute(delete(Faq))
 
-    if not rows:
-        return 0
-
-    payload = [
-        {
-            "topic_filename": row["topic_filename"],
-            "question": row["question"],
-            "answer": row["answer"],
-        }
+    session.add_all(
+        Faq(
+            topic_filename=row["topic_filename"],
+            question=row["question"],
+            answer=row["answer"],
+            source_url=row.get("source_url"),
+        )
         for row in rows
-    ]
-
-    stmt = insert(Faq).values(payload)
-    excluded = stmt.excluded
-    stmt = stmt.on_conflict_do_update(
-        index_elements=[Faq.question],
-        set_={
-            "topic_filename": excluded.topic_filename,
-            "answer": excluded.answer,
-        },
-        where=(
-            (Faq.topic_filename.is_distinct_from(excluded.topic_filename))
-            | (Faq.answer.is_distinct_from(excluded.answer))
-        ),
     )
-    session.execute(stmt)
     return len(rows)
 
 

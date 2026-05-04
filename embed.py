@@ -38,8 +38,8 @@ from pg.faq_api.repository import (
     count_faqs,
     count_faqs_missing_embeddings,
     get_faqs_missing_embeddings,
+    replace_seed_faqs,
     update_faq_embedding,
-    upsert_seed_faqs,
 )
 
 # Configure logging
@@ -471,12 +471,13 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         logger.exception(f"[pg-bootstrap] Ollama is not reachable at {ollama_url}. Aborting PG bootstrap.")
         raise
 
-    # Step 3: connect + migrate + upsert + backfill.
+    # Step 3: connect + migrate + replace seed rows + backfill.
     engine = _create_pg_bootstrap_engine()
     try:
         # Existing schema SQL in the repo (idempotent; safe to re-run).
         _pg_apply_sql_file(engine, os.path.join(schema_dir, "001_faq_schema.sql"))
         _pg_apply_sql_file(engine, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
+        # TODO: After this cleanup has run successfully across all deployed environments, consider renaming/removing this legacy cleanup SQL file. If that happens, update every code/deployment reference to `004_faq_upsert_contract.sql` at the same time.
         _pg_apply_sql_file(engine, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
 
         session_factory = create_session_factory(engine)
@@ -485,21 +486,21 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
             with session_scope(session_factory) as session:
                 before_total = count_faqs(session)
                 before_null = count_faqs_missing_embeddings(session)
-            logger.info(f"[pg-bootstrap] DB state before upsert/backfill: faqs_total={before_total} faqs_embedding_null={before_null}")
+            logger.info(f"[pg-bootstrap] DB state before replace/backfill: faqs_total={before_total} faqs_embedding_null={before_null}")
         except Exception as exc:
-            logger.warning(f"[pg-bootstrap] Could not read pre-upsert counts: {exc}")
+            logger.warning(f"[pg-bootstrap] Could not read pre-replace counts: {exc}")
 
         with session_scope(session_factory) as session:
-            upserted = upsert_seed_faqs(session, rows)
-        logger.info(f"[pg-bootstrap] Seed upsert executed for {upserted} input rows (uniqueness=question).")
+            inserted = replace_seed_faqs(session, rows)
+        logger.info(f"[pg-bootstrap] Replaced FAQ table with {inserted} seed rows.")
 
         try:
             with session_scope(session_factory) as session:
                 after_total = count_faqs(session)
                 after_null = count_faqs_missing_embeddings(session)
-            logger.info(f"[pg-bootstrap] DB state after upsert (before backfill): faqs_total={after_total} faqs_embedding_null={after_null}")
+            logger.info(f"[pg-bootstrap] DB state after replace (before backfill): faqs_total={after_total} faqs_embedding_null={after_null}")
         except Exception as exc:
-            logger.warning(f"[pg-bootstrap] Could not read post-upsert counts: {exc}")
+            logger.warning(f"[pg-bootstrap] Could not read post-replace counts: {exc}")
 
         backfilled = _pg_backfill_faq_embeddings(
             session_factory,
