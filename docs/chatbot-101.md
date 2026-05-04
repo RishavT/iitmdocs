@@ -14,6 +14,7 @@ Keep this file updated whenever the bot's logic changes.
 | `src/` | Contains topic markdown files (e.g., fees, eligibility, placements). This is the knowledge base. Each file has structured information and a `Tags` line at the bottom with keywords. |
 | `embed.py` | A Python script that reads all files from `src/` and pushes them into the vector database (Weaviate). You run this whenever you add or change a `src/` file. |
 | `pg/faq_api/` (PG FAQ API) | A small backend service that searches FAQs stored in a **Postgres database** (using embeddings) and returns the closest matching FAQ questions/answers. Used for **"Did you mean?" suggestions** and **direct FAQ answers** when the user clicks a suggestion. |
+| `pg/seed/faqs.json` | The source-of-truth FAQ seed file for the Postgres FAQ database. During FAQ bootstrap, existing FAQ rows are replaced with this file's rows, then embeddings are regenerated. FAQ questions in this file must be unique; duplicate questions fail bootstrap before Postgres is touched. |
 | `static/chatbot.js` | The **frontend widget** — the floating "Need Help?" button that you see on the website. It creates the chat window (an iframe) and handles opening/closing/fullscreen. |
 | `static/qa.html` | The **chat interface** inside the iframe. Contains the input box, send button, consent overlay, and feedback buttons. |
 | `static/qa.js` | The **frontend logic** — sends the user's question to the backend, receives the streamed response, renders it with a typing animation, handles "Did you mean?" clicks, and manages feedback (thumbs up/down/report). |
@@ -136,6 +137,13 @@ This is where the chatbot figures out what the user actually wants and translate
 - When the user clicks a "Did you mean?" suggestion, the frontend sends the request with a `faq_id` parameter (the id inside `[FAQID:...]`) and the question text.
 - The backend **skips the entire pipeline** (no query rewriting, no LLM answer generation, no fact-checking).
 - It calls the **PG FAQ API** to fetch the FAQ by id and returns that question + answer directly — this is fast and guaranteed accurate (because it is a direct lookup).
+
+### Step 11: FAQ seed bootstrap
+
+- `pg/seed/faqs.json` is the source of truth for the Postgres FAQ database.
+- When FAQ bootstrap is enabled, `embed.py` replaces the existing FAQ rows with the rows from `pg/seed/faqs.json`.
+- After inserting the seed rows, `embed.py` generates embeddings for the FAQ questions.
+- Duplicate FAQ questions are not allowed in `pg/seed/faqs.json`. If duplicates are found, bootstrap fails before modifying Postgres.
 
 ---
 

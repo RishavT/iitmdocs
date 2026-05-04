@@ -319,6 +319,26 @@ def _load_seed_faqs(path: str) -> list[dict]:
         for key in ("topic_filename", "question", "answer"):
             if not (row.get(key) or "").strip():
                 raise ValueError(f"Seed row {i} missing/empty {key}")
+
+    seen_questions: dict[str, int] = {}
+    duplicates: list[str] = []
+    for i, row in enumerate(data):
+        question = row["question"].strip()
+        key = " ".join(question.lower().split())
+        if key in seen_questions:
+            duplicates.append(f"rows {seen_questions[key]} and {i}: {question}")
+        else:
+            seen_questions[key] = i
+
+    if duplicates:
+        preview = "; ".join(duplicates[:10])
+        suffix = "" if len(duplicates) <= 10 else f"; ... and {len(duplicates) - 10} more"
+        raise ValueError(
+            "Duplicate FAQ questions found in seed file. "
+            "Each question must be unique because pg/seed/faqs.json is the FAQ source of truth. "
+            f"Duplicates: {preview}{suffix}"
+        )
+
     return data
 
 

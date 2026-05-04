@@ -267,6 +267,12 @@ OPENAI_API_KEY=sk-...
 | `PG_FAQ_API_URL` | All | `http://pg-faq-api:8000` | PG FAQ API base URL (FAQ suggestions + direct `faq_id` lookups) |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
+### PG FAQ Seed Contract
+
+`pg/seed/faqs.json` is the source of truth for the Postgres FAQ database. When FAQ bootstrap runs, `embed.py` replaces existing FAQ rows with the rows from this file and regenerates FAQ question embeddings.
+
+Each FAQ question in `pg/seed/faqs.json` must be unique. If duplicate questions are found, bootstrap fails before modifying Postgres. Do not rely on "first duplicate wins" or "last duplicate wins" behavior.
+
 ## Query Rewriting & Search Optimization
 
 The chatbot uses two techniques to improve search relevance:
