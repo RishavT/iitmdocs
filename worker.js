@@ -876,7 +876,6 @@ async function answer(request, env) {
         }));
         logContext.db_faqs = (dbFaqs || []).map((faq) => ({
           id: faq.id,
-          topic_filename: faq.topic_filename,
           cosine_similarity: faq.cosine_similarity,
         }));
 
@@ -1125,7 +1124,7 @@ RAAHAT provides support for emotional, psychological, interpersonal, and financi
 
   const docContext = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
   const faqContext = (dbFaqs || [])
-    .map((faq) => `<faq id="${faq.id}" topic_filename="${faq.topic_filename || ""}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
+    .map((faq) => `<faq id="${faq.id}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
     .join("\n\n");
   const context = [docContext, faqContext, RAAHAT_INFO].filter(Boolean).join("\n\n");
 

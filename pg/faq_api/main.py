@@ -5,7 +5,7 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, List
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -68,7 +68,6 @@ class SearchResult(BaseModel):
     """One FAQ result row plus similarity score."""
 
     id: int
-    topic_filename: Optional[str]
     question: str
     answer: str
     cosine_similarity: float
@@ -111,7 +110,6 @@ def to_search_result(row: FaqSearchRow) -> SearchResult:
 
     return SearchResult(
         id=row.id,
-        topic_filename=row.topic_filename,
         question=row.question,
         answer=row.answer,
         cosine_similarity=row.cosine_similarity,

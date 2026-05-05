@@ -316,7 +316,7 @@ def _load_seed_faqs(path: str) -> list[dict]:
     for i, row in enumerate(data):
         if not isinstance(row, dict):
             raise ValueError(f"Seed row {i} must be an object")
-        for key in ("topic_filename", "question", "answer"):
+        for key in ("question", "answer"):
             if not (row.get(key) or "").strip():
                 raise ValueError(f"Seed row {i} missing/empty {key}")
 
@@ -497,9 +497,6 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
     try:
         # Existing schema SQL in the repo (idempotent; safe to re-run).
         _pg_apply_sql_file(engine, os.path.join(schema_dir, "001_faq_schema.sql"))
-        _pg_apply_sql_file(engine, os.path.join(schema_dir, "002_add_faq_embedding.sql"))
-        # TODO: After this cleanup has run successfully across all deployed environments, consider renaming/removing this legacy cleanup SQL file. If that happens, update every code/deployment reference to `004_faq_upsert_contract.sql` at the same time.
-        _pg_apply_sql_file(engine, os.path.join(schema_dir, "004_faq_upsert_contract.sql"))
 
         session_factory = create_session_factory(engine)
 

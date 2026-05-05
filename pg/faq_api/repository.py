@@ -14,7 +14,6 @@ class FaqSearchRow:
     """FAQ row returned by lookup/search operations."""
 
     id: int
-    topic_filename: Optional[str]
     question: str
     answer: str
     cosine_similarity: float
@@ -31,7 +30,6 @@ class FaqEmbeddingInput:
 def _to_search_row(faq: Faq, cosine_similarity: float) -> FaqSearchRow:
     return FaqSearchRow(
         id=int(faq.id),
-        topic_filename=faq.topic_filename,
         question=faq.question,
         answer=faq.answer,
         cosine_similarity=float(cosine_similarity),
@@ -77,10 +75,8 @@ def replace_seed_faqs(session: Session, rows: Sequence[dict]) -> int:
 
     session.add_all(
         Faq(
-            topic_filename=row["topic_filename"],
             question=row["question"],
             answer=row["answer"],
-            source_url=row.get("source_url"),
         )
         for row in rows
     )

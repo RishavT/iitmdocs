@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import os
 from contextlib import contextmanager
-from datetime import datetime
 from typing import Iterator, Optional
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, DateTime, Text, create_engine, func
+from sqlalchemy import BigInteger, Text, create_engine
 from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
@@ -21,11 +20,8 @@ class Faq(Base):
     __tablename__ = "faqs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    topic_filename: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
-    source_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(1024), nullable=True)
 
 
