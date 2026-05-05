@@ -136,40 +136,48 @@ const HISTORY_KEY = "iitm-chatbot-history";
  * @returns {string} - Processed HTML with clickable suggestions
  */
 function processFAQSuggestions(html) {
-  // Match "Did you mean:" (or translations) followed by an ordered list
-  // The pattern covers: English, Hindi, Tamil, Hinglish variations
-  const didYouMeanPatterns = [
-    /(<p><strong>Did you mean:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>क्या आपका मतलब था:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>நீங்கள் கருதுவது:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>Kya aap ye poochna chahte the:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-  ];
+  const didYouMeanLabels = new Set([
+    "Did you mean:",
+    "क्या आपका मतलब था:",
+    "நீங்கள் கருதுவது:",
+    "Kya aap ye poochna chahte the:",
+  ]);
 
-  let processedHtml = html;
+  const template = document.createElement("template");
+  template.innerHTML = html;
 
-  for (const pattern of didYouMeanPatterns) {
-    processedHtml = processedHtml.replace(pattern, (match, header, list) => {
-      // Convert each <li> to a clickable button
-      const processedList = list.replace(
-        /<li>([\s\S]*?)<\/li>/gi,
-        (liMatch, content) => {
-          // Extract FAQ id if present: [FAQID:123]
-          const faqIdMatch = content.match(/\[FAQID:(\d+)\]/);
-          const faqId = faqIdMatch ? faqIdMatch[1] : '';
+  const paragraphs = [...template.content.querySelectorAll("p")];
+  for (const paragraph of paragraphs) {
+    const label = paragraph.textContent.trim();
+    if (!didYouMeanLabels.has(label)) continue;
 
-          // Remove tags from display text
-          let displayContent = content.replace(/\s*\[FAQID:\d+\]/, '').trim();
-          const faqIdAttr = faqId ? ` data-faq-id="${faqId}"` : '';
+    const list = paragraph.nextElementSibling;
+    if (!list || list.tagName !== "OL") continue;
 
-          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqIdAttr}>${displayContent}</button>`;
-        }
-      );
-      // Wrap in a container and replace <ol> tags
-      return `<div class="faq-suggestions">${header}${processedList.replace(/<\/?ol>/gi, '')}</div>`;
-    });
+    const container = document.createElement("div");
+    container.className = "faq-suggestions";
+    container.append(paragraph.cloneNode(true));
+
+    for (const item of list.querySelectorAll("li")) {
+      const rawText = item.textContent.trim();
+      const faqIdMatch = rawText.match(/\[FAQID:(\d+)\]/);
+      const displayText = rawText.replace(/\s*\[FAQID:\d+\]/, "").trim();
+      if (!displayText) continue;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "faq-suggestion";
+      button.dataset.question = displayText;
+      if (faqIdMatch) button.dataset.faqId = faqIdMatch[1];
+      button.textContent = displayText;
+      container.append(button);
+    }
+
+    paragraph.replaceWith(container);
+    list.remove();
   }
 
-  return processedHtml;
+  return template.innerHTML;
 }
 const MAX_HISTORY_PAIRS = 5;
 let requestCounter = 0; // Track requests to prevent race conditions

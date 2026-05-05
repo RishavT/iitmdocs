@@ -5,14 +5,17 @@ import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, List
 
-import psycopg
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from pg.faq_api.orm import create_pg_engine, create_session_factory, session_scope
+from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_embedding
+
 
 app = FastAPI(title="PG FAQ API", version="0.1.0")
+SessionFactory = create_session_factory(create_pg_engine())
 
 
 @dataclass(frozen=True)
@@ -65,7 +68,6 @@ class SearchResult(BaseModel):
     """One FAQ result row plus similarity score."""
 
     id: int
-    topic_filename: Optional[str]
     question: str
     answer: str
     cosine_similarity: float
@@ -103,22 +105,14 @@ def request_embedding(text: str, ollama_url: str, model: str) -> List[float]:
     return [float(v) for v in embedding]
 
 
-def vector_literal(values: List[float]) -> str:
-    """Format a vector as pgvector text literal, for casting to vector."""
+def to_search_result(row: FaqSearchRow) -> SearchResult:
+    """Convert a repository FAQ row to the public API response model."""
 
-    return "[" + ",".join(format(v, ".12g") for v in values) + "]"
-
-
-def open_pg_connection(s: Settings) -> psycopg.Connection:
-    """Open a Postgres connection using settings."""
-
-    # For this small local service, a per-request connection is sufficient.
-    return psycopg.connect(
-        host=s.pg_host,
-        port=s.pg_port,
-        dbname=s.pg_db,
-        user=s.pg_user,
-        password=s.pg_password,
+    return SearchResult(
+        id=row.id,
+        question=row.question,
+        answer=row.answer,
+        cosine_similarity=row.cosine_similarity,
     )
 
 
@@ -152,75 +146,26 @@ def search(req: SearchRequest) -> SearchResponse:
             detail=f"Embedding dimension mismatch: expected {s.embedding_dimension}, got {len(query_vec)}",
         )
 
-    vec_str = vector_literal(query_vec)
-
-    sql = """
-    SELECT
-      id,
-      topic_filename,
-      question,
-      answer,
-      1 - (embedding <=> %s::vector) AS cosine_similarity
-    FROM faqs
-    WHERE embedding IS NOT NULL
-    ORDER BY embedding <=> %s::vector
-    LIMIT %s;
-    """
-
     try:
-        with open_pg_connection(s) as conn:
-            with conn.cursor() as cur:
-                cur.execute(sql, (vec_str, vec_str, req.k))
-                rows = cur.fetchall()
+        with session_scope(SessionFactory) as session:
+            rows = search_faqs_by_embedding(session, query_vec, req.k)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
 
-    results: List[SearchResult] = []
-    for row in rows:
-        results.append(
-            SearchResult(
-                id=int(row[0]),
-                topic_filename=row[1],
-                question=row[2],
-                answer=row[3],
-                cosine_similarity=float(row[4]),
-            )
-        )
-
-    return SearchResponse(results=results)
+    return SearchResponse(results=[to_search_result(row) for row in rows])
 
 
 @app.get("/faq/{faq_id}", response_model=SearchResult)
 def get_faq(faq_id: int) -> SearchResult:
     """Fetch a single FAQ row by id (direct lookup for UI clickthrough)."""
 
-    s = get_settings()
-    sql = """
-    SELECT
-      id,
-      topic_filename,
-      question,
-      answer,
-      1.0 AS cosine_similarity
-    FROM faqs
-    WHERE id = %s;
-    """
-
     try:
-        with open_pg_connection(s) as conn:
-            with conn.cursor() as cur:
-                cur.execute(sql, (faq_id,))
-                row = cur.fetchone()
+        with session_scope(SessionFactory) as session:
+            row = get_faq_by_id(session, faq_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
 
     if not row:
         raise HTTPException(status_code=404, detail="FAQ not found")
 
-    return SearchResult(
-        id=int(row[0]),
-        topic_filename=row[1],
-        question=row[2],
-        answer=row[3],
-        cosine_similarity=float(row[4]),
-    )
+    return to_search_result(row)
