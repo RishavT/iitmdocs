@@ -408,6 +408,7 @@ def _pg_backfill_faq_embeddings(
     int
         Total number of FAQ rows updated with embeddings.
     """
+    # TODO: In the replace-all seed flow, every freshly inserted FAQ starts with embedding=NULL; simplify this later by having replace_seed_faqs(...) return inserted FAQ rows and embedding those directly instead of querying for NULL embeddings after every full reload. After making this change, do the relevant modifications under teaching 4 section of the branch file `docs/branch-specific-info/use-orm-inplace-of-raw-sql.md`
     updated = 0
     batch_num = 0
     while True:
