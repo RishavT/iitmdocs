@@ -142,6 +142,7 @@ This is where the chatbot figures out what the user actually wants and translate
 
 - `pg/seed/faqs.json` is the source of truth for the Postgres FAQ database.
 - When FAQ bootstrap is enabled, `embed.py` replaces the existing FAQ rows with the rows from `pg/seed/faqs.json`.
+- Bootstrap does **not** recreate the `faqs` table on every deployment. The schema file uses `CREATE TABLE IF NOT EXISTS`, so the table is created only if it is missing. On normal deployments, the existing table remains, its rows are deleted through the ORM, and all FAQs from `faqs.json` are inserted again.
 - After inserting the seed rows, `embed.py` generates embeddings for the FAQ questions.
 - Duplicate FAQ questions are not allowed in `pg/seed/faqs.json`. If duplicates are found, bootstrap fails before modifying Postgres.
 

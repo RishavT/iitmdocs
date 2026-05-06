@@ -412,7 +412,7 @@ def _pg_backfill_faq_embeddings(
     updated = 0
     batch_num = 0
     while True:
-        with session_factory() as session:
+        with session_scope(session_factory) as session:
             rows = get_faqs_missing_embeddings(session, batch_size)
 
         if not rows:

@@ -22,6 +22,7 @@ class Faq(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
+    # Must stay in sync with `embedding vector(1024)` in pg/init/001_faq_schema.sql.
     embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(1024), nullable=True)
 
 

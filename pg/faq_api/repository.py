@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from pg.faq_api.orm import Faq
@@ -107,10 +107,11 @@ def update_faq_embedding(session: Session, faq_id: int, embedding: Sequence[floa
 def count_faqs(session: Session) -> int:
     """Count FAQ rows."""
 
-    return int(session.query(Faq).count())
+    return int(session.scalar(select(func.count()).select_from(Faq)) or 0)
 
 
 def count_faqs_missing_embeddings(session: Session) -> int:
     """Count FAQ rows whose embedding still needs backfill."""
 
-    return int(session.query(Faq).filter(Faq.embedding.is_(None)).count())
+    stmt = select(func.count()).select_from(Faq).where(Faq.embedding.is_(None))
+    return int(session.scalar(stmt) or 0)
