@@ -1,5 +1,24 @@
 from __future__ import annotations
 
+"""
+FastAPI HTTP service for Postgres-backed FAQ search.
+
+This file answers: "How does `worker.js` talk to the FAQ database over HTTP?"
+
+The service exposes two runtime endpoints:
+- `POST /search`: embed the user's query, search FAQ embeddings in Postgres,
+  and return the closest FAQ question/answer rows
+- `GET /faq/{id}`: return one exact FAQ row when the user clicks a
+  "Did you mean?" suggestion
+
+This file should stay focused on HTTP concerns: request/response models,
+environment settings, Ollama embedding calls, error handling, and converting
+repository results into API responses.
+
+It should not contain raw SQL or low-level table logic. Database operations
+belong in `repository.py`; table/session definitions belong in `orm.py`.
+"""
+
 import json
 import os
 import urllib.error

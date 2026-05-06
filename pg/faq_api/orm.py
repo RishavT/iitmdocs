@@ -1,5 +1,21 @@
 from __future__ import annotations
 
+"""
+SQLAlchemy model and session setup for the PG FAQ database.
+
+This file answers: "What does the FAQ table look like to Python code, and how
+do we open safe ORM sessions against Postgres?"
+
+It intentionally does not contain product operations like "search FAQs" or
+"replace seed rows". Those actions live in `repository.py`.
+
+Keep this file in sync with `pg/init/001_faq_schema.sql`:
+- the `Faq` model describes the same columns as the `faqs` table
+- `embedding` must stay `Vector(1024)` while the schema uses `vector(1024)`
+- connection settings come from the same `PG*` environment variables used by
+  the PG FAQ API and bootstrap job
+"""
+
 import os
 from contextlib import contextmanager
 from typing import Iterator, Optional

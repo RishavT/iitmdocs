@@ -1,5 +1,25 @@
 from __future__ import annotations
 
+"""
+Database action layer for the PG FAQ feature.
+
+This file answers: "What database operations can the rest of the app perform?"
+
+The FastAPI routes in `main.py` and the bootstrap flow in `embed.py` should call
+these named functions instead of writing database queries inline. That keeps
+HTTP logic, bootstrap orchestration, and database behavior separated.
+
+The functions here use SQLAlchemy ORM/expression APIs against the `Faq` model:
+- direct lookup by id
+- semantic search by pgvector cosine distance
+- replace all seeded FAQ rows
+- find/update missing embeddings
+- count rows for bootstrap logs
+
+Return values are small dataclasses rather than raw ORM objects so callers do
+not depend on SQLAlchemy session-bound model instances.
+"""
+
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
