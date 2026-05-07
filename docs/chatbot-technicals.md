@@ -1038,7 +1038,58 @@ Good rule:
 
 That rule saves a lot of time.
 
-## 14. Final summary
+## 14. Q&A: How Weaviate and Ollama work in GCE mode
+
+### Q: Where do Weaviate and Ollama run in GCE mode?
+
+They run together on the private GCE VM, not inside the Cloud Run worker.
+
+- Weaviate runs on port `8080`.
+- Ollama runs on port `11434`.
+- Ollama serves the `bge-m3` embedding model.
+- The VM normally has no public IP.
+- Cloud Run reaches the VM through the VPC connector using the VM's internal IP.
+
+### Q: What is Ollama responsible for?
+
+Ollama generates embeddings. In this project, it converts both source documents and user queries into `bge-m3` vectors.
+
+At index time, Weaviate uses Ollama to create embeddings for the `src/*.md` documents. At query time, the Cloud Run worker calls Ollama directly to create the embedding for the user's rewritten search query.
+
+### Q: What is Weaviate responsible for?
+
+Weaviate stores and searches the knowledge-base documents.
+
+Each `src/*.md` file is stored as one object in the `Document` collection, along with metadata such as filename, filepath, content hash, file size, and vector embedding. During retrieval, Weaviate runs hybrid search over these documents.
+
+### Q: What happens during embedding in GCE mode?
+
+1. Cloud Build creates or updates the Cloud Run embed job.
+2. The embed job runs `embed.py`.
+3. `embed.py` connects to Weaviate on the GCE VM using `GCE_WEAVIATE_URL`.
+4. Weaviate uses Ollama on the same VM to generate document embeddings.
+5. Weaviate stores the document content, metadata, and vectors in the `Document` collection.
+
+### Q: What happens when a user asks a question in GCE mode?
+
+1. The Cloud Run worker receives the question.
+2. The worker sanitizes and rewrites the query.
+3. The worker calls Ollama on the VM using `GCE_OLLAMA_URL` to get the query vector.
+4. The worker sends the rewritten query plus the explicit vector to Weaviate.
+5. Weaviate runs hybrid search: BM25 keyword matching plus vector similarity.
+6. The worker sends the retrieved documents to the answer LLM as context.
+
+### Q: Why does the worker compute the query embedding manually in GCE mode?
+
+In GCE mode, the worker is outside the VM's Docker network. To make query-time retrieval reliable, the worker calls Ollama directly, receives the vector, and passes that vector explicitly to Weaviate's hybrid search.
+
+In local mode, Weaviate can handle query vectorization internally through the local Docker network. GCE mode is split across Cloud Run and a VM, so the worker takes explicit control of query embedding.
+
+### Q: What is the simplest way to remember the relationship?
+
+Ollama creates the embeddings. Weaviate stores and searches the embedded documents. Cloud Run coordinates the RAG pipeline and talks to both services over private networking.
+
+## 15. Final summary
 
 ### Local mode in one line
 
@@ -1050,7 +1101,7 @@ The worker runs on Cloud Run, Weaviate and Ollama run on a private VM, the VM ke
 
 ---
 
-## 15. Security Measures
+## 16. Security Measures
 
 ### Prompt injection protection
 
