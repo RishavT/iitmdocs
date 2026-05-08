@@ -341,8 +341,13 @@
   },
   {
     "topic_filename": "independent_faqs.md",
-    "question": "Are there physical practical classes or labs?",
-    "answer": "No.\nThe IIT Madras BS programme is fully online. There are no physical practical classes or labs. All sessions and coursework are accessible online only."
+    "question": "Are there physical practical classes or labs for DS (Data Science) program?",
+    "answer": "No.\nThe IIT Madras BS programme is fully online for DS program. There are no physical practical classes or labs for DS program. for DS program, all sessions and coursework are accessible online only."
+  },
+  {
+    "topic_filename": "independent_faqs.md",
+    "question": "Is it mandatory to travel to IIT Madras for the Lab courses for ES (Electronic Systems) program?",
+    "answer": "Yes. For the ES program, it is mandatory that students travel to IIT Madras campus to demonstrate the lab experiments specified and complete the lab exams in person at the campus."
   },
   {
     "topic_filename": "independent_faqs.md",
