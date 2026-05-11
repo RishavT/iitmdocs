@@ -1,0 +1,22 @@
+[
+  {
+    "program_id": "ds",
+    "question": "What is the Data Science program about?",
+    "answer": "The Data Science program is focused on programming, statistics, data analysis, and application-oriented problem solving."
+  },
+  {
+    "program_id": "ds",
+    "question": "Do I need prior coding experience for the Data Science program?",
+    "answer": "Prior coding experience is helpful but not required. The program can start from foundational programming concepts."
+  },
+  {
+    "program_id": "ds",
+    "question": "What kind of topics are covered in Data Science courses?",
+    "answer": "Typical topics include mathematics, statistics, Python programming, databases, machine learning, and data analysis."
+  },
+  {
+    "program_id": "ds",
+    "question": "Can Data Science learners work on analytics projects?",
+    "answer": "Yes. Data Science learners can work on analytics-style projects as they progress through programming, statistics, and machine learning courses."
+  }
+]
