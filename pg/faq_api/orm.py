@@ -36,6 +36,7 @@ class Faq(Base):
     __tablename__ = "faqs"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    program_id: Mapped[str] = mapped_column(Text, nullable=False)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     # Must stay in sync with `embedding vector(1024)` in pg/init/001_faq_schema.sql.

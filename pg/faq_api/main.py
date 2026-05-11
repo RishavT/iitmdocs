@@ -35,6 +35,7 @@ from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_em
 
 app = FastAPI(title="PG FAQ API", version="0.1.0")
 SessionFactory = create_session_factory(create_pg_engine())
+REAL_PROGRAM_IDS = {"ds", "es", "mg", "ae"}
 
 
 @dataclass(frozen=True)
@@ -76,17 +77,29 @@ def get_settings() -> Settings:
     )
 
 
+def validate_program_id(program_id: str, settings: Settings) -> str:
+    """Validate user-facing program id for FAQ retrieval."""
+
+    normalized = (program_id or "").strip().lower()
+    if normalized not in REAL_PROGRAM_IDS:
+        allowed = ", ".join(sorted(REAL_PROGRAM_IDS))
+        raise HTTPException(status_code=400, detail=f"Invalid program_id. Allowed values: {allowed}")
+    return normalized
+
+
 class SearchRequest(BaseModel):
     """Request payload for semantic FAQ search."""
 
     q: str = Field(..., min_length=1, description="User query text to embed and search with.")
     k: int = Field(5, ge=1, le=20, description="Number of FAQ rows to return.")
+    program_id: str = Field(..., min_length=1, description="Program id to scope FAQ search.")
 
 
 class SearchResult(BaseModel):
     """One FAQ result row plus similarity score."""
 
     id: int
+    program_id: str
     question: str
     answer: str
     cosine_similarity: float
@@ -129,6 +142,7 @@ def to_search_result(row: FaqSearchRow) -> SearchResult:
 
     return SearchResult(
         id=row.id,
+        program_id=row.program_id,
         question=row.question,
         answer=row.answer,
         cosine_similarity=row.cosine_similarity,
@@ -153,6 +167,7 @@ def search(req: SearchRequest) -> SearchResponse:
     """
 
     s = get_settings()
+    program_id = validate_program_id(req.program_id, s)
 
     try:
         query_vec = request_embedding(req.q, s.ollama_url, s.ollama_model)
@@ -167,7 +182,7 @@ def search(req: SearchRequest) -> SearchResponse:
 
     try:
         with session_scope(SessionFactory) as session:
-            rows = search_faqs_by_embedding(session, query_vec, req.k)
+            rows = search_faqs_by_embedding(session, query_vec, req.k, program_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
 
@@ -175,12 +190,15 @@ def search(req: SearchRequest) -> SearchResponse:
 
 
 @app.get("/faq/{faq_id}", response_model=SearchResult)
-def get_faq(faq_id: int) -> SearchResult:
+def get_faq(faq_id: int, program_id: str) -> SearchResult:
     """Fetch a single FAQ row by id (direct lookup for UI clickthrough)."""
+
+    s = get_settings()
+    validated_program_id = validate_program_id(program_id, s)
 
     try:
         with session_scope(SessionFactory) as session:
-            row = get_faq_by_id(session, faq_id)
+            row = get_faq_by_id(session, faq_id, validated_program_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
 

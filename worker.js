@@ -6,6 +6,50 @@
 // Set to false to treat each message as a new conversation
 const ENABLE_HISTORY = false;
 
+const REAL_PROGRAM_IDS = ["ds", "es", "mg", "ae"];
+const FAQ_PROGRAM_IDS = [...REAL_PROGRAM_IDS, "common"];
+const DEFAULT_PROGRAM_ID = "ds";
+
+const PROGRAM_CONFIG = {
+  ds: {
+    name: "IIT Madras BS in Data Science and Applications",
+    website: "https://study.iitm.ac.in/ds/",
+    supportEmail: "support@study.iitm.ac.in",
+    supportPhone: "7850999966",
+  },
+  es: {
+    name: "IIT Madras BS in Electronic Systems",
+    website: "https://study.iitm.ac.in/es/",
+    supportEmail: "support-es@study.iitm.ac.in",
+    supportPhone: "+91-9711397993",
+  },
+  mg: {
+    name: "IIT Madras BS in Management and Data Science",
+    website: "https://study.iitm.ac.in/mg/",
+    supportEmail: "support-mg@study.iitm.ac.in",
+    supportPhone: "7850999966",
+  },
+  ae: {
+    name: "IIT Madras BS in Aeronautics and Space Technology",
+    website: "https://study.iitm.ac.in/ae/",
+    supportEmail: "support-ae@study.iitm.ac.in",
+    supportPhone: "+91-9711397993",
+  },
+};
+
+function validateProgramId(programId, { allowCommon = false } = {}) {
+  const normalized = String(programId || DEFAULT_PROGRAM_ID).trim().toLowerCase();
+  const allowed = allowCommon ? FAQ_PROGRAM_IDS : REAL_PROGRAM_IDS;
+  if (!allowed.includes(normalized)) {
+    throw new Error(`Invalid program_id '${programId}'. Allowed values: ${allowed.join(", ")}`);
+  }
+  return normalized;
+}
+
+function getProgramConfig(programId) {
+  return PROGRAM_CONFIG[programId] || PROGRAM_CONFIG[DEFAULT_PROGRAM_ID];
+}
+
 // ============================================================================
 // LOGGING INFRASTRUCTURE
 // Structured logging for Cloud Run / Google Cloud Logging
@@ -101,13 +145,17 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-// Translated "can't answer" messages with embedded contact info
-const CANNOT_ANSWER_MESSAGES = {
-  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
-  hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें। आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं`,
-  tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும். நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்`,
-  hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
-};
+function buildCannotAnswerMessages(programId = DEFAULT_PROGRAM_ID) {
+  const config = getProgramConfig(programId);
+  return {
+    english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official ${config.name} website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${config.supportEmail} or call us at ${config.supportPhone}`,
+    hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक ${config.name} वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें। आप हमसे ${config.supportEmail} पर संपर्क कर सकते हैं या ${config.supportPhone} पर कॉल कर सकते हैं`,
+    tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ ${config.name} இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும். நீங்கள் எங்களை ${config.supportEmail} இல் தொடர்பு கொள்ளலாம் அல்லது ${config.supportPhone} என்ற எண்ணில் அழைக்கலாம்`,
+    hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official ${config.name} website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${config.supportEmail} par sampark kar sakte hain ya ${config.supportPhone} par call kar sakte hain`,
+  };
+}
+
+const CANNOT_ANSWER_MESSAGES = buildCannotAnswerMessages(DEFAULT_PROGRAM_ID);
 
 // Standardized RAAHAT message for mental health referrals - single source of truth
 const STANDARD_RAAHAT_MESSAGE = `I'm afraid I am not allowed to give you advice of any kind, but we are here. If you're looking for mental health support, our institute has a Wellness Society that provides confidential counseling services to enrolled students.
@@ -141,9 +189,10 @@ function extractLanguage(rewrittenQuery) {
  * @param {string} language - The language code
  * @returns {string} - The translated message with contact info
  */
-function getCannotAnswerMessage(language) {
+function getCannotAnswerMessage(language, programId = DEFAULT_PROGRAM_ID) {
   const lang = (language || 'english').toLowerCase();
-  return CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
+  const messages = buildCannotAnswerMessages(programId);
+  return messages[lang] || messages.english;
 }
 
 function isCannotAnswerResponse(text) {
@@ -212,12 +261,24 @@ function sanitizeQuery(query) {
  * @param {Request} request - The incoming request
  * @returns {Response} - JSON response
  */
-async function handleFeedback(request) {
+async function handleFeedback(request, env = {}) {
   try {
     const body = await request.json();
 
     // Validate required fields
     const { session_id, message_id, question, response, feedback_type } = body;
+    let programId;
+    try {
+      programId = validateProgramId(body.program_id, { allowCommon: false });
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+        }
+      );
+    }
     if (!session_id || !message_id || !feedback_type) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
@@ -257,6 +318,7 @@ async function handleFeedback(request) {
     structuredLog("INFO", "user_feedback", {
       session_id,
       message_id,
+      program_id: programId,
       question: question || null,
       response: response || null,
       feedback_type,
@@ -609,7 +671,20 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource };
+export {
+  handleFeedback,
+  structuredLog,
+  findSynonymMatch,
+  extractLanguage,
+  getCannotAnswerMessage,
+  SUPPORTED_LANGUAGES,
+  CONTACT_INFO,
+  sanitizeQuery,
+  rewriteQueryWithSource,
+  validateProgramId,
+  searchWeaviate,
+  fetchPgFaqs,
+};
 
 export default {
   async fetch(request, env) {
@@ -631,7 +706,7 @@ export default {
 
     // Handle POST /feedback
     if (request.method == "POST" && url.pathname == "/feedback") {
-      return await handleFeedback(request);
+      return await handleFeedback(request, env);
     }
 
     // Serve static assets with CORS headers for cross-origin embedding
@@ -650,12 +725,13 @@ export default {
  * Handles direct FAQ lookup by id without LLM call.
  * Used when user clicks on a "Did you mean?" suggestion backed by the Postgres FAQ DB.
  */
-async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env) {
+async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, programId, startTime, env) {
   const logContext = {
     session_id: sessionId || "anonymous",
     conversation_id: conversationId,
     message_id: messageId || null,
     username: username || null,
+    program_id: programId,
     question: question,
     rewritten_query: null,
     query_source: "faq_direct_id",
@@ -671,12 +747,12 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   };
 
   try {
-    const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
+    const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}?program_id=${encodeURIComponent(programId)}`;
     const response = await fetch(url);
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
-      logContext.response = getCannotAnswerMessage("english");
+      logContext.response = getCannotAnswerMessage("english", programId);
       logContext.latency_ms = Date.now() - startTime;
       structuredLog("INFO", "conversation_turn", logContext);
       return createSSEResponse(logContext.response, { rejected: true });
@@ -692,7 +768,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   } catch (error) {
     console.error("[DEBUG] PG FAQ id lookup error:", error?.message || String(error));
     logContext.error = error?.message || String(error);
-    logContext.response = getCannotAnswerMessage("english");
+    logContext.response = getCannotAnswerMessage("english", programId);
     logContext.latency_ms = Date.now() - startTime;
     structuredLog("ERROR", "conversation_turn", logContext);
     return createSSEResponse(logContext.response, { rejected: true });
@@ -703,13 +779,13 @@ function getPgFaqApiUrl(env) {
   return env.PG_FAQ_API_URL || "http://pg-faq-api:8000";
 }
 
-async function fetchPgFaqs(query, k, env) {
+async function fetchPgFaqs(query, k, env, programId) {
   try {
     const url = `${getPgFaqApiUrl(env)}/search`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q: query, k }),
+      body: JSON.stringify({ q: query, k, program_id: programId }),
     });
     if (!response.ok) {
       const text = await response.text();
@@ -760,20 +836,28 @@ async function answer(request, env) {
     username,
     message_id: messageId,
     faq_id: faqId,
+    program_id: rawProgramId,
   } = await request.json();
   const history = ENABLE_HISTORY ? rawHistory : [];
+  let programId;
+  try {
+    programId = validateProgramId(rawProgramId, { allowCommon: false });
+  } catch (error) {
+    return new Response(error.message, { status: 400, headers: CORS_HEADERS });
+  }
   console.log('[DEBUG] Question:', question);
   console.log('[DEBUG] Session ID:', sessionId || 'not provided');
   console.log('[DEBUG] Message ID:', messageId || 'not provided');
   console.log('[DEBUG] Username:', username || 'not provided');
   console.log('[DEBUG] Conversation ID:', conversationId);
   console.log('[DEBUG] FAQ id:', faqId || 'not provided');
+  console.log('[DEBUG] Program ID:', programId);
   if (!question) return new Response('Missing "q" parameter', { status: 400 });
 
   // Direct FAQ lookup by id - skip LLM if faq_id is provided
   if (faqId) {
     console.log('[DEBUG] Direct FAQ id lookup for:', faqId);
-    return await handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, startTime, env);
+    return await handleDirectFAQIdLookup(faqId, question, sessionId, conversationId, messageId, username, programId, startTime, env);
   }
 
   // Validate ndocs to prevent resource exhaustion
@@ -810,6 +894,7 @@ async function answer(request, env) {
     conversation_id: conversationId,
     message_id: messageId || null,
     username: username || null,
+    program_id: programId,
     question: question,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", "original", or "rejected"
@@ -838,10 +923,10 @@ async function answer(request, env) {
           logContext.rejection_reason = "prompt_injection";
           logContext.detected_language = "english";
           logContext.fact_check_passed = false;
-          let rejectMessage = getCannotAnswerMessage("english");
+          let rejectMessage = getCannotAnswerMessage("english", programId);
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqs = await fetchPgFaqs(question, 5, env);
+          const dbFaqs = await fetchPgFaqs(question, 5, env, programId);
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -866,16 +951,18 @@ async function answer(request, env) {
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
         // Search Weaviate for relevant documents using clean query (without language tag)
-        const documents = await searchWeaviate(cleanQuery, numDocs, env);
-        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+        const documents = await searchWeaviate(cleanQuery, numDocs, env, programId);
+        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env, programId);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
+          program_id: doc.program_id,
           filename: doc.filename,
           relevance: doc.relevance,
         }));
         logContext.db_faqs = (dbFaqs || []).map((faq) => ({
           id: faq.id,
+          program_id: faq.program_id,
           cosine_similarity: faq.cosine_similarity,
         }));
 
@@ -898,7 +985,7 @@ async function answer(request, env) {
                               arguments: JSON.stringify({
                                 relevance: doc.relevance,
                                 name: doc.filename.replace(/\.md$/, ""),
-                                link: `${repoUrl}/blob/main/src/${doc.filename}`,
+                                link: `${repoUrl}/blob/main/${doc.filepath}`,
                               }),
                             },
                           },
@@ -914,7 +1001,7 @@ async function answer(request, env) {
 
         // Generate AI answer using documents as context (with fact-checking)
         // Pass logContext to collect response data, and detected language for responses
-        const answerResponse = await generateAnswer(question, documents, dbFaqs, history, env, logContext, detectedLanguage);
+        const answerResponse = await generateAnswer(question, documents, dbFaqs, history, env, logContext, detectedLanguage, programId);
         // Pipe the SSE response to the client
         await answerResponse.body.pipeTo(
           new WritableStream({
@@ -940,6 +1027,7 @@ async function answer(request, env) {
         logError("conversation_error", error, {
           session_id: sessionId,
           conversation_id: conversationId,
+          program_id: programId,
           question: question,
         });
         structuredLog("INFO", "conversation_turn", logContext);
@@ -986,8 +1074,9 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
   return result.embedding;
 }
 
-async function searchWeaviate(query, limit, env) {
-  console.log('[DEBUG] searchWeaviate() called, query:', query);
+async function searchWeaviate(query, limit, env, programId) {
+  console.log('[DEBUG] searchWeaviate() called, query:', query, 'program_id:', programId);
+  const validatedProgramId = validateProgramId(programId, { allowCommon: false });
 
   // Determine embedding mode: 'local' or 'gce'
   const embeddingMode = env.EMBEDDING_MODE || "local";
@@ -1025,6 +1114,7 @@ async function searchWeaviate(query, limit, env) {
     .replace(/\n/g, " ")      // Replace newlines with spaces
     .replace(/\r/g, " ")      // Replace carriage returns with spaces
     .replace(/\t/g, " ");     // Replace tabs with spaces
+  const sanitizedProgramId = validatedProgramId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
   console.log('[DEBUG] Fetching from Weaviate:', weaviateUrl);
 
@@ -1055,8 +1145,13 @@ async function searchWeaviate(query, limit, env) {
             alpha: 0.5
           }
           limit: ${limit}
+          where: {
+            path: ["program_id"]
+            operator: Equal
+            valueText: "${sanitizedProgramId}"
+          }
         ) {
-          filename filepath content file_size
+          program_id filename filepath content file_size
           _additional { score }
         }
       }
@@ -1072,8 +1167,13 @@ async function searchWeaviate(query, limit, env) {
             alpha: 0.5
           }
           limit: ${limit}
+          where: {
+            path: ["program_id"]
+            operator: Equal
+            valueText: "${sanitizedProgramId}"
+          }
         ) {
-          filename filepath content file_size
+          program_id filename filepath content file_size
           _additional { score }
         }
       }
@@ -1108,7 +1208,7 @@ async function searchWeaviate(query, limit, env) {
   return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
 }
 
-async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
+async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english', programId = DEFAULT_PROGRAM_ID) {
   // STEP 2
   // Filter documents by relevance threshold to reduce noise
   const RELEVANCE_THRESHOLD = 0.05; // Very low threshold for maximum recall (5%)
@@ -1134,7 +1234,8 @@ RAAHAT provides support for emotional, psychological, interpersonal, and financi
   // Language instruction for response
   const languageInstruction = language === 'english' ? '' : ` Respond in ${language}.`;
 
-  const systemPrompt = `You are a helpful assistant answering questions about the IIT Madras BS programme, being an expert at understanding user queries, reading documents, and giving factually correct answers.
+  const programConfig = getProgramConfig(programId);
+  const systemPrompt = `You are a helpful assistant answering questions about ${programConfig.name}, being an expert at understanding user queries, reading documents, and giving factually correct answers.
 
 You have access to official programme documentation. Always try to answer questions using the information provided in the documents.${languageInstruction}
 
@@ -1152,9 +1253,9 @@ Guidelines:
 
 STRICTLY REFUSE to answer:
 - Any help with cheating, academic dishonesty, or bypassing exam rules
-- Questions completely unrelated to the IIT Madras BS programme
+- Questions completely unrelated to ${programConfig.name}
 
-For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language)}"
+For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language, programId)}"
 
 SPECIAL CASE - Emotional/psychological distress:
 If the user expresses significant signs of emotional, psychological distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, bad money problems, etc.):
@@ -1252,12 +1353,12 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     if (otherStatementCount > 2) {
       // There's substantial non-RAAHAT content - fact-check it
       console.log('[DEBUG] Fact-checking non-RAAHAT chunk (', otherStatementCount, 'statements)');
-      let isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: validatedHistory, env });
+      let isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: validatedHistory, env, programId });
 
       // Retry without history if needed
       if (!isOtherChunkValid && validatedHistory.length > 0) {
         console.log('[DEBUG] Retrying fact-check without history...');
-        isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: [], env });
+        isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: [], env, programId });
       }
 
       factCheckPassed = isOtherChunkValid;
@@ -1281,13 +1382,13 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     // No RAAHAT content - normal fact-checking flow
     console.log('[DEBUG] No RAAHAT content, using normal fact-check flow');
     console.log('[DEBUG] Starting fact-check with history length:', validatedHistory.length);
-    let isFactuallyCorrect = await checkResponse({ response: answerText, context, history: validatedHistory, env });
+    let isFactuallyCorrect = await checkResponse({ response: answerText, context, history: validatedHistory, env, programId });
     console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
 
     // Retry without history if needed
     if (!isFactuallyCorrect && validatedHistory.length > 0) {
       console.log('[DEBUG] Fact-check failed with history, retrying without history...');
-      isFactuallyCorrect = await checkResponse({ response: answerText, context, history: [], env });
+      isFactuallyCorrect = await checkResponse({ response: answerText, context, history: [], env, programId });
       console.log('[DEBUG] Fact-check retry result (no history):', isFactuallyCorrect);
     }
 
@@ -1305,7 +1406,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       }
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
-      finalAnswer = getCannotAnswerMessage(language);
+      finalAnswer = getCannotAnswerMessage(language, programId);
 
       // Show the same FAQs that were already retrieved from the DB for this request.
       finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
@@ -1452,13 +1553,14 @@ function createSSEResponse(text, options = {}) {
  * @param {Object} params.env - Environment variables containing API keys
  * @returns {Promise<boolean>} - true if response is factually grounded, false otherwise
  */
-async function checkResponse({ response, context, history = [], env }) {
+async function checkResponse({ response, context, history = [], env, programId = DEFAULT_PROGRAM_ID }) {
   // STEP 3
   // Build history context string from conversation history
   const historyContext = history.length > 0
     ? "\n\nPREVIOUS CONVERSATION:\n" + history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join("\n\n")
     : "";
 
+  const programConfig = getProgramConfig(programId);
   const systemPrompt = `You are a fact-checker that responds ONLY in JSON format. We are providing you with a support query response (not the query) as well as some context documents.
 
 Your task: Check if a response should be APPROVED or REJECTED based on its accuracy.
@@ -1469,8 +1571,8 @@ What is allowed:
 - Paraphrasing of any information from the context documents
 - Combining information from one or two context documents
 - contact info from the following "ALLOWED_CONTACT_LIST" as below:
-- Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in
-- Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093
+- Emails: support@study.iitm.ac.in, support-es@study.iitm.ac.in, support-mg@study.iitm.ac.in, support-ae@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in, ${programConfig.supportEmail}
+- Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093, +91-9711397993, ${programConfig.supportPhone}
 - Any club/society email ending in @study.iitm.ac.in (e.g., chess.club@study.iitm.ac.in)
 - Any numbers which are numerically equal to the numbers you find in context documents - even if they are not exact string matches - for example, 3L is the same as 3 lakhs is the same as 3,00,000 is the same as 300000 is the same as 300k.
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, validateProgramId } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -23,6 +23,21 @@ async function parseResponse(response) {
   const text = await response.text();
   return JSON.parse(text);
 }
+
+describe("Program validation", () => {
+  it("should accept real user-facing program ids", () => {
+    expect(validateProgramId("ds")).toBe("ds");
+    expect(validateProgramId("ES")).toBe("es");
+  });
+
+  it("should reject common for user-facing requests", () => {
+    expect(() => validateProgramId("common")).toThrow("Invalid program_id");
+  });
+
+  it("should allow common for stored FAQ data when requested", () => {
+    expect(validateProgramId("common", {}, { allowCommon: true })).toBe("common");
+  });
+});
 
 describe("Feedback Endpoint - handleFeedback()", () => {
   beforeEach(() => {
@@ -97,6 +112,21 @@ describe("Feedback Endpoint - handleFeedback()", () => {
       expect(response.status).toBe(400);
       expect(body.error).toBe("Invalid feedback category");
     });
+
+    it("should reject invalid program_id", async () => {
+      const request = createMockRequest({
+        session_id: "session-123",
+        message_id: "msg-123",
+        feedback_type: "up",
+        program_id: "common",
+      });
+
+      const response = await handleFeedback(request);
+      const body = await parseResponse(response);
+
+      expect(response.status).toBe(400);
+      expect(body.error).toContain("Invalid program_id");
+    });
   });
 
   describe("Valid Feedback Types", () => {
@@ -114,6 +144,29 @@ describe("Feedback Endpoint - handleFeedback()", () => {
 
       expect(response.status).toBe(200);
       expect(body.success).toBe(true);
+    });
+
+    it("should include program_id in feedback logs", async () => {
+      const request = createMockRequest({
+        session_id: "session-123",
+        message_id: "msg-123",
+        feedback_type: "up",
+        program_id: "es",
+      });
+
+      await handleFeedback(request);
+
+      const feedbackLog = mockLogs.find((log) => {
+        try {
+          const parsed = JSON.parse(log[0]);
+          return parsed.message === "user_feedback";
+        } catch {
+          return false;
+        }
+      });
+
+      const logEntry = JSON.parse(feedbackLog[0]);
+      expect(logEntry.program_id).toBe("es");
     });
 
     it("should accept thumbs down feedback", async () => {
@@ -415,7 +468,8 @@ describe("CANNOT_ANSWER_MESSAGE content (via getCannotAnswerMessage)", () => {
 
   it("should reference official website", () => {
     const message = getCannotAnswerMessage("english");
-    expect(message).toContain("official IITM BS degree program website");
+    expect(message).toContain("official");
+    expect(message).toContain("website");
   });
 
   it("should mention feedback option", () => {
@@ -431,6 +485,12 @@ describe("CANNOT_ANSWER_MESSAGE content (via getCannotAnswerMessage)", () => {
   it("should include support phone number", () => {
     const message = getCannotAnswerMessage("english");
     expect(message).toContain("7850999966");
+  });
+
+  it("should use program-specific support contact", () => {
+    const message = getCannotAnswerMessage("english", "es");
+    expect(message).toContain("support-es@study.iitm.ac.in");
+    expect(message).toContain("+91-9711397993");
   });
 });
 

@@ -28,8 +28,12 @@ I can help you with questions about:
 Please type your question below (minimum 5 words).`;
 const SESSION_ID_KEY = "iitm-chatbot-session-id";
 const USERNAME_KEY = "iitm-chatbot-username";
+const REAL_PROGRAM_IDS = ["ds", "es", "mg", "ae"];
 // Get parent origin from URL parameter for secure postMessage (set by chatbot.js)
-const PARENT_ORIGIN = new URLSearchParams(window.location.search).get("parentOrigin") || window.location.origin;
+const urlParams = new URLSearchParams(window.location.search);
+const PARENT_ORIGIN = urlParams.get("parentOrigin") || window.location.origin;
+const requestedProgramId = (urlParams.get("program_id") || "ds").trim().toLowerCase();
+const PROGRAM_ID = REAL_PROGRAM_IDS.includes(requestedProgramId) ? requestedProgramId : "ds";
 
 /**
  * Gets or creates a unique session ID stored in storage (with fallback for private browsing).
@@ -51,7 +55,6 @@ function getOrCreateSessionId() {
 const sessionId = getOrCreateSessionId();
 
 // Initialize username: URL param takes priority, then storage
-const urlParams = new URLSearchParams(window.location.search);
 const urlUsername = urlParams.get("username");
 if (urlUsername) {
   usernameInput.value = urlUsername;
@@ -82,6 +85,7 @@ async function submitFeedback(feedbackData) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
+      program_id: PROGRAM_ID,
       ...feedbackData,
     }),
   });
@@ -127,7 +131,7 @@ marked.use({
     }
   }
 });
-const HISTORY_KEY = "iitm-chatbot-history";
+const HISTORY_KEY = `iitm-chatbot-history-${PROGRAM_ID}`;
 
 /**
  * Post-processes HTML to make "Did you mean?" FAQ suggestions clickable.
@@ -491,7 +495,15 @@ async function askQuestion(e, faqId = null) {
     let fullContent = "";
     let otherData = {};
 
-    const requestBody = { q, ndocs: 2, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
+    const requestBody = {
+      q,
+      ndocs: 2,
+      history,
+      session_id: sessionId,
+      message_id: messageId,
+      username: usernameInput.value || undefined,
+      program_id: PROGRAM_ID,
+    };
     if (faqId) {
       requestBody.faq_id = Number(faqId);
     }

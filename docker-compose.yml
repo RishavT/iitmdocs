@@ -30,6 +30,8 @@ services:
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: bge-m3
       EMBEDDING_DIMENSION: 1024
+      REAL_PROGRAM_IDS: ds,es,mg,ae
+      ALLOWED_PROGRAM_IDS: ds,es,mg,ae,common
     ports:
       - "8001:8000"
     networks:
@@ -45,6 +47,11 @@ services:
     container_name: iitm-chatbot-embed
     env_file:
       - .env
+    environment:
+      REAL_PROGRAM_IDS: ds,es,mg,ae
+      ALLOWED_PROGRAM_IDS: ds,es,mg,ae,common
+      DEFAULT_PROGRAM_ID: ds
+      FAQ_SEED_PATH: pg/seed
     volumes:
       - ./src:/app/src:ro
       - ./embed.py:/app/embed.py:ro
@@ -61,6 +68,10 @@ services:
     container_name: iitm-chatbot-worker
     env_file:
       - .env
+    environment:
+      REAL_PROGRAM_IDS: ds,es,mg,ae
+      ALLOWED_PROGRAM_IDS: ds,es,mg,ae,common
+      DEFAULT_PROGRAM_ID: ds
     ports:
       - "8787:8787"
     volumes:

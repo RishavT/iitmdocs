@@ -46,6 +46,9 @@ from pg.faq_api.repository import (
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+REAL_PROGRAM_IDS = {"ds", "es", "mg", "ae"}
+FAQ_PROGRAM_IDS = REAL_PROGRAM_IDS | {"common"}
+
 
 def clear_collection(weaviate_client):
     """Delete the Document collection if it exists"""
@@ -89,13 +92,26 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
             collection = weaviate_client.collections.get("Document")
             existing_vectorizer = collection.config.get().vectorizer.value if hasattr(collection.config.get().vectorizer, 'value') else str(collection.config.get().vectorizer)
 
-            # Only delete if vectorizer has changed
+            config = collection.config.get()
+            raw_properties = getattr(config, "properties", [])
+            if isinstance(raw_properties, dict):
+                property_names = set(raw_properties.keys())
+            else:
+                property_names = {
+                    getattr(prop, "name", None) or (prop.get("name") if isinstance(prop, dict) else None)
+                    for prop in raw_properties
+                }
+
+            # Only delete if vectorizer has changed or the required program_id property is missing.
             if existing_vectorizer != expected_vectorizer:
                 logger.warning(
                     f"Vectorizer mismatch! Existing: {existing_vectorizer}, Expected: {expected_vectorizer}. "
                     f"Deleting and recreating collection with {embedding_mode} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
+                weaviate_client.collections.delete("Document")
+            elif "program_id" not in property_names:
+                logger.warning("Existing Document collection is missing program_id. Recreating collection for multi-program support.")
                 weaviate_client.collections.delete("Document")
             else:
                 logger.info(f"Collection exists with correct vectorizer ({expected_vectorizer}). Reusing existing collection.")
@@ -105,6 +121,7 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
             weaviate_client.collections.delete("Document")
 
     properties = [
+        Property(name="program_id", data_type=DataType.TEXT, description="Program id for this source document"),
         Property(name="filename", data_type=DataType.TEXT, description="Name of the source file"),
         Property(name="filepath", data_type=DataType.TEXT, description="Full path to the source"),
         Property(name="content", data_type=DataType.TEXT, description="Content of the document"),
@@ -306,27 +323,55 @@ def _pg_apply_sql_file(engine, path: str) -> None:
 
 
 def _load_seed_faqs(path: str) -> list[dict]:
-    """Load `pg/seed/faqs.json` and validate minimal shape."""
+    """Load FAQ seed JSON from a file or pg/seed/<program_id>/faqs.json folders."""
 
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if not isinstance(data, list):
-        raise ValueError(f"Seed file must be a JSON array: {path}")
+    seed_path = Path(path)
+    seed_files: list[tuple[str | None, Path]]
+    if seed_path.is_dir():
+        seed_files = []
+        for child in sorted(seed_path.iterdir()):
+            faq_file = child / "faqs.json"
+            if child.is_dir() and faq_file.exists():
+                seed_files.append((child.name.strip().lower(), faq_file))
+        if not seed_files:
+            raise ValueError(f"No program FAQ seed files found under: {path}")
+    else:
+        seed_files = [(None, seed_path)]
+
+    allowed_program_ids = FAQ_PROGRAM_IDS
+    data: list[dict] = []
+    for folder_program_id, file_path in seed_files:
+        with open(file_path, "r", encoding="utf-8") as f:
+            file_data = json.load(f)
+        if not isinstance(file_data, list):
+            raise ValueError(f"Seed file must be a JSON array: {file_path}")
+        for row in file_data:
+            if isinstance(row, dict) and folder_program_id and "program_id" not in row:
+                row = {**row, "program_id": folder_program_id}
+            elif isinstance(row, dict) and folder_program_id and row.get("program_id", "").strip().lower() != folder_program_id:
+                raise ValueError(
+                    f"Seed row program_id={row.get('program_id')!r} does not match folder program_id={folder_program_id!r}: {file_path}"
+                )
+            data.append(row)
 
     for i, row in enumerate(data):
         if not isinstance(row, dict):
             raise ValueError(f"Seed row {i} must be an object")
-        for key in ("question", "answer"):
+        for key in ("program_id", "question", "answer"):
             if not (row.get(key) or "").strip():
                 raise ValueError(f"Seed row {i} missing/empty {key}")
+        row["program_id"] = row["program_id"].strip().lower()
+        if row["program_id"] not in allowed_program_ids:
+            raise ValueError(f"Seed row {i} has invalid program_id={row['program_id']!r}")
 
-    seen_questions: dict[str, int] = {}
+    seen_questions: dict[tuple[str, str], int] = {}
     duplicates: list[str] = []
     for i, row in enumerate(data):
+        program_id = row["program_id"].strip().lower()
         question = row["question"].strip()
-        key = " ".join(question.lower().split())
+        key = (program_id, " ".join(question.lower().split()))
         if key in seen_questions:
-            duplicates.append(f"rows {seen_questions[key]} and {i}: {question}")
+            duplicates.append(f"program {program_id}: rows {seen_questions[key]} and {i}: {question}")
         else:
             seen_questions[key] = i
 
@@ -335,7 +380,7 @@ def _load_seed_faqs(path: str) -> list[dict]:
         suffix = "" if len(duplicates) <= 10 else f"; ... and {len(duplicates) - 10} more"
         raise ValueError(
             "Duplicate FAQ questions found in seed file. "
-            "Each question must be unique because pg/seed/faqs.json is the FAQ source of truth. "
+            "Each question must be unique within a program because pg/seed is the FAQ source of truth. "
             f"Duplicates: {preview}{suffix}"
         )
 
@@ -450,7 +495,7 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
         logger.info("PG FAQ bootstrap disabled (ENABLE_PG_FAQ_BOOTSTRAP not set to true).")
         return
 
-    seed_path = os.getenv("FAQ_SEED_PATH", "pg/seed/faqs.json")
+    seed_path = os.getenv("FAQ_SEED_PATH", "pg/seed")
     schema_dir = os.getenv("FAQ_SQL_DIR", "pg/init")
 
     model = os.getenv("OLLAMA_MODEL", "bge-m3")
@@ -495,7 +540,7 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
     # Step 3: connect + migrate + replace seed rows + backfill.
     engine = _create_pg_bootstrap_engine()
     try:
-        # Existing schema SQL in the repo (idempotent; safe to re-run).
+        # Existing schema SQL in the repo (idempotent; safe to re-run for fresh test DBs).
         _pg_apply_sql_file(engine, os.path.join(schema_dir, "001_faq_schema.sql"))
 
         session_factory = create_session_factory(engine)
@@ -545,9 +590,10 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="local",
     """Embed all documents from the src directory into Weaviate"""
     collection = create_schema(weaviate_client, embedding_mode, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
+    real_program_ids = REAL_PROGRAM_IDS
 
     # Exclude internal files that shouldn't be in vector search
-    files = [f for f in src_path.glob("**/*") if f.is_file() and f.name not in EXCLUDED_FILES]
+    files = [f for f in src_path.glob("**/*.md") if f.is_file() and f.name not in EXCLUDED_FILES]
     total_files = len(files)
     logger.info(f"Processing {total_files} files from {src_path.absolute()}")
 
@@ -556,6 +602,18 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="local",
     failed = 0
 
     for idx, file_path in enumerate(files, 1):
+        relative_path = file_path.relative_to(src_path)
+        if len(relative_path.parts) < 2:
+            logger.warning(f"[{idx}/{total_files}] Skipping {file_path}: expected src/<program_id>/<file>.md")
+            skipped += 1
+            continue
+
+        program_id = relative_path.parts[0].strip().lower()
+        if program_id not in real_program_ids:
+            logger.warning(f"[{idx}/{total_files}] Skipping {file_path}: invalid document program_id={program_id!r}")
+            skipped += 1
+            continue
+
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -566,8 +624,9 @@ def embed_documents(weaviate_client, src_directory: str, embedding_mode="local",
 
         try:
             doc_data = {
+                "program_id": program_id,
                 "filename": file_path.name,
-                "filepath": str(file_path),
+                "filepath": str(file_path.as_posix()),
                 "content": content,
                 "file_size": file_path.stat().st_size,
                 "content_hash": hashlib.sha256(content.encode("utf-8")).hexdigest(),

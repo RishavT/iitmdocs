@@ -34,6 +34,7 @@ class FaqSearchRow:
     """FAQ row returned by lookup/search operations."""
 
     id: int
+    program_id: str
     question: str
     answer: str
     cosine_similarity: float
@@ -44,22 +45,31 @@ class FaqEmbeddingInput:
     """FAQ row that needs an embedding backfill."""
 
     id: int
+    program_id: str
     question: str
 
 
 def _to_search_row(faq: Faq, cosine_similarity: float) -> FaqSearchRow:
     return FaqSearchRow(
         id=int(faq.id),
+        program_id=faq.program_id,
         question=faq.question,
         answer=faq.answer,
         cosine_similarity=float(cosine_similarity),
     )
 
 
-def get_faq_by_id(session: Session, faq_id: int) -> Optional[FaqSearchRow]:
+def _faq_program_scope(program_id: str) -> list[str]:
+    """Return FAQ program ids visible from the selected program."""
+
+    return [program_id, "common"]
+
+
+def get_faq_by_id(session: Session, faq_id: int, program_id: str) -> Optional[FaqSearchRow]:
     """Fetch one FAQ by id for direct UI clickthrough."""
 
-    faq = session.get(Faq, faq_id)
+    stmt = select(Faq).where(Faq.id == faq_id, Faq.program_id.in_(_faq_program_scope(program_id)))
+    faq = session.scalar(stmt)
     if faq is None:
         return None
     return _to_search_row(faq, 1.0)
@@ -69,6 +79,7 @@ def search_faqs_by_embedding(
     session: Session,
     query_embedding: Sequence[float],
     limit: int,
+    program_id: str,
 ) -> list[FaqSearchRow]:
     """Search FAQs by pgvector cosine distance using SQLAlchemy expressions."""
 
@@ -78,6 +89,7 @@ def search_faqs_by_embedding(
     stmt = (
         select(Faq, cosine_similarity)
         .where(Faq.embedding.is_not(None))
+        .where(Faq.program_id.in_(_faq_program_scope(program_id)))
         .order_by(distance)
         .limit(limit)
     )
@@ -89,12 +101,15 @@ def search_faqs_by_embedding(
 
 
 def replace_seed_faqs(session: Session, rows: Sequence[dict]) -> int:
-    """Replace all FAQ rows with the seed FAQ rows."""
+    """Replace seeded FAQ rows program-wise."""
 
-    session.execute(delete(Faq))
+    program_ids = sorted({row["program_id"] for row in rows})
+    if program_ids:
+        session.execute(delete(Faq).where(Faq.program_id.in_(program_ids)))
 
     session.add_all(
         Faq(
+            program_id=row["program_id"],
             question=row["question"],
             answer=row["answer"],
         )
@@ -107,12 +122,12 @@ def get_faqs_missing_embeddings(session: Session, limit: int) -> list[FaqEmbeddi
     """Return a deterministic batch of FAQ rows that still need embeddings."""
 
     stmt = (
-        select(Faq.id, Faq.question)
+        select(Faq.id, Faq.program_id, Faq.question)
         .where(Faq.embedding.is_(None))
         .order_by(Faq.id)
         .limit(limit)
     )
-    return [FaqEmbeddingInput(id=int(row.id), question=row.question) for row in session.execute(stmt)]
+    return [FaqEmbeddingInput(id=int(row.id), program_id=row.program_id, question=row.question) for row in session.execute(stmt)]
 
 
 def update_faq_embedding(session: Session, faq_id: int, embedding: Sequence[float]) -> None:
