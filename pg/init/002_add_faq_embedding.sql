@@ -1,2 +1,0 @@
-ALTER TABLE faqs
-ADD COLUMN IF NOT EXISTS embedding vector(1024);
