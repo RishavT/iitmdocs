@@ -146,6 +146,20 @@ function getCannotAnswerMessage(language) {
   return CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
 }
 
+function isCannotAnswerResponse(text) {
+  const normalized = (text || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  if (!normalized) return false;
+
+  return (
+    normalized.includes("don't have the information to answer") ||
+    normalized.includes("please rephrase your question") ||
+    Object.values(CANNOT_ANSWER_MESSAGES).some((message) => {
+      const prefix = message.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 80);
+      return prefix && normalized.includes(prefix);
+    })
+  );
+}
+
 // ============================================================================
 // PROMPT INJECTION PROTECTION
 // ============================================================================
@@ -827,7 +841,7 @@ async function answer(request, env) {
           let rejectMessage = getCannotAnswerMessage("english");
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+          const dbFaqs = await fetchPgFaqs(question, 5, env);
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -862,7 +876,6 @@ async function answer(request, env) {
         }));
         logContext.db_faqs = (dbFaqs || []).map((faq) => ({
           id: faq.id,
-          topic_filename: faq.topic_filename,
           cosine_similarity: faq.cosine_similarity,
         }));
 
@@ -1111,7 +1124,7 @@ RAAHAT provides support for emotional, psychological, interpersonal, and financi
 
   const docContext = relevantDocs.map((doc) => `<document filename="${doc.filename}">${doc.content}</document>`).join("\n\n");
   const faqContext = (dbFaqs || [])
-    .map((faq) => `<faq id="${faq.id}" topic_filename="${faq.topic_filename || ""}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
+    .map((faq) => `<faq id="${faq.id}">\nQ: ${faq.question}\nA: ${faq.answer}\n</faq>`)
     .join("\n\n");
   const context = [docContext, faqContext, RAAHAT_INFO].filter(Boolean).join("\n\n");
 
@@ -1228,6 +1241,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
   let finalAnswer;
   let factCheckPassed = null; // Track fact-check result for logging
+  let rejectedForHistory = false;
 
   if (hasRaahat) {
     // Response contains RAAHAT content - handle specially
@@ -1281,12 +1295,21 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
 
     if (isFactuallyCorrect) {
       finalAnswer = answerText;
+      if (isCannotAnswerResponse(answerText)) {
+        console.log('[DEBUG] Answer is a cannot-answer fallback; appending FAQ suggestions');
+        finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
+        rejectedForHistory = true;
+        if (logContext) {
+          logContext.rejection_reason = "cannot_answer";
+        }
+      }
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
       finalAnswer = getCannotAnswerMessage(language);
 
       // Show the same FAQs that were already retrieved from the DB for this request.
       finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
+      rejectedForHistory = true;
 
       if (logContext) {
         logContext.rejection_reason = "fact_check_failed";
@@ -1302,8 +1325,8 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
-  // Mark as rejected if fact check failed (to exclude from conversation history)
-  return createSSEResponse(finalAnswer, { rejected: !factCheckPassed });
+  // Mark as rejected if it should be excluded from conversation history.
+  return createSSEResponse(finalAnswer, { rejected: rejectedForHistory || !factCheckPassed });
 }
 
 /**
