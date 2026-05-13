@@ -672,7 +672,8 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
 
   try {
     const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
-    const response = await fetch(url);
+    const authHeaders = await getPgFaqAuthHeaders(env);
+    const response = await fetch(url, { headers: authHeaders });
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
@@ -703,12 +704,38 @@ function getPgFaqApiUrl(env) {
   return env.PG_FAQ_API_URL || "http://pg-faq-api:8000";
 }
 
+async function getPgFaqAuthHeaders(env) {
+  const baseUrl = getPgFaqApiUrl(env);
+  const parsed = new URL(baseUrl);
+
+  if (!parsed.hostname.endsWith(".run.app")) {
+    return {};
+  }
+
+  const audience = parsed.origin;
+  const tokenUrl =
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity" +
+    `?audience=${encodeURIComponent(audience)}&format=full`;
+
+  const response = await fetch(tokenUrl, {
+    headers: { "Metadata-Flavor": "Google" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch identity token: ${response.status}`);
+  }
+
+  const token = await response.text();
+  return { Authorization: `Bearer ${token}` };
+}
+
 async function fetchPgFaqs(query, k, env) {
   try {
     const url = `${getPgFaqApiUrl(env)}/search`;
+    const authHeaders = await getPgFaqAuthHeaders(env);
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ q: query, k }),
     });
     if (!response.ok) {
