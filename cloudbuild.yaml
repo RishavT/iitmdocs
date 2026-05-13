@@ -333,8 +333,8 @@ steps:
           --image gcr.io/$PROJECT_ID/iitm-pg-faq-api:$COMMIT_SHA \
           --region asia-south1 \
           --platform managed \
-          --allow-unauthenticated \
-          --no-invoker-iam-check \
+          --no-allow-unauthenticated \
+          --ingress internal \
           --port 8000 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
