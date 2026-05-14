@@ -22,6 +22,7 @@ belong in `repository.py`; table/session definitions belong in `orm.py`.
 import json
 import logging
 import os
+import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -36,6 +37,8 @@ from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_em
 
 logger = logging.getLogger(__name__)
 OLLAMA_TIMEOUT_SECONDS = 60
+MAX_CONCURRENT_SEARCHES = int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "4"))
+search_slots = threading.BoundedSemaphore(MAX_CONCURRENT_SEARCHES)
 
 app = FastAPI(title="PG FAQ API", version="0.1.0")
 SessionFactory = create_session_factory(create_pg_engine())
@@ -159,28 +162,35 @@ def search(req: SearchRequest) -> SearchResponse:
     - exact search (no HNSW index) because FAQ table is small
     """
 
-    s = get_settings()
+    # /search is the expensive path because it calls Ollama before Postgres.
+    if not search_slots.acquire(blocking=False):
+        raise HTTPException(status_code=429, detail="Too many concurrent searches")
 
     try:
-        query_vec = request_embedding(req.q, s.ollama_url, s.ollama_model)
-    except Exception as exc:
-        logger.exception("Ollama embedding request failed")
-        raise HTTPException(status_code=502, detail="Embedding service failed") from exc
+        s = get_settings()
 
-    if len(query_vec) != s.embedding_dimension:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Embedding dimension mismatch: expected {s.embedding_dimension}, got {len(query_vec)}",
-        )
+        try:
+            query_vec = request_embedding(req.q, s.ollama_url, s.ollama_model)
+        except Exception as exc:
+            logger.exception("Ollama embedding request failed")
+            raise HTTPException(status_code=502, detail="Embedding service failed") from exc
 
-    try:
-        with session_scope(SessionFactory) as session:
-            rows = search_faqs_by_embedding(session, query_vec, req.k)
-    except Exception as exc:
-        logger.exception("Postgres FAQ search failed")
-        raise HTTPException(status_code=500, detail="Internal error") from exc
+        if len(query_vec) != s.embedding_dimension:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Embedding dimension mismatch: expected {s.embedding_dimension}, got {len(query_vec)}",
+            )
 
-    return SearchResponse(results=[to_search_result(row) for row in rows])
+        try:
+            with session_scope(SessionFactory) as session:
+                rows = search_faqs_by_embedding(session, query_vec, req.k)
+        except Exception as exc:
+            logger.exception("Postgres FAQ search failed")
+            raise HTTPException(status_code=500, detail="Internal error") from exc
+
+        return SearchResponse(results=[to_search_result(row) for row in rows])
+    finally:
+        search_slots.release()
 
 
 @app.get("/faq/{faq_id}", response_model=SearchResult)
