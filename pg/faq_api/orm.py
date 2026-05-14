@@ -26,6 +26,9 @@ from sqlalchemy.engine import URL, Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
 
 
+REQUIRED_PG_ENV_VARS = ("PGHOST", "PGDATABASE", "PGUSER", "PGPASSWORD")
+
+
 class Base(DeclarativeBase):
     """Base class for PG FAQ ORM models."""
 
@@ -42,9 +45,20 @@ class Faq(Base):
     embedding: Mapped[Optional[list[float]]] = mapped_column(Vector(1024), nullable=True)
 
 
+def required_pg_env() -> dict[str, str]:
+    """Return required Postgres env vars, failing before any weak defaults are used."""
+
+    values = {key: os.getenv(key) for key in REQUIRED_PG_ENV_VARS}
+    missing = [key for key, value in values.items() if not value]
+    if missing:
+        raise RuntimeError(f"Missing required Postgres env vars: {', '.join(missing)}")
+    return {key: value for key, value in values.items() if value is not None}
+
+
 def database_url_from_env() -> URL:
     """Build a SQLAlchemy database URL from the existing PG* environment variables."""
 
+    pg_env = required_pg_env()
     query: dict[str, str] = {}
     sslmode = os.getenv("PGSSLMODE")
     connect_timeout = os.getenv("PGCONNECT_TIMEOUT")
@@ -55,11 +69,11 @@ def database_url_from_env() -> URL:
 
     return URL.create(
         "postgresql+psycopg",
-        username=os.getenv("PGUSER", "faq_user"),
-        password=os.getenv("PGPASSWORD", "faq_password"),
-        host=os.getenv("PGHOST", "postgres"),
+        username=pg_env["PGUSER"],
+        password=pg_env["PGPASSWORD"],
+        host=pg_env["PGHOST"],
         port=int(os.getenv("PGPORT", "5432")),
-        database=os.getenv("PGDATABASE", "faqdb"),
+        database=pg_env["PGDATABASE"],
         query=query,
     )
 

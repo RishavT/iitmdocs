@@ -29,7 +29,7 @@ from typing import Any, List
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from pg.faq_api.orm import create_pg_engine, create_session_factory, session_scope
+from pg.faq_api.orm import create_pg_engine, create_session_factory, required_pg_env, session_scope
 from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_embedding
 
 
@@ -54,6 +54,8 @@ class Settings:
 def get_settings() -> Settings:
     """Read environment variables and return validated service settings."""
 
+    pg_env = required_pg_env()
+
     try:
         pg_port = int(os.getenv("PGPORT", "5432"))
     except ValueError as exc:
@@ -65,11 +67,11 @@ def get_settings() -> Settings:
         raise RuntimeError("EMBEDDING_DIMENSION must be an integer") from exc
 
     return Settings(
-        pg_host=os.getenv("PGHOST", "postgres"),
+        pg_host=pg_env["PGHOST"],
         pg_port=pg_port,
-        pg_db=os.getenv("PGDATABASE", "faqdb"),
-        pg_user=os.getenv("PGUSER", "faq_user"),
-        pg_password=os.getenv("PGPASSWORD", "faq_password"),
+        pg_db=pg_env["PGDATABASE"],
+        pg_user=pg_env["PGUSER"],
+        pg_password=pg_env["PGPASSWORD"],
         ollama_url=os.getenv("OLLAMA_URL", "http://ollama:11434"),
         ollama_model=os.getenv("OLLAMA_MODEL", "bge-m3"),
         embedding_dimension=embedding_dimension,
