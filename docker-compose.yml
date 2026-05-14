@@ -1,4 +1,42 @@
 services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: iitm-postgres
+    environment:
+      POSTGRES_DB: faqdb
+      POSTGRES_USER: faq_user
+      POSTGRES_PASSWORD: faq_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pg/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - iitm-network
+
+  pg-faq-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.pgfaq
+    container_name: iitm-pg-faq-api
+    profiles:
+      - local
+    environment:
+      PGHOST: postgres
+      PGPORT: 5432
+      PGDATABASE: faqdb
+      PGUSER: faq_user
+      PGPASSWORD: faq_password
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: bge-m3
+      EMBEDDING_DIMENSION: 1024
+    ports:
+      - "8001:8000"
+    networks:
+      - iitm-network
+    depends_on:
+      - postgres
+      - ollama
   # Embedding service - runs once to populate Weaviate
   embed:
     build:
@@ -74,6 +112,7 @@ services:
 volumes:
   weaviate_data:
   ollama_data:
+  postgres_data:
 
 networks:
   iitm-network:

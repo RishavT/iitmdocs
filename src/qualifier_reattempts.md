@@ -1,20 +1,20 @@
 ---
 title: Qualifier Exam Reattempts
-description: Reattempt policy for the qualifier exam — two attempts per term (end of week 4 and week 8), reattempt fees by category, assignment score carry-forward, unlimited attempts across terms, and single-subject reattempt option.
+description: Explains reattempt rules for the qualifier exam including attempts per term, eligibility, fees, assignment carry-forward, and reapplication in future terms.
 covers:
-  - Two attempts per term (first at week 4, second at week 8)
-  - Reattempt eligibility (absent or failed first attempt)
+  - Number of attempts per term
+  - Eligibility for same-term reattempt
+  - Reattempt application process
   - Reattempt fees by category
-  - Assignment scores carry forward for same-term reattempt
-  - Unlimited attempts across terms (fresh application needed)
-  - Cannot improve marks if already passed
+  - Assignment carry-forward rules
+  - Reattempts across future terms
 sample_queries:
-  - What happens if I fail the qualifier exam?
-  - How many times can I reattempt the qualifier?
-  - What is the reattempt fee for the qualifier exam?
-  - Do I need to redo assignments for a qualifier reattempt?
-  - Can I reattempt just one subject in the qualifier?
-  - What if I was absent for the qualifier exam?
+  - How many attempts are allowed for the qualifier exam?
+  - Who can reattempt the qualifier in the same term?
+  - Do I need to redo assignments for a reattempt?
+  - What is the reattempt fee for different categories?
+  - Can I attempt the qualifier again in another term?
+  - What if I did not qualify for the exam eligibility?
 ---
 
 # Qualifier Exam Reattempt
@@ -55,111 +55,6 @@ For those who did not achieve the minimum assignment scores:
 - They have to redo the 4 weeks of course work and weekly graded assignments
 - They must become eligible to get the hall ticket for the qualifier exam
 
-# FAQs
-
-**Question**: What happens if I fail the qualifier exam?
-**Answer**: If a learner fails the qualifier exam, they have the following options:
-
-* Reattempt in the same term
-  Applicable if the learner was absent or failed the first attempt and meets eligibility criteria.
-
-* Reattempt in subsequent terms
-  Learners must redo the entire qualifier process, including:
-
-  * 4 weeks of coursework
-  * Weekly graded assignments
-  * Paying the full applicable fees
-
-There is no limit on the number of times a learner can attempt the qualifier process in future terms.
-
-
-
-**Question**: Can I reattempt the qualifier exam?
-**Answer**: Yes.
-Reattempt is allowed:
-
-* Within the same term, if eligible
-* In subsequent terms, by reapplying afresh
-
-
-
-**Question**: Is there a limit on the number of qualifier attempts?
-**Answer**: No.
-There is no limit on the number of attempts.
-
-
-
-**Question**: Is there a separate fee for qualifier reattempt?
-**Answer**: Yes.
-Reattempt fees (same term):
-
-* General / OBC: ₹2000
-* SC / ST / PwD (≥40% disability): ₹1000
-* SC / ST + PwD (≥40% disability): ₹500
-
-This fee applies if the learner was absent or failed the first attempt.
-
-
-
-**Question**: Do I need to redo assignments for a reattempt?
-**Answer**: No.
-Previously earned assignment scores are carried forward for a same-term reattempt.
-
-
-
-**Question**: Can I reattempt the qualifier in the same term?
-**Answer**: Yes.
-Eligible learners may reattempt in the same term.
-
-
-
-**Question**: Will my previous assignment scores carry forward?
-**Answer**: Yes.
-Assignment scores carry forward for the reattempt.
-
-
-
-**Question**: Can I improve only one subject in a reattempt?
-**Answer**: Yes, only if the learner failed in a single subject.
-In such cases, the learner does not need to reappear for the entire exam.
-
-If the learner has already passed the qualifier, marks cannot be improved.
-
-
-
-**Question**: Is the reattempt difficulty level the same?
-**Answer**: Yes.
-The syllabus and difficulty level remain the same for the reattempt exam.
-
-
-
-**Question**: Does failing the qualifier affect future admissions?
-**Answer**: No.
-Failing the qualifier does not affect future admissions.
-
-
-
-**Question**: If I miss the qualifier application, when can I apply again?
-**Answer**: Learners who miss the application can apply again in the next term.
-They must:
-
-* Pay the full applicable fees
-* Redo the 4 weeks of coursework and assignments.
-
-For upcoming term dates: https://study.iitm.ac.in/ds/admissions.html#AD0
-
-
-
-**Question**: I am unable to attend the Qualifier Exam but received hall ticket / I didn't clear the Qualifier Exam. What will be the procedure to re-apply? Do I need to pay application fee again?
-**Answer**: You can re-apply again for the immediate next Qualifier Process with partial application fee payment. Your previous assignment scores will be considered and you will be directly eligible to write the Qualifier Exam without having to submit assignments again.
-
-
-
-**Question**: I applied for the Qualifier Exam but I didn't obtain the minimum required average assignment scores to take Qualifier Exam, and hence didn't receive any hall ticket for the same. What will be the procedure to re-apply?
-**Answer**: You have to re-apply as a new applicant with payment of full application fee.
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: qualifier reattempt, number of attempts, retry policy, reattempt eligibility, reattempt fees, attempt limit, fail qualifier, what if I fail qualifier, second attempt qualifier, third attempt allowed, cooling period, two attempts per term, end of 4 weeks first attempt, end of 8 weeks second attempt, absent candidates reattempt, failed candidates reattempt, no repeat assignments same term, reattempt fee Rs 2000 1000 500, unlimited attempts across terms, fresh application new term, redo coursework new term, cannot improve marks if passed, same difficulty reattempt, failing does not affect future admissions
+Tags: qualifier reattempt, attempts per term, first attempt week 4, second attempt week 8, reattempt eligibility, absent candidates, failed candidates, reattempt process, no repeat assignments same term, assignment carry forward, reattempt fees, general obc 2000, sc st pwd 1000, sc st pwd combined 500, unlimited attempts, future term attempts, fresh application required, redo coursework, hall ticket eligibility, qualifier retry rules

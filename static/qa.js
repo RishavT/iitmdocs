@@ -136,38 +136,48 @@ const HISTORY_KEY = "iitm-chatbot-history";
  * @returns {string} - Processed HTML with clickable suggestions
  */
 function processFAQSuggestions(html) {
-  // Match "Did you mean:" (or translations) followed by an ordered list
-  // The pattern covers: English, Hindi, Tamil, Hinglish variations
-  const didYouMeanPatterns = [
-    /(<p><strong>Did you mean:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>क्या आपका मतलब था:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>நீங்கள் கருதுவது:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-    /(<p><strong>Kya aap ye poochna chahte the:<\/strong><\/p>)\s*(<ol>[\s\S]*?<\/ol>)/gi,
-  ];
+  const didYouMeanLabels = new Set([
+    "Did you mean:",
+    "क्या आपका मतलब था:",
+    "நீங்கள் கருதுவது:",
+    "Kya aap ye poochna chahte the:",
+  ]);
 
-  let processedHtml = html;
+  const template = document.createElement("template");
+  template.innerHTML = html;
 
-  for (const pattern of didYouMeanPatterns) {
-    processedHtml = processedHtml.replace(pattern, (match, header, list) => {
-      // Convert each <li> to a clickable button
-      const processedList = list.replace(
-        /<li>([\s\S]*?)<\/li>/gi,
-        (liMatch, content) => {
-          // Extract FAQ filename if present: [FAQ:filename.md]
-          const faqMatch = content.match(/\[FAQ:([^\]]+)\]/);
-          const faqFile = faqMatch ? faqMatch[1] : '';
-          // Remove the [FAQ:...] tag from display text
-          const displayContent = content.replace(/\s*\[FAQ:[^\]]+\]/, '').trim();
-          const faqAttr = faqFile ? ` data-faq-file="${faqFile}"` : '';
-          return `<button type="button" class="faq-suggestion" data-question="${displayContent.replace(/"/g, '&quot;')}"${faqAttr}>${displayContent}</button>`;
-        }
-      );
-      // Wrap in a container and replace <ol> tags
-      return `<div class="faq-suggestions">${header}${processedList.replace(/<\/?ol>/gi, '')}</div>`;
-    });
+  const paragraphs = [...template.content.querySelectorAll("p")];
+  for (const paragraph of paragraphs) {
+    const label = paragraph.textContent.trim();
+    if (!didYouMeanLabels.has(label)) continue;
+
+    const list = paragraph.nextElementSibling;
+    if (!list || list.tagName !== "OL") continue;
+
+    const container = document.createElement("div");
+    container.className = "faq-suggestions";
+    container.append(paragraph.cloneNode(true));
+
+    for (const item of list.querySelectorAll("li")) {
+      const rawText = item.textContent.trim();
+      const faqIdMatch = rawText.match(/\[FAQID:(\d+)\]/);
+      const displayText = rawText.replace(/\s*\[FAQID:\d+\]/, "").trim();
+      if (!displayText) continue;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "faq-suggestion";
+      button.dataset.question = displayText;
+      if (faqIdMatch) button.dataset.faqId = faqIdMatch[1];
+      button.textContent = displayText;
+      container.append(button);
+    }
+
+    paragraph.replaceWith(container);
+    list.remove();
   }
 
-  return processedHtml;
+  return template.innerHTML;
 }
 const MAX_HISTORY_PAIRS = 5;
 let requestCounter = 0; // Track requests to prevent race conditions
@@ -454,9 +464,9 @@ async function handleReportSubmit(messageId, question, response) {
  * Handles asking a question and streaming the response
  * Prevents race conditions by tracking request order
  * @param {Event} e - Submit event from the form
- * @param {string} faqFile - Optional FAQ filename for direct lookup (skips LLM)
+ * @param {string|number} faqId - Optional FAQ id for direct lookup (skips LLM)
  */
-async function askQuestion(e, faqFile = null) {
+async function askQuestion(e, faqId = null) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
@@ -481,10 +491,9 @@ async function askQuestion(e, faqFile = null) {
     let fullContent = "";
     let otherData = {};
 
-    // Build request body - include faq_file for direct FAQ lookup
     const requestBody = { q, ndocs: 2, history, session_id: sessionId, message_id: messageId, username: usernameInput.value || undefined };
-    if (faqFile) {
-      requestBody.faq_file = faqFile;
+    if (faqId) {
+      requestBody.faq_id = Number(faqId);
     }
 
     // Collect the full response
@@ -529,14 +538,18 @@ chatArea.addEventListener("click", function (e) {
   const suggestionBtn = e.target.closest(".faq-suggestion");
   if (suggestionBtn) {
     const question = suggestionBtn.dataset.question;
-    const faqFile = suggestionBtn.dataset.faqFile;
+    const faqId = suggestionBtn.dataset.faqId;
     if (question) {
       // Set the question in the input
       questionInput.value = question;
       // Update validation (will enable the ask button)
       updateInputValidation();
-      // Submit the question (with faq_file for direct lookup, skipping LLM)
-      askQuestion(null, faqFile);
+      if (faqId) {
+        askQuestion(null, faqId);
+      } else {
+        // If no FAQ id is present, treat the click as a normal question submission.
+        askQuestion(null);
+      }
       // Smooth scroll to bottom
       chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
     }

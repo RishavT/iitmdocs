@@ -1,18 +1,20 @@
 ---
 title: BS in Electronic Systems Program
-description: The BS in Electronic Systems (ES) program at IIT Madras — eligibility requirements (Physics and Mathematics in Class 12), qualifier subjects, registration process, and differences from BS in Data Science.
+description: Provides an overview of the BS in Electronic Systems program, including eligibility, qualifier subjects, registration steps, and program differences.
 covers:
-  - ES program overview and duration
-  - Eligibility (Class 12 Physics and Mathematics required)
-  - Qualifier subjects (English, Math for Electronics, Electronic Systems Thinking, C Programming)
-  - Key differences from BS in Data Science
-  - Cannot switch between programs after qualifying
+  - Program overview and duration
+  - Eligibility requirements for ES program
+  - Qualifier subjects for ES
+  - Registration process steps
+  - Differences from Data Science program
+  - Rules on switching between programs
 sample_queries:
   - What is the BS in Electronic Systems program?
-  - What are the eligibility requirements for BS Electronic Systems?
-  - What subjects are tested in the Electronic Systems qualifier?
-  - What is the difference between BS Data Science and BS Electronic Systems?
-  - Can I switch from Data Science to Electronic Systems or vice versa?
+  - What are the eligibility criteria for ES?
+  - What subjects are in the ES qualifier?
+  - How do I apply for BS Electronic Systems?
+  - What is the difference between ES and Data Science?
+  - Can I switch programs after qualifying?
 ---
 
 # BS in Electronic Systems (ES) Program
@@ -56,4 +58,4 @@ The Electronic Systems qualifier covers 4 subjects:
 
 ---
 
-Tags: BS electronic systems, electronic systems program, ES program details, difference between DS and ES, alternate BS program IITM, electronic systems degree IIT Madras, physics and mathematics class 12, qualifier subjects ES, Electronic Systems Thinking and Circuits, Introduction to C Programming, cannot switch programs, ES registration, ES website, four year BS ES
+Tags: bs electronic systems, electronic systems program, es eligibility, physics mathematics class 12 requirement, qualifier subjects es, english math electronics circuits c programming, es registration process, apply es program, difference ds vs es, electronic systems curriculum, cannot switch programs, reapply for other program, iitm es program, four year bs electronic systems
