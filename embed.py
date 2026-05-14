@@ -45,6 +45,7 @@ from pg.faq_api.repository import (
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+OLLAMA_TIMEOUT_SECONDS = 60
 
 
 def clear_collection(weaviate_client):
@@ -357,7 +358,8 @@ def _request_ollama_embedding(text: str, ollama_url: str, model: str) -> list[fl
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        # Bound upstream waits so the embed job fails clearly if Ollama stalls.
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as resp:
             body = resp.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         err = exc.read().decode("utf-8", errors="replace")

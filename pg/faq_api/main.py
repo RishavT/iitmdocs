@@ -20,6 +20,7 @@ belong in `repository.py`; table/session definitions belong in `orm.py`.
 """
 
 import json
+import logging
 import os
 import urllib.error
 import urllib.request
@@ -32,6 +33,9 @@ from pydantic import BaseModel, Field
 from pg.faq_api.orm import create_pg_engine, create_session_factory, required_pg_env, session_scope
 from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_embedding
 
+
+logger = logging.getLogger(__name__)
+OLLAMA_TIMEOUT_SECONDS = 60
 
 app = FastAPI(title="PG FAQ API", version="0.1.0")
 SessionFactory = create_session_factory(create_pg_engine())
@@ -111,7 +115,8 @@ def request_embedding(text: str, ollama_url: str, model: str) -> List[float]:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req) as response:
+        # Bound upstream waits so one stuck Ollama call cannot hold a worker forever.
+        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT_SECONDS) as response:
             body = response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         error_body = exc.read().decode("utf-8", errors="replace")
@@ -159,7 +164,8 @@ def search(req: SearchRequest) -> SearchResponse:
     try:
         query_vec = request_embedding(req.q, s.ollama_url, s.ollama_model)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.exception("Ollama embedding request failed")
+        raise HTTPException(status_code=502, detail="Embedding service failed") from exc
 
     if len(query_vec) != s.embedding_dimension:
         raise HTTPException(
@@ -171,7 +177,8 @@ def search(req: SearchRequest) -> SearchResponse:
         with session_scope(SessionFactory) as session:
             rows = search_faqs_by_embedding(session, query_vec, req.k)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
+        logger.exception("Postgres FAQ search failed")
+        raise HTTPException(status_code=500, detail="Internal error") from exc
 
     return SearchResponse(results=[to_search_result(row) for row in rows])
 
@@ -184,7 +191,8 @@ def get_faq(faq_id: int) -> SearchResult:
         with session_scope(SessionFactory) as session:
             row = get_faq_by_id(session, faq_id)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Postgres query failed: {exc}") from exc
+        logger.exception("Postgres FAQ lookup failed")
+        raise HTTPException(status_code=500, detail="Internal error") from exc
 
     if not row:
         raise HTTPException(status_code=404, detail="FAQ not found")
