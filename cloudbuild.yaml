@@ -334,7 +334,7 @@ steps:
           --region asia-south1 \
           --platform managed \
           --no-allow-unauthenticated \
-          --ingress internal \
+          --ingress all \
           --port 8000 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
