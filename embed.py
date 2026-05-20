@@ -48,6 +48,7 @@ logger = logging.getLogger(__name__)
 
 REAL_PROGRAM_IDS = {"ds", "es", "mg", "ae"}
 FAQ_PROGRAM_IDS = REAL_PROGRAM_IDS | {"common"}
+PROGRAM_ID_ORDER = ("ds", "es", "mg", "ae")
 
 
 def clear_collection(weaviate_client):
@@ -322,37 +323,165 @@ def _pg_apply_sql_file(engine, path: str) -> None:
     logger.info(f"[pg-bootstrap] Applied SQL OK: {path} (elapsed_ms={int((time.monotonic() - t0) * 1000)})")
 
 
+def _clean_seed_text(value, *, field_name: str, file_path: Path, row_index: int) -> str:
+    """Validate and normalize a required FAQ seed text field."""
+
+    if not isinstance(value, str):
+        raise ValueError(f"Seed row {row_index} in {file_path} has non-string {field_name}")
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError(f"Seed row {row_index} in {file_path} missing/empty {field_name}")
+    return cleaned
+
+
+def _seed_question(row: dict, file_path: Path, row_index: int) -> str:
+    """Return the title-case Question field used by common/timeline/program seeds."""
+
+    return _clean_seed_text(
+        row.get("Question"),
+        field_name="Question",
+        file_path=file_path,
+        row_index=row_index,
+    )
+
+
+def _seed_answer(row: dict, file_path: Path, row_index: int) -> str:
+    """Return the title-case Answer field used by common/timeline/program seeds."""
+
+    return _clean_seed_text(
+        row.get("Answer"),
+        field_name="Answer",
+        file_path=file_path,
+        row_index=row_index,
+    )
+
+
+def _append_seed_row(rows: list[dict], *, program_id: str, question: str, answer: str) -> None:
+    """Append one normalized row in the database format expected by repository.py."""
+
+    normalized_program_id = program_id.strip().lower()
+    if normalized_program_id not in FAQ_PROGRAM_IDS:
+        raise ValueError(f"Invalid FAQ program_id={program_id!r}")
+    rows.append(
+        {
+            "program_id": normalized_program_id,
+            "question": question.strip(),
+            "answer": answer.strip(),
+        }
+    )
+
+
+def _load_question_answer_seed_file(file_path: Path, program_id: str) -> list[dict]:
+    """Load a JSON array of {Question, Answer} rows for one program."""
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        file_data = json.load(f)
+    if not isinstance(file_data, list):
+        raise ValueError(f"Seed file must be a JSON array: {file_path}")
+
+    rows: list[dict] = []
+    for i, row in enumerate(file_data):
+        if not isinstance(row, dict):
+            raise ValueError(f"Seed row {i} in {file_path} must be an object")
+        question_value = row.get("Question")
+        answer_value = row.get("Answer")
+        if (
+            isinstance(question_value, str)
+            and isinstance(answer_value, str)
+            and not question_value.strip()
+            and not answer_value.strip()
+        ):
+            logger.warning(f"Skipping blank FAQ seed row {i} in {file_path}")
+            continue
+        _append_seed_row(
+            rows,
+            program_id=program_id,
+            question=_seed_question(row, file_path, i),
+            answer=_seed_answer(row, file_path, i),
+        )
+    return rows
+
+
+def _load_diff_answers_seed_file(file_path: Path) -> list[dict]:
+    """Load diff_answers.json by expanding each question into one FAQ row per program answer."""
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        file_data = json.load(f)
+    if not isinstance(file_data, list):
+        raise ValueError(f"Seed file must be a JSON array: {file_path}")
+
+    rows: list[dict] = []
+    for i, row in enumerate(file_data):
+        if not isinstance(row, dict):
+            raise ValueError(f"Seed row {i} in {file_path} must be an object")
+
+        question = _clean_seed_text(row.get("question"), field_name="question", file_path=file_path, row_index=i)
+        answers = row.get("answers")
+        if not isinstance(answers, dict):
+            raise ValueError(f"Seed row {i} in {file_path} missing/invalid answers object")
+
+        for program_id in PROGRAM_ID_ORDER:
+            if program_id not in answers:
+                raise ValueError(f"Seed row {i} in {file_path} missing answer for program_id={program_id!r}")
+            _append_seed_row(
+                rows,
+                program_id=program_id,
+                question=question,
+                answer=_clean_seed_text(
+                    answers.get(program_id),
+                    field_name=f"answers.{program_id}",
+                    file_path=file_path,
+                    row_index=i,
+                ),
+            )
+    return rows
+
+
 def _load_seed_faqs(path: str) -> list[dict]:
-    """Load FAQ seed JSON from a file or pg/seed/<program_id>/faqs.json folders."""
+    """
+    Load FAQ seed JSON into normalized database rows.
+
+    Expected layout under pg/seed:
+    - common.json: [{ "Question": "...", "Answer": "..." }]
+    - timeline_based.json: [{ "Question": "...", "Answer": "..." }]
+    - diff_answers.json: [{ "question": "...", "answers": { "ds": "...", "ae": "...", "mg": "...", "es": "..." } }]
+    - program_specific/<program_id>.json: [{ "Question": "...", "Answer": "..." }]
+    """
 
     seed_path = Path(path)
-    seed_files: list[tuple[str | None, Path]]
-    if seed_path.is_dir():
-        seed_files = []
-        for child in sorted(seed_path.iterdir()):
-            faq_file = child / "faqs.json"
-            if child.is_dir() and faq_file.exists():
-                seed_files.append((child.name.strip().lower(), faq_file))
-        if not seed_files:
-            raise ValueError(f"No program FAQ seed files found under: {path}")
-    else:
-        seed_files = [(None, seed_path)]
+    if not seed_path.is_dir():
+        raise ValueError(f"FAQ_SEED_PATH must be the pg/seed directory for the current seed format: {path}")
 
-    allowed_program_ids = FAQ_PROGRAM_IDS
+    common_file = seed_path / "common.json"
+    timeline_file = seed_path / "timeline_based.json"
+    diff_answers_file = seed_path / "diff_answers.json"
+    program_specific_dir = seed_path / "program_specific"
+
+    required_files = [common_file, timeline_file, diff_answers_file]
+    missing_files = [str(file_path) for file_path in required_files if not file_path.exists()]
+    if not program_specific_dir.is_dir():
+        missing_files.append(str(program_specific_dir))
+    for program_id in PROGRAM_ID_ORDER:
+        program_file = program_specific_dir / f"{program_id}.json"
+        if not program_file.exists():
+            missing_files.append(str(program_file))
+    if missing_files:
+        raise ValueError(f"Missing required FAQ seed files/directories: {', '.join(missing_files)}")
+
+    seed_files: list[tuple[str, Path, str]] = [
+        ("qa", common_file, "common"),
+        ("qa", timeline_file, "common"),
+        ("diff_answers", diff_answers_file, ""),
+    ]
+    for program_id in PROGRAM_ID_ORDER:
+        seed_files.append(("qa", program_specific_dir / f"{program_id}.json", program_id))
+
     data: list[dict] = []
-    for folder_program_id, file_path in seed_files:
-        with open(file_path, "r", encoding="utf-8") as f:
-            file_data = json.load(f)
-        if not isinstance(file_data, list):
-            raise ValueError(f"Seed file must be a JSON array: {file_path}")
-        for row in file_data:
-            if isinstance(row, dict) and folder_program_id and "program_id" not in row:
-                row = {**row, "program_id": folder_program_id}
-            elif isinstance(row, dict) and folder_program_id and row.get("program_id", "").strip().lower() != folder_program_id:
-                raise ValueError(
-                    f"Seed row program_id={row.get('program_id')!r} does not match folder program_id={folder_program_id!r}: {file_path}"
-                )
-            data.append(row)
+    for seed_type, file_path, program_id in seed_files:
+        if seed_type == "diff_answers":
+            data.extend(_load_diff_answers_seed_file(file_path))
+        else:
+            data.extend(_load_question_answer_seed_file(file_path, program_id))
 
     for i, row in enumerate(data):
         if not isinstance(row, dict):
@@ -361,7 +490,7 @@ def _load_seed_faqs(path: str) -> list[dict]:
             if not (row.get(key) or "").strip():
                 raise ValueError(f"Seed row {i} missing/empty {key}")
         row["program_id"] = row["program_id"].strip().lower()
-        if row["program_id"] not in allowed_program_ids:
+        if row["program_id"] not in FAQ_PROGRAM_IDS:
             raise ValueError(f"Seed row {i} has invalid program_id={row['program_id']!r}")
 
     seen_questions: dict[tuple[str, str], int] = {}
