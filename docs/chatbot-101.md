@@ -11,10 +11,10 @@ Keep this file updated whenever the bot's logic changes.
 | Folder / File | What it does |
 |---|---|
 | `worker.js` | The **brain of the chatbot**. Handles everything on the backend — receiving questions, rewriting queries, searching the knowledge base, generating answers, fact-checking, and streaming the response back. |
-| `src/` | Contains topic markdown files (e.g., fees, eligibility, placements). This is the knowledge base. Each file has structured information and a `Tags` line at the bottom with keywords. |
+| `src/<program_id>/` | Contains topic markdown files for each real program. Valid folders are `src/ds`, `src/es`, `src/mg`, and `src/ae`. `embed.py` uses the folder name as the document `program_id`. There is no `src/common`; `common` is only for FAQs. |
 | `embed.py` | A Python script that reads all files from `src/` and pushes them into the vector database (Weaviate). You run this whenever you add or change a `src/` file. |
 | `pg/faq_api/` (PG FAQ API) | A small backend service that searches FAQs stored in a **Postgres database** (using embeddings) and returns the closest matching FAQ questions/answers. Used for **"Did you mean?" suggestions** and **direct FAQ answers** when the user clicks a suggestion. |
-| `pg/seed/faqs.json` | The source-of-truth FAQ seed file for the Postgres FAQ database. During FAQ bootstrap, existing FAQ rows are replaced with this file's rows, then embeddings are regenerated. FAQ questions in this file must be unique; duplicate questions fail bootstrap before Postgres is touched. |
+| `pg/seed/` | The source-of-truth FAQ seed directory for the Postgres FAQ database. It must contain `common.json`, `timeline_based.json`, `diff_answers.json`, and `program_specific/{ds,es,mg,ae}.json`. During FAQ bootstrap, existing FAQ rows are replaced from these files, then embeddings are regenerated. Duplicate questions within the same program fail bootstrap. |
 | `static/chatbot.js` | The **frontend widget** — the floating "Need Help?" button that you see on the website. It creates the chat window (an iframe) and handles opening/closing/fullscreen. |
 | `static/qa.html` | The **chat interface** inside the iframe. Contains the input box, send button, consent overlay, and feedback buttons. |
 | `static/qa.js` | The **frontend logic** — sends the user's question to the backend, receives the streamed response, renders it with a typing animation, handles "Did you mean?" clicks, and manages feedback (thumbs up/down/report). |
@@ -140,11 +140,52 @@ This is where the chatbot figures out what the user actually wants and translate
 
 ### Step 11: FAQ seed bootstrap
 
-- `pg/seed/faqs.json` is the source of truth for the Postgres FAQ database.
-- When FAQ bootstrap is enabled, `embed.py` replaces the existing FAQ rows with the rows from `pg/seed/faqs.json`.
-- Bootstrap does **not** recreate the `faqs` table on every deployment. The schema file uses `CREATE TABLE IF NOT EXISTS`, so the table is created only if it is missing. On normal deployments, the existing table remains, its rows are deleted through the ORM, and all FAQs from `faqs.json` are inserted again.
+- `pg/seed/` is the source of truth for the Postgres FAQ database.
+- When FAQ bootstrap is enabled, `embed.py` replaces the existing FAQ rows with rows loaded from the required `pg/seed` files.
+- Bootstrap does **not** recreate the `faqs` table on every deployment. The schema file uses `CREATE TABLE IF NOT EXISTS`, so the table is created only if it is missing. On normal deployments, the existing table remains, its rows are deleted through the ORM, and all FAQs from `pg/seed` are inserted again.
 - After inserting the seed rows, `embed.py` generates embeddings for the FAQ questions.
-- Duplicate FAQ questions are not allowed in `pg/seed/faqs.json`. If duplicates are found, bootstrap fails before modifying Postgres.
+- Duplicate FAQ questions are not allowed within the same `program_id`. If duplicates are found, bootstrap fails before modifying Postgres.
+
+Required FAQ seed layout:
+
+```text
+pg/seed/
+  common.json
+  timeline_based.json
+  diff_answers.json
+  program_specific/
+    ds.json
+    es.json
+    mg.json
+    ae.json
+```
+
+`common.json`, `timeline_based.json`, and `program_specific/*.json` use:
+
+```json
+[
+  {
+    "Question": "...",
+    "Answer": "..."
+  }
+]
+```
+
+`diff_answers.json` uses:
+
+```json
+[
+  {
+    "question": "...",
+    "answers": {
+      "ds": "...",
+      "ae": "...",
+      "mg": "...",
+      "es": "..."
+    }
+  }
+]
+```
 
 ---
 
@@ -203,7 +244,15 @@ These are things that are easy to get wrong when making changes. Read this secti
 
 ## How to Update the Knowledge Base
 
-1. Edit or add markdown files in `src/`. Each file should have:
+1. Edit or add markdown files under the correct program folder:
+   - `src/ds/*.md`
+   - `src/es/*.md`
+   - `src/mg/*.md`
+   - `src/ae/*.md`
+
+   `embed.py` gets the document `program_id` from this folder name. Do not create `src/common`.
+
+   Each file should have:
    - Structured information at the top
    - A `Tags:` line at the very end with relevant keywords
 
@@ -212,6 +261,22 @@ These are things that are easy to get wrong when making changes. Read this secti
 3. If you added a new topic or significantly changed what a topic covers, also update `KNOWLEDGE_BASE_SUMMARY` in `worker.js` with 8-12 discriminating keywords for the new/changed topic.
 
 4. If there are common ways users might phrase questions about your new content, consider adding entries to `QUERY_SYNONYMS` in `worker.js` for fast-path matching.
+
+## How to Update FAQs
+
+1. Put shared FAQs in:
+   - `pg/seed/common.json`
+   - `pg/seed/timeline_based.json`
+
+2. Put program-only FAQs in:
+   - `pg/seed/program_specific/ds.json`
+   - `pg/seed/program_specific/es.json`
+   - `pg/seed/program_specific/mg.json`
+   - `pg/seed/program_specific/ae.json`
+
+3. If the same question has different answers for each program, put it in `pg/seed/diff_answers.json`.
+
+4. Keep each question unique within the same program. Duplicate questions fail bootstrap loudly.
 
 ---
 
@@ -295,7 +360,7 @@ Sure. Here's how it all fits together:
   ┌───────────────┬───────────────────────────────────────────┬─────────────────────────────────────────────────────┐
   │               │          KNOWLEDGE_BASE_SUMMARY           │                        Tags                         │
   ├───────────────┼───────────────────────────────────────────┼─────────────────────────────────────────────────────┤
-  │ Where         │ worker.js                                 │ Bottom of each src/*.md file                        │
+  │ Where         │ worker.js                                 │ Bottom of each src/<program_id>/*.md file           │
   ├───────────────┼───────────────────────────────────────────┼─────────────────────────────────────────────────────┤
   │ Who reads it  │ gpt-4o-mini (the query rewriter)          │ Weaviate BM25 search engine                         │
   ├───────────────┼───────────────────────────────────────────┼─────────────────────────────────────────────────────┤

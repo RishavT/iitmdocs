@@ -267,11 +267,92 @@ OPENAI_API_KEY=sk-...
 | `PG_FAQ_API_URL` | All | `http://pg-faq-api:8000` | PG FAQ API base URL (FAQ suggestions + direct `faq_id` lookups) |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
-### PG FAQ Seed Contract
+### Required Data Layout
 
-`pg/seed/faqs.json` is the source of truth for the Postgres FAQ database. When FAQ bootstrap runs, `embed.py` replaces existing FAQ rows with the rows from this file and regenerates FAQ question embeddings.
+The code expects a fixed directory structure for source documents and FAQ seeds.
 
-Each FAQ question in `pg/seed/faqs.json` must be unique. If duplicate questions are found, bootstrap fails before modifying Postgres. Do not rely on "first duplicate wins" or "last duplicate wins" behavior.
+#### Source Documents
+
+Source documents must live under one of the real program folders:
+
+```text
+src/ds/*.md
+src/es/*.md
+src/mg/*.md
+src/ae/*.md
+```
+
+`embed.py` assigns `program_id` from the folder name. For example:
+
+```text
+src/es/eligibility_requirements.md -> program_id = "es"
+```
+
+Only these source document program ids are valid:
+
+```text
+ds, es, mg, ae
+```
+
+There is no `src/common/` source-doc folder. `common` applies only to FAQs.
+
+#### FAQ Seeds
+
+`pg/seed` is the source of truth for the Postgres FAQ database. When FAQ bootstrap runs, `embed.py` replaces existing FAQ rows with the rows loaded from this directory and regenerates FAQ question embeddings.
+
+The required FAQ seed layout is:
+
+```text
+pg/seed/
+  common.json
+  timeline_based.json
+  diff_answers.json
+  program_specific/
+    ds.json
+    es.json
+    mg.json
+    ae.json
+```
+
+`common.json` and `timeline_based.json` contain shared FAQs and must use this format:
+
+```json
+[
+  {
+    "Question": "...",
+    "Answer": "..."
+  }
+]
+```
+
+`program_specific/<program_id>.json` contains FAQs for one program and must use the same `Question` / `Answer` format:
+
+```json
+[
+  {
+    "Question": "...",
+    "Answer": "..."
+  }
+]
+```
+
+`diff_answers.json` contains one question with different answers per program:
+
+```json
+[
+  {
+    "question": "...",
+    "answers": {
+      "ds": "...",
+      "ae": "...",
+      "mg": "...",
+      "es": "..."
+    }
+  }
+]
+```
+
+Duplicate FAQ questions are not allowed within the same `program_id`. If duplicates are found, bootstrap fails loudly before modifying Postgres. Do not rely on "first duplicate wins" or "last duplicate wins" behavior.
 
 ## Query Rewriting & Search Optimization
 
@@ -325,12 +406,13 @@ The bot detects emotional distress signals and redirects to RAAHAT (Mental Healt
 
 ## Embedding
 
-The embedding system (`embed.py`) processes `src/*.md` files and stores them in Weaviate with vector embeddings.
+The embedding system (`embed.py`) processes `src/<program_id>/*.md` files and stores them in Weaviate with vector embeddings.
 
 **Production uses GCE mode** with Ollama (`bge-m3`) running on a GCE VM - no external embedding APIs needed. See [Configuration](#configuration) for all modes.
 
 `embed.py` creates a `Document` collection with the following properties:
 
+- `program_id`: Program id from the source folder (`ds`, `es`, `mg`, or `ae`)
 - `filename`: Name of the source file
 - `filepath`: Full path to the source file
 - `content`: Complete file content
