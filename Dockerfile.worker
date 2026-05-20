@@ -15,8 +15,10 @@ RUN npm install
 COPY worker.js wrangler.toml ./
 COPY static ./static
 
-# Create startup script to generate .dev.vars from environment variables
+# Create startup script to generate .dev.vars from environment variables when
+# Compose has not mounted an explicit .dev.vars file.
 RUN echo '#!/bin/sh\n\
+if [ ! -f /app/.dev.vars ]; then\n\
 cat > /app/.dev.vars <<EOF\n\
 EMBEDDING_MODE=${EMBEDDING_MODE}\n\
 GCE_WEAVIATE_URL=${GCE_WEAVIATE_URL}\n\
@@ -35,6 +37,7 @@ CHAT_MODEL=${CHAT_MODEL}\n\
 EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER}\n\
 EMBEDDING_MODEL=${EMBEDDING_MODEL}\n\
 EOF\n\
+fi\n\
 exec npx wrangler dev --port 8787 --ip 0.0.0.0\n\
 ' > /app/start.sh && chmod +x /app/start.sh
 
