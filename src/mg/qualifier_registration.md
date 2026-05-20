@@ -1,61 +1,44 @@
 ---
 title: qualifier_registration
-description: Qualifier Exam registration requirements, access to Week-1 content, regular entry requirements, ES eligibility conditions, fees, and JEE proof submission.
+description: Qualifier Exam registration process, sample content access, registration form, reattempt application, repeat attempts, fresh application rules, fee payment, and JEE-based application proof.
 covers:
-  - Qualifier Exam registration
-  - Week-1 sample content access
-  - ES eligibility conditions
-  - JEE Advanced proof upload
+  - qualifier registration form
+  - Week-1 sample course content access
+  - fee payment during registration
+  - reattempt application form
+  - unlimited qualifier process attempts
+  - fresh application and full fee rules
 sample_queries:
-  - Where is the Qualifier Exam registration form available?
   - Do qualifier applicants get access to Week-1 sample content?
-  - What conditions must ES applicants fulfill for the Qualifier Exam?
-  - When must I pay the Qualifier exam application fee?
-  - What happens if my JEE proof is not valid?
+  - Where is the Qualifier Exam registration form available?
+  - When does the re-attempt application form open?
+  - Is there a limit on qualifier process attempts?
+  - Do I need to redo coursework if I did not become eligible for the qualifier exam?
 ---
 
 # Content
 
-## Included knowledge blocks
+## Qualifier registration and content access
 
-### KB015
-All regular entry applicants must go through the Qualifier Process to earn admission to the Foundation Level.
+- All regular entry applicants must go through the Qualifier Process to earn admission to the Foundation Level.
+- The application fee for the Qualifier exam must be paid during registration and is non-refundable under any circumstances.
+- All applicants registering for the Qualifier Exam will receive access to Week-1 sample course content.
+- This allows candidates to explore the learning material and understand the structure of the program before attempting the exam.
+- To receive access, learners must complete the Qualifier Exam registration form available on the official website: https://study.iitm.ac.in/.
+- Access to the Week-1 content will be provided after successful submission of the form.
 
-### KB016
-To apply for the Qualifier Exam of For the BS in Electronic Systems (ES) programme students should fulfill the below conditions
+## JEE-based entry during qualifier process
 
-### KB017
-Passed Class 12 or equivalent with Physics and Mathematics, irrespective of age/group/stream/board
+- Apply to the Qualifier process, saying Yes to the question on eligibility to JEE Advanced level. Upload a valid proof for the same.
 
-### KB018
-School students who have appeared for and passed their Class 11 final exams can apply irrespective of their age/group/stream/board.
+## Reattempt and repeat attempts
 
-### KB020
-If students have passed class 12 without Physics and Mathematics, but have passed Physics and Mathematics separately through NIOS or any other equivalent organization - they will be permitted to apply to the BS in Electronics systems (ES) after committee approval.
-
-### KB024
-The application fee for the Qualifier exam must be paid during registration and is non-refundable under any circumstances.
-
-### KB033
-All applicants registering for the Qualifier Exam will receive access to Week-1 sample course content.
-
-### KB035
-To receive access, learners must complete the Qualifier Exam registration form available on the official website: https://study.iitm.ac.in/.
-
-### KB036
-Access to the Week-1 content will be provided after successful submission of the form.
-
-### KB076
-Please note that the Qualifier Examination fee is non-refundable under all circumstances, including cases where the learner misses the examination or does not pass it.
-
-### KB099
-Apply to the Qualifier process, saying Yes to the question on eligibility to JEE Advanced level.
-
-### KB100
-Upload a valid proof for the same.
-
-### KB104
-If the proof of the document submitted is found to be not valid, the student will be moved into the category of non-JEE and will be treated as a regular entry candidate to the foundation level and have to go through the qualifier process.
+- This re-attempt application form will open up immediately after the qualifier results are announced.
+- There are no limits on the number of times a candidate can attempt the qualifier process.
+- The candidate can attempt again the subsequent terms.
+- If the qualifier score becomes invalid, the student will have to go through the entire qualifier process again and re-take the qualifier exam.
+- They have to pay the full fees as per the fee norms applicable for their category. (and additional exam facilitation fee in case of candidates outside India)
+- This will be considered like a fresh application and they have to redo the 4 weeks of course work and weekly graded assignments and become eligible to get the hall ticket for the qualifier exam
 
 ---
 
@@ -64,9 +47,10 @@ Tags:
 - Qualifier Exam registration form
 - Week-1 sample content
 - official website
-- regular entry
-- ES eligibility
-- Physics and Mathematics
-- NIOS
+- study.iitm.ac.in
+- re-attempt application form
+- unlimited attempts
+- subsequent terms
+- fresh application
+- full fees
 - JEE Advanced proof
-- application fee
