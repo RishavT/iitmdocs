@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, extractFAQs, scoreFAQMatch, getFAQSuggestions } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -694,9 +694,19 @@ describe("sanitizeQuery()", () => {
   });
 });
 
+/*
 // ============================================================================
 // Task 3: FAQ Suggestions ("Did you mean?") Tests
 // ============================================================================
+//
+// This file previously tested the old Weaviate-backed FAQ suggestion path:
+// - extract FAQs from `src/*.md` content
+// - render suggestions as [FAQ:filename.md]
+// - clickthrough using `faq_file`
+//
+// That path has been removed in favor of Postgres-backed FAQ suggestions and
+// `faq_id` clickthrough. Keeping these tests enabled would fail because the
+// underlying functions no longer exist in worker.js.
 
 describe("extractFAQs()", () => {
   describe("Basic extraction", () => {
@@ -821,6 +831,7 @@ Tags: fee, refund`;
     });
   });
 });
+*/
 
 describe("scoreFAQMatch()", () => {
   it("should score full word overlap", () => {
@@ -878,7 +889,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -908,7 +919,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -936,7 +947,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -964,7 +975,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -988,7 +999,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1001,7 +1012,7 @@ describe("getFAQSuggestions()", () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1029,7 +1040,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1057,7 +1068,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1097,7 +1108,7 @@ Tags: qualifier, exam`,
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 

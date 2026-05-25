@@ -1,19 +1,20 @@
 ---
 title: Contact and Support Information
-description: Official contact details for the IIT Madras BS program — program-specific support emails, phone number, office address, qualifier support, international student support (Global Entry), and special accommodation requests.
+description: Lists official contact channels, support details, and guidance on when and how to reach IIT Madras BS program support.
 covers:
-  - Program-specific support emails (DS, ES, AE, MG)
-  - Qualifier support email
-  - International students / Global Entry contact
+  - Program-specific support emails
+  - Qualifier and international support contacts
   - Phone support and office address
-  - What the chatbot can and cannot help with
-  - Special accommodation and scribe requests for PwD students
+  - Official websites for programs
+  - Scenarios for contacting support
+  - Chatbot capabilities and limitations
 sample_queries:
-  - What is the support email for the IITM BS program?
-  - Are there any official WhatsApp or Telegram groups?
-  - Who do I contact for application or payment issues?
-  - How do I contact support as an international student?
-  - How do I request special accommodation for exams?
+  - What is the support email for IITM BS?
+  - Who do I contact for application issues?
+  - Is there a phone number for support?
+  - How do international students contact support?
+  - What issues can support help with?
+  - How do I request special accommodation?
 ---
 
 # Contact Information and Support
@@ -74,21 +75,6 @@ For PwD students requiring special seating or scribe, email support@study.iitm.a
 ## Response Time
 Support team typically responds within 1-2 business days. For urgent exam-related issues, call the phone number.
 
-# FAQs
-
-**Question**: Are there any communication groups on WhatsApp, Telegram etc for the IITM Online Degree Program?
-**Answer**: There are NO official WhatsApp or Telegram groups. We currently answer all questions / doubts via support email / calls.
-We will use WhatsApp from our side for communication or reminder purpose only.
-
-
-
-**Question**: I ran into an error or issue in the application form. What do I do?
-**Answer**: Please send us your registered email ID and a screenshot of the error / issue with relevant description to support@study.iitm.ac.in
-
-If the error is after payment has been made, please forward the confirmation email from Razorpay along with email ID, application number and screenshot with description.
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: contact details, student support, helpdesk, official email, grievance redressal, support queries, whom to contact, support response time, program-specific email, support-es, support-ae, support-mg, qualifier support email, global entry email, phone number, ICSR building office address, payment issues, document upload problems, category change, hall ticket issues, special accommodation, PwD scribe request
+Tags: contact information, support email iitm bs, program specific emails ds es ae mg, qualifier support email, international student support, global entry contact, phone support number, office address iitm bs, official websites ds es mg ae, when to contact support, payment issues help, document upload issues, hall ticket queries, exam city changes, result queries, chatbot limitations, chatbot capabilities, special accommodation pwd scribe, support response time

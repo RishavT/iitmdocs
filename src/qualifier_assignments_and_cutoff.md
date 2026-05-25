@@ -1,20 +1,20 @@
 ---
 title: Qualifier Assignments and Cutoff
-description: Qualifier exam passing criteria and assignment requirements — category-wise cutoff marks (General, OBC-NCL, SC/ST/PwD), assignment grading, eligibility for first and second attempts within a term, and category relaxation policies.
+description: Details qualifier exam passing criteria, assignment grading, category-wise cutoffs, eligibility for attempts, and category-related rules and documentation.
 covers:
-  - Qualifier exam passing criteria (per-subject and overall cutoffs)
-  - Category-wise cutoff marks (General, OBC-NCL/EWS, SC/ST/PwD)
-  - Assignment grading (out of 100, unattempted = 0)
-  - First attempt vs second attempt eligibility
-  - Category relaxations (apply only during qualifier, not after)
-  - Category documents required and changing category
+  - Qualifier exam passing criteria and scoring rules
+  - Category-wise cutoff marks and averages
+  - Assignment grading and eligibility requirements
+  - First and second attempt eligibility rules
+  - Category relaxations and applicability limits
+  - Fees and documents for different categories
 sample_queries:
-  - Are qualifier assignments mandatory and what happens if I miss them?
-  - What are the minimum cutoff marks to pass the qualifier?
-  - Is there a cutoff relaxation for SC/ST/OBC/PwD candidates?
-  - Can I improve my qualifier scores after passing?
-  - What is the passing criteria for the qualifier exam?
-  - Are qualifier assignments proctored or can I do them from home?
+  - What are the cutoff marks for the qualifier exam?
+  - How are assignments graded in the qualifier process?
+  - What is the minimum assignment score required?
+  - How do I become eligible for the qualifier exam attempts?
+  - Are there different cutoffs for reserved categories?
+  - Can I change my category after applying?
 ---
 
 # Qualifier Exam Passing Criteria
@@ -148,80 +148,6 @@ qualifier assignment, qualifier assignment requirements, qualifier exam eligibil
 - If this score is ≥ 40/100 (or as per the cutoff for each category of students) in each of the 4 subjects, the students will become eligible to write the qualifier exam in the second attempt within the term.
 - Reattempts within the term will be given suitably.
 
-# FAQs
-
-
-**Question**: Are assignments compulsory to appear for the qualifier?
-**Answer**: Yes.
-Assignments are compulsory to become eligible for the qualifier exam.
-
-Any assignment that is not attempted is marked as 0.
-
-Eligibility rules:
-
-* If the average of the first 2 weeks’ assignments is ≥ the required cutoff in each of the 4 subjects, the learner becomes eligible for the first attempt.
-* If not eligible after week 2, the best 2 out of the first 3 weeks’ assignments are considered for eligibility for the second attempt within the term.
-* Reattempts within the term may be provided suitably.
-
-Only learners who meet the minimum required average assignment score in all four courses are allowed to appear for the qualifier exam.
-
-
-
-**Question**: What is the minimum assignment score required?
-**Answer**: Minimum average assignment score required in each course:
-
-* General: 40%
-* OBC-NCL / EWS: 35%
-* SC / ST / PwD (≥40% disability): 30%
-* SC / ST + PwD (≥40% disability): 30%
-
-Relaxations apply only for the qualifier process.
-There are no relaxations once registered into the program.
-
-
-
-**Question**: Is assignment eligibility different for reserved categories?
-**Answer**: Yes.
-The minimum assignment score requirements differ by category as listed above.
-
-
-
-**Question**: What happens if I miss qualifier assignments?
-**Answer**: If a learner misses assignments, those assignments are marked as 0, and the learner may not become eligible to write the qualifier exam.
-
-
-
-**Question**: Can I improve assignment scores after qualifying?
-**Answer**: No.
-Once a learner has successfully qualified, they are not permitted to reattempt the qualifier examination during the validity period to improve assignment scores.
-
-
-
-**Question**: Are qualifier assignments graded or pass/fail?
-**Answer**: Qualifier assignments are graded.
-Each week during the 4-week qualifier process, assignments are graded and contribute to
-
-
-
-**Question**: Are assignments proctored during qualifier preparation?
-**Answer**: No.
-Weekly assignments are not proctored and can be completed from home.
-However, if a learner meets the assignment score eligibility, the final Qualifier Exam is strictly proctored and conducted in person at an exam centre.
-
-
-
-**Question**: Will everyone who goes through the qualifier process be allowed to write the qualifier exam? What is the passing criteria?
-**Answer**: No. Only the learners who get the minimum required marks in the online assignments during the qualifier process of 4 weeks will be allowed to attend the qualifier exam. Only those learners allowed to write the qualifier exam shall be provided with hall tickets.
-
-Refer to the Qualifier Process and the section below it to learn about the minimum required marks in the qualifier assignments and minimum required marks to pass / clear the qualifier exam.
-
-
-
-**Question**: Is there any concession for SC / ST / OBC-NCL / EWS / PwD candidates in terms of scores?
-**Answer**: SC / ST / OBC-NCL / EWS / PwD candidates will have concession in minimum scores required during the qualifier process to enter the program. Note that there will be no such concessions after entering the program. (OBC candidates not belonging to the OBC-NCL category cannot avail any concession)
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: qualifier assignments, assignment weightage, assignment submission rules, assignment deadline, missed qualifier assignment, cutoff marks, passing criteria, minimum assignment score, category cutoff, cutoff calculation, internal assessment, graded out of 100, not attempted zero, general 40 percent, OBC-NCL EWS 35 percent, SC ST PwD 30 percent, first 2 weeks average, best 2 out of 3 weeks, hall ticket eligibility, relaxations only qualifier, category documents, OBC-NCL certificate, cannot change category, assignments compulsory, assignments not proctored, complete from home
+Tags: qualifier assignments, assignment grading, assignment eligibility, cutoff marks, passing criteria, category cutoff, general obc sc st pwd cutoffs, assignment scores, minimum assignment score, qualifier exam eligibility, first attempt eligibility, second attempt eligibility, best 2 of 3 weeks, assignment average calculation, hall ticket eligibility, category relaxations, no relaxation after admission, application fee by category, reattempt fee, category documents, obc ncl certificate, sc st certificate, pwd certificate, income certificate, cannot change category, assignments compulsory, assignments not attempted zero, qualifier process rules

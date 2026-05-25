@@ -1,20 +1,20 @@
 ---
 title: JEE-Based Entry
-description: Direct entry into the IIT Madras BS Foundation level via JEE Advanced eligibility — two admission pathways (regular vs JEE), validity period (3 terms), application process, proof requirements, and benefits of JEE-based entry.
+description: Explains admission pathways to the IIT Madras BS program, including regular entry and JEE-based direct entry, eligibility, validity, application process, and benefits.
 covers:
-  - Two entry pathways (regular qualifier vs JEE-based direct entry)
-  - JEE Advanced eligibility and validity period (3 terms)
-  - Application process and proof requirements (scorecard, admit card)
-  - Benefits of JEE entry (skip qualifier, CCC of 4)
-  - Cannot switch between entry types after applying
-  - International exams (SAT, AP, IB, A-Levels) not accepted
+  - Two admission pathways to Foundation level
+  - JEE Advanced eligibility and validity rules
+  - Regular qualifier process structure
+  - Application steps and required proof
+  - Benefits of JEE-based direct entry
+  - Rules for entry type and switching
 sample_queries:
-  - What are the different ways to enter the IITM BS program?
-  - Can I skip the qualifier exam if I have JEE Advanced?
-  - Which JEE years are eligible for direct entry?
-  - Can I switch between qualifier and JEE entry after applying?
-  - What documents do I need for JEE-based entry?
-  - Can I use SAT, AP, or IB scores for admission?
+  - What are the admission pathways to IITM BS program?
+  - Can I join without the qualifier exam using JEE?
+  - How long is JEE Advanced eligibility valid?
+  - What documents are needed for JEE-based entry?
+  - Can I switch from regular entry to JEE entry later?
+  - What happens if my JEE proof is invalid?
 ---
 
 # Admission Pathways to IIT Madras BS Program
@@ -121,106 +121,6 @@ Once you apply as a qualifier applicant, you cannot change to JEE-based entry fo
 - Directly register for Foundation courses with CCC (Credit Clearing Capability) of 4
 - Can register for up to 4 courses in first term
 
-# FAQs
-
-**Question**: What are the ways to enter the BS program?
-**Answer**: There are two entry routes:
-
-* Qualifier Exam Route
-* Direct Entry via JEE Advanced (eligible years only)
-
-For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
-
-
-
-**Question**: Who is exempted from the qualifier exam?
-**Answer**: Learners who are eligible for JEE Advanced (JEE Main qualified and eligible for JEE Advanced, or JEE Advanced qualified) for the specified admission cycles are exempted from the qualifier exam.
-
-Eligible JEE years depend on the admission term:
-
-* Jan 2026: JEE 2024, 2025
-* May 2026: JEE 2025, 2026
-* Sep 2026: JEE 2025, 2026
-
-
-
-**Question**: How does JEE Advanced exemption work?
-**Answer**: Eligible learners:
-
-* Apply during the regular application window
-* Upload JEE Main scorecard or proof of JEE Advanced eligibility
-* After verification, directly register for Foundation-level courses
-
-
-
-**Question**: Which JEE years are eligible for exemption?
-**Answer**: Eligibility is based on the admission cycle, as listed above.
-Only the specified recent JEE years are considered.
-
-
-
-**Question**: Do exempted students need to do qualifier assignments?
-**Answer**: Yes.
-All regular applicants must mandatorily submit assignments, as qualifier eligibility depends on assignment scores.
-
-
-
-**Question**: Can exemption be claimed after applying normally?
-**Answer**: No.
-Once an application is submitted under the regular entry route, it cannot be changed to JEE-based entry for that term.
-
-
-
-**Question**: What proof is required for qualifier exemption?
-**Answer**: Valid proof of eligibility for JEE Advanced, such as:
-
-* JEE Main scorecard
-* Admit card indicating Advanced eligibility
-
-
-
-**Question**: Can exemption be rejected?
-**Answer**: Yes.
-Exemption may be rejected if:
-
-* Eligibility criteria are not met
-* Required documents are not submitted or are invalid
-
-
-
-**Question**: Can exempted students directly register for courses?
-**Answer**: No.
-There are no exempted students who can directly register without following the defined admission process.
-
-
-
-**Question**: Can international exams be used for exemption?
-**Answer**: No.
-International exams such as AP, SAT, A-Levels, IB cannot be used for exemption or credit transfer.
-
-
-
-**Question**: Can I enter as a qualifier applicant and later switch to JEE-based entry?
-**Answer**: No.
-A learner entering through the qualifier route cannot switch to JEE-based entry later.
-
-
-
-**Question**: What is the JEE-based entry application fee?
-**Answer**: The application fee for JEE-based entry is ₹4000.
-For more details: https://study.iitm.ac.in/ds/admissions.html#AD8
-
-
-
-**Question**: What are the JEE eligibility confirmations?
-**Answer**: Learners who cleared JEE Main and are eligible for JEE Advanced within the allowed years can apply for the BS program under JEE-based entry.
-
-**Question**: When does the May 2026 qualifier application start?
-**Answer**: The May 2026 qualifier application is currently in-progress. The last date to apply is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
-
-**Question**: When is the last date to apply for the May 2026 qualifier?
-**Answer**: The last date to apply for the May 2026 qualifier is May 30, 2026. You can visit "https://study.iitm.ac.in/ds" and click on "Apply Now" button to start your application process.
-
 ---
 
-Tags: JEE entry, JEE based admission, JEE Advanced eligibility, JEE Main acceptance, direct admission via JEE, JEE score validity, JEE route IITM BS, cutoff through JEE, regular entry vs JEE entry, two entry pathways, CCC credit clearing capability of 4, skip qualifier, direct foundation admission, JEE proof upload, JEE Main scorecard, JEE Advanced admit card, cannot switch entry type, international exams not accepted, SAT AP IB A-Levels not accepted, JEE 2024 2025 2026 eligibility, admission cycles, 3 terms validity
+Tags: jee entry, jee based admission, jee advanced eligibility, jee main eligibility, direct admission, foundation level entry, qualifier process, admission pathways, regular entry, jee validity period, application process, proof upload, jee scorecard, admit card, credit clearing capability, ccc 4 courses, skip qualifier, admission rules, entry type restriction, cannot switch entry type, eligibility criteria, admission process iitm bs, jee advanced direct entry, foundation course registration, application fee, admission verification

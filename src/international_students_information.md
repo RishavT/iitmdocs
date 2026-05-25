@@ -1,19 +1,20 @@
 ---
 title: International Students Information
-description: Guide for international students applying to the IIT Madras BS program — eligibility, remote proctored exam mode, IST exam timings, additional facilitation fee (Rs 2000 per subject), required documents (residence proof, ID proof), and payment support.
+description: Provides guidance for international students including eligibility, exam mode, fees, required documents, and support contacts.
 covers:
-  - International student eligibility
-  - Remote proctored exam mode (no travel to India needed)
+  - Eligibility for international students
+  - Remote proctored exam mode
   - Exam timing in IST
-  - Additional exam facilitation fee (Rs 2000 per subject)
-  - Required documents (residence proof, visa/citizenship)
-  - Changing exam city between India and abroad
+  - Additional exam facilitation fee
+  - Required documents for verification
+  - Support for payment and exam issues
 sample_queries:
-  - Can international students enroll in the IITM BS program?
+  - Can international students apply for IITM BS?
+  - Do I need to travel to India for exams?
   - What extra fees do international students pay?
-  - What documents do international students need to submit?
-  - Can I change my exam city from India to outside India?
-  - What do I do if payment fails from outside India?
+  - What documents are required for international applicants?
+  - How do I handle payment issues from abroad?
+  - Can I change my exam location from India to abroad?
 ---
 
 # International Students Guide
@@ -59,20 +60,6 @@ ge@study.iitm.ac.in (Global Entry support)
 ## Exam City Information for International Students
 Check availability at: https://study.iitm.ac.in/ds/academics.html#AC9
 
-# FAQs
-
-**Question**: What is the procedure to change exam city from Outside India to India / India to outside India?
-**Answer**: Yes, a student can change their exam city from India to outside India and vice versa. To do this you can follow the below steps:
-
-* Log in to the candidate portal or exam dashboard.
-* Go to the Exam Registration or Application Details section.
-* Select the option to edit or modify the exam center/city.
-* Change the location from an Indian city to the preferred international city (or vice versa).
-* Check if there is any additional fee applicable for an international center.
-* Submit the request and complete the payment (if required).
-
-<!-- end of faqs --> 
-
 ---
 
-Tags: international students, foreign students, NRI students, overseas applicants, international eligibility, admission for foreign nationals, international fee structure, payment from abroad, country eligibility, visa requirement, remote proctored exam, no travel to India, exam timing IST, Rs 2000 facilitation fee per subject, residence proof, ID proof, residence card, driving license, bank statement, utility bill, visa page, citizenship document, global entry email, ge@study.iitm.ac.in, exam city availability abroad
+Tags: international students, foreign applicants, overseas students, eligibility international, remote proctored exam, no travel required, exam timing ist, additional facilitation fee 2000, residence proof documents, id proof visa citizenship, payment from abroad, payment issues support, global entry email, ge support, exam city change international, study from outside india, iitm bs international admission
