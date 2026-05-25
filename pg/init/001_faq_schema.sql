@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- `program_id`. The 4-program FAQ bootstrap replaces rows from `pg/seed`, so
 -- this reset is safe only when the deployed seed files are the source of truth.
 -- Remove this DROP after the test database has been migrated/reset once.
-DROP TABLE IF EXISTS faqs
+DROP TABLE IF EXISTS faqs;
 
 CREATE TABLE IF NOT EXISTS faqs (
   id BIGSERIAL PRIMARY KEY,
