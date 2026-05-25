@@ -18,6 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.pgfaq
+      network: host
     container_name: iitm-pg-faq-api
     profiles:
       - local
@@ -42,6 +43,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.embed
+      network: host
     container_name: iitm-chatbot-embed
     env_file:
       - .env
@@ -58,11 +60,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.worker
+      network: host
     container_name: iitm-chatbot-worker
     env_file:
       - .env
     ports:
       - "8787:8787"
+    command: ["npx", "wrangler", "dev", "--port", "8787", "--ip", "0.0.0.0"]
     volumes:
       - ./worker.js:/app/worker.js:ro
       - ./wrangler.toml:/app/wrangler.toml:ro
