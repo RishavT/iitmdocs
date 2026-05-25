@@ -6,17 +6,13 @@ FastAPI HTTP service for Postgres-backed FAQ search.
 This file answers: "How does `worker.js` talk to the FAQ database over HTTP?"
 
 The service exposes two runtime endpoints:
-- `POST /search`: embed the user's query, search FAQ embeddings in Postgres,
-  and return the closest FAQ question/answer rows
-- `GET /faq/{id}`: return one exact FAQ row when the user clicks a
-  "Did you mean?" suggestion
+- `POST /search`: embed the user's query, search FAQ embeddings in Postgres, and return the closest FAQ question/answer rows
+- `GET /faq/{id}`: return one exact FAQ row when the user clicks a "Did you mean?" suggestion
 
 This file should stay focused on HTTP concerns: request/response models,
-environment settings, Ollama embedding calls, error handling, and converting
-repository results into API responses.
+environment settings, Ollama embedding calls, error handling, and converting repository results into API responses.
 
-It should not contain raw SQL or low-level table logic. Database operations
-belong in `repository.py`; table/session definitions belong in `orm.py`.
+It should not contain raw SQL or low-level table logic. Database operations belong in `repository.py`; table/session definitions belong in `orm.py`.
 """
 
 import json
@@ -25,7 +21,6 @@ import os
 import threading
 import urllib.error
 import urllib.request
-from dataclasses import dataclass
 from typing import Any, List
 
 from fastapi import FastAPI, HTTPException
@@ -40,49 +35,16 @@ OLLAMA_TIMEOUT_SECONDS = 60
 MAX_CONCURRENT_SEARCHES = int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "4"))
 search_slots = threading.BoundedSemaphore(MAX_CONCURRENT_SEARCHES)
 
+# Environment configuration (read once at startup)
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "bge-m3")
+try:
+    EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
+except ValueError as exc:
+    raise RuntimeError("EMBEDDING_DIMENSION must be an integer") from exc
+
 app = FastAPI(title="PG FAQ API", version="0.1.0")
-SessionFactory = create_session_factory(create_pg_engine())
-
-
-@dataclass(frozen=True)
-class Settings:
-    """Runtime configuration loaded from environment variables."""
-
-    pg_host: str
-    pg_port: int
-    pg_db: str
-    pg_user: str
-    pg_password: str
-    ollama_url: str
-    ollama_model: str
-    embedding_dimension: int
-
-
-def get_settings() -> Settings:
-    """Read environment variables and return validated service settings."""
-
-    pg_env = required_pg_env()
-
-    try:
-        pg_port = int(os.getenv("PGPORT", "5432"))
-    except ValueError as exc:
-        raise RuntimeError("PGPORT must be an integer") from exc
-
-    try:
-        embedding_dimension = int(os.getenv("EMBEDDING_DIMENSION", "1024"))
-    except ValueError as exc:
-        raise RuntimeError("EMBEDDING_DIMENSION must be an integer") from exc
-
-    return Settings(
-        pg_host=pg_env["PGHOST"],
-        pg_port=pg_port,
-        pg_db=pg_env["PGDATABASE"],
-        pg_user=pg_env["PGUSER"],
-        pg_password=pg_env["PGPASSWORD"],
-        ollama_url=os.getenv("OLLAMA_URL", "http://ollama:11434"),
-        ollama_model=os.getenv("OLLAMA_MODEL", "bge-m3"),
-        embedding_dimension=embedding_dimension,
-    )
+SessionFactory = create_session_factory(create_pg_engine()) # create engine once at startup, reuse sessions per request
 
 
 class SearchRequest(BaseModel):
@@ -108,7 +70,7 @@ class SearchResponse(BaseModel):
 
 
 def request_embedding(text: str, ollama_url: str, model: str) -> List[float]:
-    """Call Ollama embeddings API and return a vector."""
+    """Get the embedding vector of a text string by making a request to the Ollama embeddings API. Returns a list of floats representing the embedding vector."""
 
     payload = json.dumps({"model": model, "prompt": text}).encode("utf-8")
     req = urllib.request.Request(
@@ -131,6 +93,10 @@ def request_embedding(text: str, ollama_url: str, model: str) -> List[float]:
     embedding = parsed.get("embedding")
     if not isinstance(embedding, list) or not embedding:
         raise RuntimeError("Ollama returned invalid embedding payload")
+    if len(embedding) != EMBEDDING_DIMENSION:
+        raise RuntimeError(
+            f"Ollama embedding dimension mismatch: expected {EMBEDDING_DIMENSION}, got {len(embedding)}"
+        )
     return [float(v) for v in embedding]
 
 
@@ -167,19 +133,11 @@ def search(req: SearchRequest) -> SearchResponse:
         raise HTTPException(status_code=429, detail="Too many concurrent searches")
 
     try:
-        s = get_settings()
-
         try:
-            query_vec = request_embedding(req.q, s.ollama_url, s.ollama_model)
+            query_vec = request_embedding(req.q, OLLAMA_URL, OLLAMA_MODEL)
         except Exception as exc:
             logger.exception("Ollama embedding request failed")
             raise HTTPException(status_code=502, detail="Embedding service failed") from exc
-
-        if len(query_vec) != s.embedding_dimension:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Embedding dimension mismatch: expected {s.embedding_dimension}, got {len(query_vec)}",
-            )
 
         try:
             with session_scope(SessionFactory) as session:
@@ -196,7 +154,6 @@ def search(req: SearchRequest) -> SearchResponse:
 @app.get("/faq/{faq_id}", response_model=SearchResult)
 def get_faq(faq_id: int) -> SearchResult:
     """Fetch a single FAQ row by id (direct lookup for UI clickthrough)."""
-
     try:
         with session_scope(SessionFactory) as session:
             row = get_faq_by_id(session, faq_id)
