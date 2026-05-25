@@ -889,7 +889,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -919,7 +919,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -947,7 +947,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -975,7 +975,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -999,7 +999,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1012,7 +1012,7 @@ describe("getFAQSuggestions()", () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1040,7 +1040,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1068,7 +1068,7 @@ describe("getFAQSuggestions()", () => {
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 
@@ -1108,7 +1108,7 @@ Tags: qualifier, exam`,
       });
 
       const env = {
-        EMBEDDING_MODE: "local",
+        DEPLOYMENT_MODE: "local",
         LOCAL_WEAVIATE_URL: "http://weaviate:8080"
       };
 

@@ -708,7 +708,7 @@ async function getPgFaqAuthHeaders(env) {
   const baseUrl = getPgFaqApiUrl(env);
   const parsed = new URL(baseUrl);
 
-  if (!parsed.hostname.endsWith(".run.app")) {
+  if (env.DEPLOYMENT_MODE == "local") {
     return {};
   }
 
@@ -1016,13 +1016,13 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
 async function searchWeaviate(query, limit, env) {
   console.log('[DEBUG] searchWeaviate() called, query:', query);
 
-  // Determine embedding mode: 'local' or 'gce'
-  const embeddingMode = env.EMBEDDING_MODE || "local";
-  console.log('[DEBUG] Embedding mode:', embeddingMode);
+  // Determine deployment mode: 'local' or 'gce'
+  const deploymentMode = env.DEPLOYMENT_MODE || "local";
+  console.log('[DEBUG] Deployment mode:', deploymentMode);
 
-  if (embeddingMode !== "local" && embeddingMode !== "gce") {
+  if (deploymentMode !== "local" && deploymentMode !== "gce") {
     throw new Error(
-      `Unsupported EMBEDDING_MODE='${embeddingMode}'. Supported values: local, gce.`
+      `Unsupported DEPLOYMENT_MODE='${deploymentMode}'. Supported values: local, gce.`
     );
   }
 
@@ -1032,15 +1032,15 @@ async function searchWeaviate(query, limit, env) {
     "Content-Type": "application/json",
   };
 
-  if (embeddingMode === "local") {
+  if (deploymentMode === "local") {
     // Local mode: connect to local Weaviate (no auth needed)
     weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
     console.log('[DEBUG] Using local Weaviate at:', weaviateUrl);
-  } else if (embeddingMode === "gce") {
+  } else if (deploymentMode === "gce") {
     // GCE mode: connect to remote Weaviate on GCE VM
     weaviateUrl = env.GCE_WEAVIATE_URL;
     if (!weaviateUrl) {
-      throw new Error("GCE_WEAVIATE_URL is required for EMBEDDING_MODE=gce");
+      throw new Error("GCE_WEAVIATE_URL is required for DEPLOYMENT_MODE=gce");
     }
     console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
   }
@@ -1057,7 +1057,7 @@ async function searchWeaviate(query, limit, env) {
 
   let graphqlQuery;
 
-  if (embeddingMode === "gce") {
+  if (deploymentMode === "gce") {
     // GCE mode: get embedding from Ollama first, then use hybrid search with vector
     const ollamaUrl = env.GCE_OLLAMA_URL;
     const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
@@ -1065,7 +1065,7 @@ async function searchWeaviate(query, limit, env) {
     console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
 
     if (!ollamaUrl) {
-      throw new Error("GCE_OLLAMA_URL is required for EMBEDDING_MODE=gce");
+      throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
     }
 
     const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);

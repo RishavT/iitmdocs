@@ -207,7 +207,7 @@ Uses Docker Compose with local Weaviate + Ollama, plus a local Postgres-backed F
 
 **Environment Variables (`.env` and `.dev.vars`):**
 ```bash
-EMBEDDING_MODE=local
+DEPLOYMENT_MODE=local
 LOCAL_WEAVIATE_URL=http://weaviate:8080
 OLLAMA_MODEL=bge-m3
 
@@ -238,7 +238,7 @@ Uses a GCE VM running Weaviate + Ollama, accessed via VPC connector from Cloud R
 
 **Environment Variables** (set automatically by Cloud Build):
 ```bash
-EMBEDDING_MODE=gce
+DEPLOYMENT_MODE=gce
 GCE_WEAVIATE_URL=http://<GCE_VM_IP>:8080
 GCE_OLLAMA_URL=http://<GCE_VM_IP>:11434
 
@@ -256,7 +256,7 @@ OPENAI_API_KEY=sk-...
 
 | Variable | Modes | Default | Description |
 |----------|-------|---------|-------------|
-| `EMBEDDING_MODE` | All | `local` | `local` or `gce` |
+| `DEPLOYMENT_MODE` | All | `local` | `local` or `gce` |
 | `OPENAI_API_KEY` | All | - | OpenAI API key for chat |
 | `CHAT_API_ENDPOINT` | All | OpenAI URL | Custom chat endpoint |
 | `CHAT_MODEL` | All | `gpt-4o-mini` | Chat model |

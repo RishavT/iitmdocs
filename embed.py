@@ -13,7 +13,7 @@
 # TODO: The file is now too large. Consider splitting into multiple modules (e.g. `weaviate_utils.py`, `pg_bootstrap.py`) for better organization and maintainability. We can also just move the helper functions to seperate files and keep the main embedding logic in `embed.py` to keep it as the single entry point for the embedding process.
 """
 Script to embed all files from src/ directory into Weaviate.
-Supports local (Ollama) and gce (remote Ollama) modes via EMBEDDING_MODE env var.
+Supports local (Ollama) and gce (remote Ollama) modes via DEPLOYMENT_MODE env var.
 """
 
 from __future__ import annotations
@@ -58,11 +58,11 @@ def clear_collection(weaviate_client):
         logger.info("No existing Document collection to clear.")
 
 
-def create_schema(weaviate_client, embedding_mode="local", embedding_model=None, ollama_endpoint=None):
+def create_schema(weaviate_client, deployment_mode="local", embedding_model=None, ollama_endpoint=None):
     """Create or update the Document class schema in Weaviate"""
     # Configure vectorizer based on mode and provider
-    logger.debug(f"EMBEDDING MODE: {embedding_mode}")
-    if embedding_mode == "local":
+    logger.debug(f"DEPLOYMENT MODE: {deployment_mode}")
+    if deployment_mode == "local":
         model = embedding_model or "bge-m3"
         logger.warning(f"EMBEDDING_MODEL: {embedding_model}")
         vectorizer_config = Configure.Vectorizer.text2vec_ollama(
@@ -70,7 +70,7 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
             api_endpoint="http://ollama:11434"
         )
         expected_vectorizer = "text2vec-ollama"
-    elif embedding_mode == "gce":
+    elif deployment_mode == "gce":
         # GCE mode: connect to remote Ollama on GCE VM
         model = embedding_model or "bge-m3"
         ollama_url = ollama_endpoint or os.getenv("GCE_OLLAMA_URL", "http://localhost:11434")
@@ -81,7 +81,7 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
         expected_vectorizer = "text2vec-ollama"
     else:
         raise ValueError(
-            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Supported values: local, gce."
+            f"Unsupported DEPLOYMENT_MODE='{deployment_mode}'. Supported values: local, gce."
         )
 
     # Check if collection exists and validate vectorizer configuration
@@ -94,7 +94,7 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
             if existing_vectorizer != expected_vectorizer:
                 logger.warning(
                     f"Vectorizer mismatch! Existing: {existing_vectorizer}, Expected: {expected_vectorizer}. "
-                    f"Deleting and recreating collection with {embedding_mode} embeddings. "
+                    f"Deleting and recreating collection with {deployment_mode} embeddings. "
                     f"ALL EXISTING EMBEDDINGS WILL BE LOST."
                 )
                 weaviate_client.collections.delete("Document")
@@ -114,7 +114,7 @@ def create_schema(weaviate_client, embedding_mode="local", embedding_model=None,
         Property(name="file_extension", data_type=DataType.TEXT, description="File extension"),
     ]
 
-    logger.info(f"Creating new Document collection with {embedding_mode} mode, {expected_vectorizer} (model: {model})")
+    logger.info(f"Creating new Document collection with {deployment_mode} mode, {expected_vectorizer} (model: {model})")
     return weaviate_client.collections.create(
         name="Document",
         vectorizer_config=vectorizer_config,
@@ -441,7 +441,7 @@ def _pg_backfill_faq_embeddings(
     return updated
 
 
-def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
+def maybe_bootstrap_cloudsql_faq_db(deployment_mode: str) -> None:
     """
     Optional Cloud SQL bootstrap for Postgres-backed FAQ search.
 
@@ -459,13 +459,13 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
     dimension = int(os.getenv("FAQ_EMBEDDING_DIMENSION", os.getenv("EMBEDDING_DIMENSION", "1024")))
     batch_size = int(os.getenv("FAQ_EMBEDDING_BATCH_SIZE", "50"))
 
-    if embedding_mode == "gce":
+    if deployment_mode == "gce":
         ollama_url = os.getenv("OLLAMA_URL") or os.getenv("GCE_OLLAMA_URL")
     else:
         ollama_url = os.getenv("OLLAMA_URL") or "http://ollama:11434"
 
     if not ollama_url:
-        raise ValueError("Ollama URL missing: set OLLAMA_URL (or GCE_OLLAMA_URL for EMBEDDING_MODE=gce)")
+        raise ValueError("Ollama URL missing: set OLLAMA_URL (or GCE_OLLAMA_URL for DEPLOYMENT_MODE=gce)")
 
     logger.info("[pg-bootstrap] Starting Cloud SQL FAQ bootstrap...")
     logger.info(f"[pg-bootstrap] Seed: {seed_path}")
@@ -543,9 +543,9 @@ def maybe_bootstrap_cloudsql_faq_db(embedding_mode: str) -> None:
     logger.info(f"[pg-bootstrap] Cloud SQL FAQ bootstrap finished OK (elapsed_ms={int((time.monotonic() - t_all) * 1000)})")
 
 
-def embed_documents(weaviate_client, src_directory: str, embedding_mode="local", embedding_model=None, ollama_endpoint=None) -> bool:
+def embed_documents(weaviate_client, src_directory: str, deployment_mode="local", embedding_model=None, ollama_endpoint=None) -> bool:
     """Embed all documents from the src directory into Weaviate"""
-    collection = create_schema(weaviate_client, embedding_mode, embedding_model, ollama_endpoint)
+    collection = create_schema(weaviate_client, deployment_mode, embedding_model, ollama_endpoint)
     src_path = Path(src_directory)
 
     # Exclude internal files that shouldn't be in vector search
@@ -621,25 +621,25 @@ def main():
     clear_db = os.getenv("CLEAR_DB", "true").lower() == "true"
 
     # Determine embedding mode: 'local' or 'gce'
-    embedding_mode = os.getenv("EMBEDDING_MODE", "local").lower()
-    logger.info(f"Embedding mode: {embedding_mode}")
+    deployment_mode = os.getenv("DEPLOYMENT_MODE", "local").lower()
+    logger.info(f"Deployment mode: {deployment_mode}")
 
     supported_modes = {"local", "gce"}
-    if embedding_mode not in supported_modes:
+    if deployment_mode not in supported_modes:
         raise ValueError(
-            f"Unsupported EMBEDDING_MODE='{embedding_mode}'. Supported values: local, gce."
+            f"Unsupported DEPLOYMENT_MODE='{deployment_mode}'. Supported values: local, gce."
         )
 
     # Optional: bootstrap managed Postgres FAQ DB during deploy (Cloud SQL).
     # Opt-in so local/GCE runs keep behaving the same unless explicitly enabled.
-    maybe_bootstrap_cloudsql_faq_db(embedding_mode)
+    maybe_bootstrap_cloudsql_faq_db(deployment_mode)
 
     if clear_db:
         logger.info("Will clear existing embeddings before re-embedding (set CLEAR_DB=false to disable)")
     else:
         logger.info("CLEAR_DB=false: Keeping existing embeddings, only updating changed files")
 
-    if embedding_mode == "local":
+    if deployment_mode == "local":
         # Local mode: connect to local Weaviate (no auth needed)
         weaviate_url = os.getenv("LOCAL_WEAVIATE_URL", "http://weaviate:8080")
         embedding_model = os.getenv("OLLAMA_MODEL", "bge-m3")
@@ -652,9 +652,9 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, embedding_model)
+        embed_documents(client, "src", deployment_mode, embedding_model)
         client.close()
-    elif embedding_mode == "gce":
+    elif deployment_mode == "gce":
         # GCE mode: connect to remote Weaviate on GCE VM (no auth needed)
         weaviate_url = os.getenv("GCE_WEAVIATE_URL")
         ollama_url = os.getenv("GCE_OLLAMA_URL")
@@ -686,7 +686,7 @@ def main():
         )
         if clear_db:
             clear_collection(client)
-        embed_documents(client, "src", embedding_mode, embedding_model, ollama_url)
+        embed_documents(client, "src", deployment_mode, embedding_model, ollama_url)
         client.close()
 
 
