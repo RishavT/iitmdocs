@@ -150,13 +150,8 @@ steps:
           --tunnel-through-iap \
           --command='set -euo pipefail
             cd /opt/iitm-chatbot
-            WEAVIATE_CONTAINER_ID="$(docker compose ps -q weaviate || true)"
-            if [ -n "$WEAVIATE_CONTAINER_ID" ]; then
-              echo "[remote] stopping weaviate container: $WEAVIATE_CONTAINER_ID"
-              docker compose stop weaviate
-            else
-              echo "[remote] weaviate container is not running; skipping stop"
-            fi
+            echo "[remote] stopping weaviate"
+            docker compose stop weaviate || true
             echo "[remote] removing stale weaviate_data"
             sudo rm -rf weaviate_data
             echo "[remote] recreating weaviate_data"
