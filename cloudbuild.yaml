@@ -128,7 +128,39 @@ steps:
         echo "Waiting for services to be ready (Cloud Build cannot verify directly)..."
         sleep 60
 
-  # Step 5: Check if embedding is needed (based on tag name)
+  # Step 5: Reset stale Weaviate data only when the tag requests embedding
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'reset-weaviate-data'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+
+        echo "TAG_NAME: $TAG_NAME"
+        if ! echo "$TAG_NAME" | grep -qi "embed"; then
+          echo "Skipping Weaviate reset because this deployment is not an embed deployment"
+          exit 0
+        fi
+
+        echo "Resetting stale Weaviate data on the GCE VM..."
+        gcloud compute ssh iitm-ollama-vm \
+          --project="$PROJECT_ID" \
+          --zone=asia-south1-a \
+          --tunnel-through-iap \
+          --command='set -euo pipefail
+            cd /opt/iitm-chatbot
+            echo "[remote] stopping weaviate"
+            docker compose stop weaviate || true
+            echo "[remote] removing stale weaviate_data"
+            sudo rm -rf weaviate_data
+            echo "[remote] recreating weaviate_data"
+            sudo mkdir weaviate_data
+            echo "[remote] starting weaviate"
+            docker compose up -d weaviate
+            echo "[remote] reset complete"'
+
+  # Step 6: Check if embedding is needed (based on tag name)
   - name: 'gcr.io/cloud-builders/git'
     id: 'check-embed-trigger'
     entrypoint: 'bash'
@@ -150,7 +182,7 @@ steps:
 
         echo "Embed mode: $$(cat /workspace/embed_mode.txt)"
 
-  # Step 6: Build embed image (only if src/ changed)
+  # Step 7: Build embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-embed'
     entrypoint: 'bash'
@@ -167,7 +199,7 @@ steps:
           -t gcr.io/$PROJECT_ID/iitm-embed:latest \
           -f Dockerfile.embed .
 
-  # Step 7: Build worker image
+  # Step 8: Build worker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-worker'
     args:
@@ -180,7 +212,7 @@ steps:
       - 'Dockerfile.worker'
       - '.'
 
-  # Step 8: Push embed image (only if src/ changed)
+  # Step 9: Push embed image (only if src/ changed)
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-embed'
     entrypoint: 'bash'
@@ -207,7 +239,7 @@ steps:
         fi
         docker push gcr.io/$PROJECT_ID/iitm-embed:latest
 
-  # Step 9: Push worker image
+  # Step 10: Push worker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-worker'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:$COMMIT_SHA']
@@ -216,7 +248,7 @@ steps:
     id: 'push-worker-latest'
     args: ['push', 'gcr.io/$PROJECT_ID/iitm-chatbot-worker:latest']
 
-  # Step 10: Create/Update Cloud Run Job for embedding (only if src/ changed)
+  # Step 11: Create/Update Cloud Run Job for embedding (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'create-embed-job'
     entrypoint: 'bash'
@@ -249,7 +281,7 @@ steps:
           --task-timeout=60m \
           --max-retries=1
 
-  # Step 11: Execute the embed job and stream logs (only if src/ changed)
+  # Step 12: Execute the embed job and stream logs (only if src/ changed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'run-embed-job'
     entrypoint: 'bash'
@@ -298,7 +330,7 @@ steps:
           sleep 5
         done
 
-  # Step 12: Deploy Cloud Run service
+  # Step 13: Deploy Cloud Run service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-cloudrun'
     entrypoint: 'bash'
