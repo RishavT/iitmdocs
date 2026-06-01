@@ -128,37 +128,37 @@ steps:
         echo "Waiting for services to be ready (Cloud Build cannot verify directly)..."
         sleep 60
 
-  # Step 5: Reset stale Weaviate data only when the tag requests embedding
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'reset-weaviate-data'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        set -euo pipefail
+  # # Step 5: Reset stale Weaviate data only when the tag requests embedding
+  # - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  #   id: 'reset-weaviate-data'
+  #   entrypoint: 'bash'
+  #   args:
+  #     - '-c'
+  #     - |
+  #       set -euo pipefail
 
-        echo "TAG_NAME: $TAG_NAME"
-        if ! echo "$TAG_NAME" | grep -qi "embed"; then
-          echo "Skipping Weaviate reset because this deployment is not an embed deployment"
-          exit 0
-        fi
+  #       echo "TAG_NAME: $TAG_NAME"
+  #       if ! echo "$TAG_NAME" | grep -qi "embed"; then
+  #         echo "Skipping Weaviate reset because this deployment is not an embed deployment"
+  #         exit 0
+  #       fi
 
-        echo "Resetting stale Weaviate data on the GCE VM..."
-        gcloud compute ssh iitm-ollama-vm \
-          --project="$PROJECT_ID" \
-          --zone=asia-south1-a \
-          --tunnel-through-iap \
-          --command='set -euo pipefail
-            cd /opt/iitm-chatbot
-            echo "[remote] stopping weaviate"
-            docker compose stop weaviate || true
-            echo "[remote] removing stale weaviate_data"
-            sudo rm -rf weaviate_data
-            echo "[remote] recreating weaviate_data"
-            sudo mkdir weaviate_data
-            echo "[remote] starting weaviate"
-            docker compose up -d weaviate
-            echo "[remote] reset complete"'
+  #       echo "Resetting stale Weaviate data on the GCE VM..."
+  #       gcloud compute ssh iitm-ollama-vm \
+  #         --project="$PROJECT_ID" \
+  #         --zone=asia-south1-a \
+  #         --tunnel-through-iap \
+  #         --command='set -euo pipefail
+  #           cd /opt/iitm-chatbot
+  #           echo "[remote] stopping weaviate"
+  #           docker compose stop weaviate || true
+  #           echo "[remote] removing stale weaviate_data"
+  #           sudo rm -rf weaviate_data
+  #           echo "[remote] recreating weaviate_data"
+  #           sudo mkdir weaviate_data
+  #           echo "[remote] starting weaviate"
+  #           docker compose up -d weaviate
+  #           echo "[remote] reset complete"'
 
   # Step 6: Check if embedding is needed (based on tag name)
   - name: 'gcr.io/cloud-builders/git'
