@@ -32,7 +32,7 @@ from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_em
 
 logger = logging.getLogger(__name__)
 OLLAMA_TIMEOUT_SECONDS = 60
-MAX_CONCURRENT_SEARCHES = int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "4"))
+MAX_CONCURRENT_SEARCHES = int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "250")) # Bound concurrent searches to prevent overload of Ollama or Postgres. Tune based on expected load and resource limits.
 search_slots = threading.BoundedSemaphore(MAX_CONCURRENT_SEARCHES)
 
 # Environment configuration (read once at startup)
