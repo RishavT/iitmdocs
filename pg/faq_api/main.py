@@ -18,7 +18,6 @@ It should not contain raw SQL or low-level table logic. Database operations belo
 import json
 import logging
 import os
-import threading
 import urllib.error
 import urllib.request
 from typing import Any, List
@@ -32,8 +31,6 @@ from pg.faq_api.repository import FaqSearchRow, get_faq_by_id, search_faqs_by_em
 
 logger = logging.getLogger(__name__)
 OLLAMA_TIMEOUT_SECONDS = 60
-MAX_CONCURRENT_SEARCHES = int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "250")) # Bound concurrent searches to prevent overload of Ollama or Postgres. Tune based on expected load and resource limits.
-search_slots = threading.BoundedSemaphore(MAX_CONCURRENT_SEARCHES)
 
 # Environment configuration (read once at startup)
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
@@ -128,27 +125,20 @@ def search(req: SearchRequest) -> SearchResponse:
     - exact search (no HNSW index) because FAQ table is small
     """
 
-    # /search is the expensive path because it calls Ollama before Postgres.
-    if not search_slots.acquire(blocking=False):
-        raise HTTPException(status_code=429, detail="Too many concurrent searches")
+    try:
+        query_vec = request_embedding(req.q, OLLAMA_URL, OLLAMA_MODEL)
+    except Exception as exc:
+        logger.exception("Ollama embedding request failed")
+        raise HTTPException(status_code=502, detail="Embedding service failed") from exc
 
     try:
-        try:
-            query_vec = request_embedding(req.q, OLLAMA_URL, OLLAMA_MODEL)
-        except Exception as exc:
-            logger.exception("Ollama embedding request failed")
-            raise HTTPException(status_code=502, detail="Embedding service failed") from exc
+        with session_scope(SessionFactory) as session:
+            rows = search_faqs_by_embedding(session, query_vec, req.k)
+    except Exception as exc:
+        logger.exception("Postgres FAQ search failed")
+        raise HTTPException(status_code=500, detail="Internal error") from exc
 
-        try:
-            with session_scope(SessionFactory) as session:
-                rows = search_faqs_by_embedding(session, query_vec, req.k)
-        except Exception as exc:
-            logger.exception("Postgres FAQ search failed")
-            raise HTTPException(status_code=500, detail="Internal error") from exc
-
-        return SearchResponse(results=[to_search_result(row) for row in rows])
-    finally:
-        search_slots.release()
+    return SearchResponse(results=[to_search_result(row) for row in rows])
 
 
 @app.get("/faq/{faq_id}", response_model=SearchResult)
