@@ -66,14 +66,32 @@ def write_seed(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text(json.dumps(rows, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def find_exact_duplicate(rows: Sequence[dict[str, Any]], question: str) -> int | None:
+def find_exact_duplicate(
+    rows: Sequence[dict[str, Any]],
+    question: str,
+    *,
+    exclude_idx: int | None = None,
+) -> int | None:
     """Return the first duplicate seed row index for a normalized question."""
 
     needle = normalize_question(question)
     for idx, row in enumerate(rows):
+        if idx == exclude_idx:
+            continue
         if normalize_question(str(row.get("question", ""))) == needle:
             return idx
     return None
+
+
+def find_seed_rows_by_question(rows: Sequence[dict[str, Any]], question: str) -> list[int]:
+    """Return seed row indexes matching a normalized question."""
+
+    needle = normalize_question(question)
+    return [
+        idx
+        for idx, row in enumerate(rows)
+        if normalize_question(str(row.get("question", ""))) == needle
+    ]
 
 
 def prompt_non_empty(label: str) -> str:
@@ -106,6 +124,18 @@ def prompt_answer() -> str:
         print("Please enter a non-empty answer.")
         return prompt_answer()
     return answer
+
+
+def prompt_yes_no(label: str) -> bool:
+    """Prompt until the user answers yes or no."""
+
+    while True:
+        value = input(label).strip().lower()
+        if value in {"y", "yes"}:
+            return True
+        if value in {"n", "no"}:
+            return False
+        print("Please enter y or n.")
 
 
 def prompt_program() -> str:
@@ -181,19 +211,127 @@ def print_similar_matches(matches: Sequence[dict[str, Any]], threshold: float) -
     print("\n\n")
 
 
-def confirm_after_similarity(matches: Sequence[dict[str, Any]], threshold: float) -> str:
-    """Return add/edit/cancel after showing similar matches."""
+def print_existing_seed_row(row: dict[str, Any], row_idx: int) -> None:
+    """Print one seed FAQ row for review before editing."""
+
+    print()
+    print(f"Existing FAQ at seed row {row_idx}:")
+    print(f"Question: {str(row.get('question', '')).strip()}")
+    print("Answer:")
+    print(textwrap.indent(str(row.get("answer", "")).strip(), "  "))
+    print()
+
+
+def choose_matching_seed_row(
+    rows: Sequence[dict[str, Any]],
+    matches: Sequence[dict[str, Any]],
+) -> int | None:
+    """Ask which similar FAQ to edit and map the API result back to the seed file."""
+
+    while True:
+        selected = input(f"Select FAQ to edit (1-{len(matches)}), or c to cancel: ").strip().lower()
+        if selected in {"c", "cancel"}:
+            return None
+        try:
+            selected_idx = int(selected)
+        except ValueError:
+            print("Please enter a valid number, or c to cancel.")
+            continue
+        if not 1 <= selected_idx <= len(matches):
+            print(f"Please enter a number between 1 and {len(matches)}, or c to cancel.")
+            continue
+
+        question = str(matches[selected_idx - 1].get("question", "")).strip()
+        seed_indexes = find_seed_rows_by_question(rows, question)
+        if len(seed_indexes) == 1:
+            return seed_indexes[0]
+        if not seed_indexes:
+            print("ERROR: Could not find that FAQ in the seed file. Choose another FAQ or cancel.")
+            continue
+        print("ERROR: Multiple seed rows have that same question. Choose another FAQ or cancel.")
+
+
+def confirm_exact_duplicate(existing: dict[str, Any], duplicate_idx: int) -> str:
+    """Return edit/retry/cancel after an exact duplicate is found."""
+
+    print_existing_seed_row(existing, duplicate_idx)
+    while True:
+        action = input("Choose: [u]pdate existing FAQ, [e]dit new question, [c]ancel: ").strip().lower()
+        if action in {"u", "update"}:
+            return "update_existing"
+        if action in {"e", "edit"}:
+            return "edit_question"
+        if action in {"c", "cancel"}:
+            return "cancel"
+        print("Please enter u, e, or c.")
+
+
+def confirm_after_similarity(
+    rows: Sequence[dict[str, Any]],
+    matches: Sequence[dict[str, Any]],
+    threshold: float,
+) -> tuple[str, int | None]:
+    """Return the selected add/edit/cancel action after showing similar matches."""
 
     print_similar_matches(matches, threshold)
     while True:
-        action = input("Choose: [a]dd anyway, [e]dit question, [c]ancel: ").strip().lower()
+        action = input(
+            "Choose: [a]dd anyway, [e]dit new question, [u]pdate existing FAQ, [c]ancel: "
+        ).strip().lower()
         if action in {"a", "add"}:
-            return "add"
+            return "add", None
         if action in {"e", "edit"}:
-            return "edit"
+            return "edit_question", None
+        if action in {"u", "update"}:
+            row_idx = choose_matching_seed_row(rows, matches)
+            if row_idx is None:
+                continue
+            return "edit_existing", row_idx
         if action in {"c", "cancel"}:
-            return "cancel"
-        print("Please enter a, e, or c.")
+            return "cancel", None
+        print("Please enter a, e, u, or c.")
+
+
+def edit_existing_faq(rows: list[dict[str, Any]], row_idx: int) -> bool:
+    """Interactively edit an existing FAQ seed row. Return whether it changed."""
+
+    while True:
+        row = rows[row_idx]
+        current_question = str(row.get("question", "")).strip()
+        current_answer = str(row.get("answer", "")).strip()
+
+        print_existing_seed_row(row, row_idx)
+        print("Updated question:")
+        print("  Press Enter to keep the current question.")
+        updated_question = input("Question: ").strip() or current_question
+        if not updated_question:
+            print("ERROR: Question cannot be empty.")
+            continue
+
+        duplicate_idx = find_exact_duplicate(rows, updated_question, exclude_idx=row_idx)
+        if duplicate_idx is not None:
+            print()
+            print(f"ERROR: Updated question duplicates seed row {duplicate_idx}:")
+            print(str(rows[duplicate_idx].get("question", "")).strip())
+            print("Please try again.")
+            continue
+
+        if prompt_yes_no("Update answer? [y/n]: "):
+            updated_answer = prompt_answer()
+        else:
+            updated_answer = current_answer
+
+        if not updated_answer:
+            print("ERROR: Answer cannot be empty.")
+            continue
+
+        if updated_question == current_question and updated_answer == current_answer:
+            print("No changes made.")
+            return False
+
+        row["question"] = updated_question
+        row["answer"] = updated_answer
+        return True
 
 
 def collect_question_with_checks(
@@ -204,7 +342,7 @@ def collect_question_with_checks(
     similarity_threshold: float,
     skip_similarity_check: bool,
     timeout: int,
-) -> str:
+) -> tuple[str, str | int]:
     """Prompt for a question, enforce exact duplicates, and run similarity review."""
 
     while True:
@@ -212,15 +350,15 @@ def collect_question_with_checks(
         duplicate_idx = find_exact_duplicate(rows, question)
         if duplicate_idx is not None:
             existing = rows[duplicate_idx]
-            print()
-            print(f"ERROR: Exact duplicate question already exists at seed row {duplicate_idx}:")
-            print(str(existing.get("question", "")).strip())
-            print("Edit the question or cancel with Ctrl+C.")
-            print()
+            action = confirm_exact_duplicate(existing, duplicate_idx)
+            if action == "update_existing":
+                return "edit_existing", duplicate_idx
+            if action == "cancel":
+                raise SystemExit("Cancelled. Seed file was not changed.")
             continue
 
         if skip_similarity_check:
-            return question
+            return "add", question
 
         try:
             results = search_similar_faqs(api_url, question, similarity_k, timeout)
@@ -237,11 +375,17 @@ def collect_question_with_checks(
             and float(row["cosine_similarity"]) >= similarity_threshold
         ]
         if not matches:
-            return question
+            print()
+            print(f"No close FAQ matches found (threshold >= {similarity_threshold:.2f}).")
+            print("Proceeding to add this as a new FAQ.")
+            print()
+            return "add", question
 
-        action = confirm_after_similarity(matches, similarity_threshold)
+        action, row_idx = confirm_after_similarity(rows, matches, similarity_threshold)
+        if action == "edit_existing" and row_idx is not None:
+            return "edit_existing", row_idx
         if action == "add":
-            return question
+            return "add", question
         if action == "cancel":
             raise SystemExit("Cancelled. Seed file was not changed.")
 
@@ -260,7 +404,7 @@ def add_faq(args: argparse.Namespace) -> int:
     # Captured now to keep the future 4-program UX visible while the MVP stays
     # intentionally scoped to Data Science.
     _program = prompt_program()
-    question = collect_question_with_checks(
+    action, value = collect_question_with_checks(
         rows,
         api_url=args.api_url,
         similarity_k=args.similarity_k,
@@ -268,13 +412,22 @@ def add_faq(args: argparse.Namespace) -> int:
         skip_similarity_check=args.skip_similarity_check,
         timeout=args.timeout,
     )
-    answer = prompt_answer()
 
-    rows.append({"question": question, "answer": answer})
-    write_seed(seed_path, rows)
+    changed = True
+    if action == "add":
+        answer = prompt_answer()
+        rows.append({"question": str(value), "answer": answer})
+    else:
+        changed = edit_existing_faq(rows, int(value))
+
+    if changed:
+        write_seed(seed_path, rows)
 
     print()
-    print(f"Updated {seed_path}")
+    if changed:
+        print(f"Updated {seed_path}")
+    else:
+        print(f"No changes written to {seed_path}")
     print(f"FAQ seed rows: {len(rows)}")
     print("Next: commit this seed change and deploy to test with the existing embed/bootstrap path.")
     return 0
