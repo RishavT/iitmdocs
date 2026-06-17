@@ -391,7 +391,7 @@ def collect_question_with_checks(
 
 
 def add_faq(args: argparse.Namespace) -> int:
-    """Interactive add command."""
+    """Run the interactive FAQ admin flow."""
 
     seed_path = Path(args.seed_path)
     rows = load_seed(seed_path)
@@ -401,8 +401,6 @@ def add_faq(args: argparse.Namespace) -> int:
     print(f"Similarity API: {args.api_url}")
     print()
 
-    # Captured now to keep the future 4-program UX visible while the MVP stays
-    # intentionally scoped to Data Science.
     _program = prompt_program()
     action, value = collect_question_with_checks(
         rows,
@@ -437,35 +435,31 @@ def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
 
     parser = argparse.ArgumentParser(description="Manage FAQ seed rows.")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    add_parser = subparsers.add_parser("add", help="Interactively add one FAQ seed row")
-    add_parser.add_argument("--seed-path", default=DEFAULT_SEED_PATH, help=f"FAQ seed JSON path (default: {DEFAULT_SEED_PATH})")
-    add_parser.add_argument("--api-url", default=DEFAULT_API_URL, help=f"PG FAQ API base URL (default: {DEFAULT_API_URL})")
-    add_parser.add_argument(
+    parser.add_argument("--seed-path", default=DEFAULT_SEED_PATH, help=f"FAQ seed JSON path (default: {DEFAULT_SEED_PATH})")
+    parser.add_argument("--api-url", default=DEFAULT_API_URL, help=f"PG FAQ API base URL (default: {DEFAULT_API_URL})")
+    parser.add_argument(
         "--similarity-threshold",
         type=float,
         default=DEFAULT_SIMILARITY_THRESHOLD,
         help=f"Similarity score threshold for warning (default: {DEFAULT_SIMILARITY_THRESHOLD})",
     )
-    add_parser.add_argument(
+    parser.add_argument(
         "--similarity-k",
         type=int,
         default=DEFAULT_SIMILARITY_K,
         help=f"Number of similar FAQs to request (default: {DEFAULT_SIMILARITY_K})",
     )
-    add_parser.add_argument(
+    parser.add_argument(
         "--skip-similarity-check",
         action="store_true",
         help="Bypass the deployed FAQ API similarity review",
     )
-    add_parser.add_argument(
+    parser.add_argument(
         "--timeout",
         type=int,
         default=DEFAULT_TIMEOUT_SECONDS,
         help=f"FAQ API timeout in seconds (default: {DEFAULT_TIMEOUT_SECONDS})",
     )
-    add_parser.set_defaults(func=add_faq)
     return parser
 
 
@@ -486,7 +480,7 @@ def main(argv: Sequence[str]) -> int:
         return 2
 
     try:
-        return int(args.func(args))
+        return add_faq(args)
     except (KeyboardInterrupt, EOFError):
         print("\nCancelled. Seed file was not changed.")
         return 130
