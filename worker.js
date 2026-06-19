@@ -909,7 +909,7 @@ async function answer(request, env) {
         // Stream documents first (single enqueue)
         if (documents?.length) {
           // Use configurable repository URL or default
-          const repoUrl = "https://github.com/RishavT/iitmdocs";
+          const repoUrl = "https://github.com/iitmbsc-student-projects/iitmdocs";
           const sseDocs = documents
             .map(
               (doc) =>
