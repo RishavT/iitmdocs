@@ -33,6 +33,10 @@ SELECT
   CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.history_length') AS INT64) AS history_length,
   JSON_EXTRACT(TO_JSON_STRING(jsonPayload), '$.documents') AS documents,
   JSON_EXTRACT(TO_JSON_STRING(jsonPayload), '$.db_faqs') AS db_faqs,
+  JSON_EXTRACT(TO_JSON_STRING(jsonPayload), '$.tokens') AS tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.tokens.total_tokens') AS INT64) AS total_tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.tokens.total_input_tokens') AS INT64) AS total_input_tokens,
+  CAST(JSON_VALUE(TO_JSON_STRING(jsonPayload), '$.tokens.total_output_tokens') AS INT64) AS total_output_tokens,
   -- Derived fields for analytics
   DATE(timestamp) AS date,
   EXTRACT(HOUR FROM timestamp) AS hour,
