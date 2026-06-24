@@ -842,12 +842,14 @@ async function answer(request, env) {
     query_source: "original", // "synonym", "llm", "original", or "rejected"
     rejection_reason: null, // "prompt_injection", "fact_check_failed", or null
     documents: [],
+    db_faqs: [],
     response: null,
     fact_check_passed: null,
     contains_raahat: false,
     history_length: Array.isArray(history) ? history.length : 0,
     latency_ms: null,
     error: null,
+    original_answer: null,
   };
 
   const encoder = new TextEncoder();
@@ -1258,6 +1260,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   // Step 2: Parse the response
   const result = await response.json();
   const answerText = result.choices?.[0]?.message?.content || "";
+  logContext.original_answer = answerText;
   console.log('[DEBUG] Generated answer length:', answerText.length);
   console.log('[DEBUG] Generated answer preview:', answerText.substring(0, 500));
   // console.log('\n========== [DEBUG] LLM FULL RESPONSE ==========\n' + answerText + '\n================================================\n');
