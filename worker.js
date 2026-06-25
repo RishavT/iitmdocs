@@ -1279,10 +1279,12 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   // Step 2: Parse the response
   const result = await response.json();
   const answerText = result.choices?.[0]?.message?.content || "";
-  logContext.original_answer = answerText;
+  if (logContext) {
+    logContext.original_answer = answerText;
+  }
   
   // Track tokens from answer generation
-  if (result.usage) {
+  if (result.usage && logContext) {
     logContext.tokens.answer_generation_input = result.usage.prompt_tokens || 0;
     logContext.tokens.answer_generation_output = result.usage.completion_tokens || 0;
   }
@@ -1311,7 +1313,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       let isOtherChunkValid = factCheckResult.approved;
       
       // Track fact-check tokens
-      if (factCheckResult.tokens) {
+      if (factCheckResult.tokens && logContext) {
         logContext.tokens.fact_check_input += factCheckResult.tokens.input;
         logContext.tokens.fact_check_output += factCheckResult.tokens.output;
       }
@@ -1323,7 +1325,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
         isOtherChunkValid = factCheckResult.approved;
         
         // Track retry tokens
-        if (factCheckResult.tokens) {
+        if (factCheckResult.tokens && logContext) {
           logContext.tokens.fact_check_input += factCheckResult.tokens.input;
           logContext.tokens.fact_check_output += factCheckResult.tokens.output;
         }
@@ -1355,7 +1357,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
     
     // Track fact-check tokens
-    if (factCheckResult.tokens) {
+    if (factCheckResult.tokens && logContext) {
       logContext.tokens.fact_check_input += factCheckResult.tokens.input;
       logContext.tokens.fact_check_output += factCheckResult.tokens.output;
     }
@@ -1368,7 +1370,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       console.log('[DEBUG] Fact-check retry result (no history):', isFactuallyCorrect);
       
       // Track retry tokens
-      if (factCheckResult.tokens) {
+      if (factCheckResult.tokens && logContext) {
         logContext.tokens.fact_check_input += factCheckResult.tokens.input;
         logContext.tokens.fact_check_output += factCheckResult.tokens.output;
       }
