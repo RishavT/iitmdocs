@@ -862,7 +862,6 @@ async function answer(request, env) {
       fact_check_output: 0,
       total_input_tokens: 0,
       total_output_tokens: 0,
-      total_tokens: 0,
     },
   };
 
@@ -1410,7 +1409,6 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     // Calculate total tokens
     logContext.tokens.total_input_tokens = logContext.tokens.query_rewrite_input + logContext.tokens.answer_generation_input + logContext.tokens.fact_check_input;
     logContext.tokens.total_output_tokens = logContext.tokens.query_rewrite_output + logContext.tokens.answer_generation_output + logContext.tokens.fact_check_output;
-    logContext.tokens.total_tokens = logContext.tokens.total_input_tokens + logContext.tokens.total_output_tokens;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
