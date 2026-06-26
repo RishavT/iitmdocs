@@ -514,6 +514,7 @@ async function rewriteQueryWithSource(query, env) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    console.log("[DURATION] query_rewrite_chat_api took", 0, "ms");
     return { query: augmentedSynonym, source: "synonym" };
   }
 
@@ -585,7 +586,7 @@ Examples:
         max_tokens: 100,
       }),
     });
-    console.log("[DEBUG] query_rewrite_chat_api took", Date.now() - queryRewriteStartTime, "ms");
+    console.log("[DURATION] query_rewrite_chat_api took", Date.now() - queryRewriteStartTime, "ms");
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
@@ -677,7 +678,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
     const authHeaders = await getPgFaqAuthHeaders(env);
     const pgFaqDirectLookupStartTime = Date.now();
     const response = await fetch(url, { headers: authHeaders });
-    console.log("[DEBUG] pg_faq_direct_lookup took", Date.now() - pgFaqDirectLookupStartTime, "ms");
+    console.log("[DURATION] pg_faq_direct_lookup took", Date.now() - pgFaqDirectLookupStartTime, "ms");
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
@@ -725,7 +726,7 @@ async function getPgFaqAuthHeaders(env) {
   const response = await fetch(tokenUrl, {
     headers: { "Metadata-Flavor": "Google" },
   });
-  console.log("[DEBUG] pg_faq_identity_token took", Date.now() - pgFaqIdentityTokenStartTime, "ms");
+  console.log("[DURATION] pg_faq_identity_token took", Date.now() - pgFaqIdentityTokenStartTime, "ms");
 
   if (!response.ok) {
     throw new Error(`Failed to fetch identity token: ${response.status}`);
@@ -745,7 +746,7 @@ async function fetchPgFaqs(query, k, env) {
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ q: query, k }),
     });
-    console.log("[DEBUG] pg_faq_search took", Date.now() - pgFaqSearchStartTime, "ms");
+    console.log("[DURATION] pg_faq_search took", Date.now() - pgFaqSearchStartTime, "ms");
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
@@ -1010,7 +1011,7 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt: text }),
   });
-  console.log("[DEBUG] ollama_embedding took", Date.now() - ollamaEmbeddingStartTime, "ms");
+  console.log("[DURATION] ollama_embedding took", Date.now() - ollamaEmbeddingStartTime, "ms");
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1123,7 +1124,7 @@ async function searchWeaviate(query, limit, env) {
     headers: embeddingHeaders,
     body: JSON.stringify({ query: graphqlQuery }),
   });
-  console.log("[DEBUG] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
+  console.log("[DURATION] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
 
   console.log('[DEBUG] Weaviate response received, status:', response.status);
   const responseText = await response.text();
@@ -1260,7 +1261,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       stream: false, // Non-streaming to collect full response for fact-checking
     }),
   });
-  console.log("[DEBUG] answer_chat_api took", Date.now() - answerChatApiStartTime, "ms");
+  console.log("[DURATION] answer_chat_api took", Date.now() - answerChatApiStartTime, "ms");
 
   console.log('[DEBUG] Chat API response status:', response.status);
   if (!response.ok) {
@@ -1573,7 +1574,7 @@ Output your fact-check result as JSON:`;
         stream: false,
       }),
     });
-    console.log("[DEBUG] fact_check_chat_api took", Date.now() - factCheckChatApiStartTime, "ms");
+    console.log("[DURATION] fact_check_chat_api took", Date.now() - factCheckChatApiStartTime, "ms");
 
     if (!factCheckResponse.ok) {
       console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
