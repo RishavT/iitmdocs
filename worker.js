@@ -568,6 +568,7 @@ Examples:
 
   try {
     console.log('[DEBUG] No synonym match, using LLM rewrite for:', query);
+    const queryRewriteStartTime = Date.now();
     const response = await fetch(chatEndpoint, {
       method: "POST",
       headers: {
@@ -584,6 +585,7 @@ Examples:
         max_tokens: 100,
       }),
     });
+    console.log("[DEBUG] query_rewrite_chat_api took", Date.now() - queryRewriteStartTime, "ms");
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
@@ -673,7 +675,9 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   try {
     const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqDirectLookupStartTime = Date.now();
     const response = await fetch(url, { headers: authHeaders });
+    console.log("[DEBUG] pg_faq_direct_lookup took", Date.now() - pgFaqDirectLookupStartTime, "ms");
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
@@ -717,9 +721,11 @@ async function getPgFaqAuthHeaders(env) {
     "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity" +
     `?audience=${encodeURIComponent(audience)}&format=full`;
 
+  const pgFaqIdentityTokenStartTime = Date.now();
   const response = await fetch(tokenUrl, {
     headers: { "Metadata-Flavor": "Google" },
   });
+  console.log("[DEBUG] pg_faq_identity_token took", Date.now() - pgFaqIdentityTokenStartTime, "ms");
 
   if (!response.ok) {
     throw new Error(`Failed to fetch identity token: ${response.status}`);
@@ -733,11 +739,13 @@ async function fetchPgFaqs(query, k, env) {
   try {
     const url = `${getPgFaqApiUrl(env)}/search`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqSearchStartTime = Date.now();
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ q: query, k }),
     });
+    console.log("[DEBUG] pg_faq_search took", Date.now() - pgFaqSearchStartTime, "ms");
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
@@ -996,11 +1004,13 @@ async function answer(request, env) {
  */
 async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
   console.log('[DEBUG] Getting embedding from Ollama:', ollamaUrl);
+  const ollamaEmbeddingStartTime = Date.now();
   const response = await fetch(`${ollamaUrl}/api/embeddings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt: text }),
   });
+  console.log("[DEBUG] ollama_embedding took", Date.now() - ollamaEmbeddingStartTime, "ms");
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1107,11 +1117,13 @@ async function searchWeaviate(query, limit, env) {
     }`;
   }
 
+  const weaviateGraphqlSearchStartTime = Date.now();
   const response = await fetch(`${weaviateUrl}/v1/graphql`, {
     method: "POST",
     headers: embeddingHeaders,
     body: JSON.stringify({ query: graphqlQuery }),
   });
+  console.log("[DEBUG] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
 
   console.log('[DEBUG] Weaviate response received, status:', response.status);
   const responseText = await response.text();
@@ -1237,6 +1249,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   console.log('[DEBUG] Sending', messages.length, 'messages to chat API');
 
   // Step 1: Get non-streaming response from LLM
+  const answerChatApiStartTime = Date.now();
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1247,6 +1260,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       stream: false, // Non-streaming to collect full response for fact-checking
     }),
   });
+  console.log("[DEBUG] answer_chat_api took", Date.now() - answerChatApiStartTime, "ms");
 
   console.log('[DEBUG] Chat API response status:', response.status);
   if (!response.ok) {
@@ -1543,6 +1557,7 @@ Output your fact-check result as JSON:`;
 
   try {
     console.log('[DEBUG] checkResponse() - Calling LLM for fact-check');
+    const factCheckChatApiStartTime = Date.now();
     const factCheckResponse = await fetch(chatEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1558,6 +1573,7 @@ Output your fact-check result as JSON:`;
         stream: false,
       }),
     });
+    console.log("[DEBUG] fact_check_chat_api took", Date.now() - factCheckChatApiStartTime, "ms");
 
     if (!factCheckResponse.ok) {
       console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
