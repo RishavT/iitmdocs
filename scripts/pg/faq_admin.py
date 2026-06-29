@@ -21,7 +21,7 @@ from pathlib import Path
 
 
 DEFAULT_SEED_PATH = "pg/seed/faqs.json"
-DEFAULT_API_URL = "https://iitm-pg-faq-api-d2k7gd2v6q-el.a.run.app"
+DEFAULT_API_URL = "https://iitm-pg-faq-api-d2k7gd2v6q-el.a.run.app"  # This is the URL for the pg_faq-api service deployed in the test environment. 
 DEFAULT_SIMILARITY_THRESHOLD = 0.65
 DEFAULT_SIMILARITY_K = 5
 DEFAULT_TIMEOUT_SECONDS = 60
@@ -278,7 +278,7 @@ def search_similar_faqs(api_url: str, question: str, k: int, timeout: int) -> li
     results = parsed.get("results")
     if not isinstance(results, list):
         raise RuntimeError("FAQ API response is missing results list")
-    return [row for row in results if isinstance(row, dict)]
+    return results
 
 
 def print_similar_matches(matches: list[dict], threshold: float) -> None:
@@ -388,8 +388,8 @@ def choose_matching_seed_row(
 
 def confirm_exact_duplicate(existing: dict, duplicate_idx: int) -> str:
     """
-    Return the user's choice after an exact duplicate is found.
-    It is called when the user typed question exactly matches an existing question in the seed file.
+    Return the user's choice "after" an exact duplicate is found.
+    It is called when the user typed question "exactly matches an existing question" in the seed file.
 
     duplicate_idx = “which row in the seed file is the duplicate”
 
@@ -691,7 +691,12 @@ def main(argv: list[str]) -> int:
         main(["--similarity-k", "5"])
 
         validates CLI arguments, runs the FAQ admin flow, and returns the exit
-        code. Invalid arguments return 2. Ctrl+C returns 130.
+        code.
+    
+    We return a number from main() so the script can tell the terminal whether it succeeded or failed. When the script finishes, the shell can read that number. So main() is not just doing the work. It is also reporting the final result in a standard machine-readable way. For a human, the printed message explains what happened. For the terminal, the return number explains what happened.
+    - 0 means success
+    - 2 means bad input or bad CLI values
+    - 130 means the user stopped it with Ctrl+C
     """
 
     parser = build_parser()
@@ -709,10 +714,17 @@ def main(argv: list[str]) -> int:
 
     try:
         return add_faq(args)
-    except (KeyboardInterrupt, EOFError):
+    except (KeyboardInterrupt, EOFError): # KeyboardInterrupt is triggered on Ctrl+C, EOFError is triggered on Ctrl+D.
         print("\nCancelled. Seed file was not changed.")
         return 130
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    """
+    1. take command-line arguments from sys.argv[1:]
+    2. pass them to main(...)
+    3. let main() return a number like 0, 2, or 130
+    4. exit the script with that number
+    """
+    exit_code = main(sys.argv[1:])
+    sys.exit(exit_code)
