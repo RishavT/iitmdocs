@@ -483,8 +483,7 @@ function removeStopWords(query) {
     return true;
   });
   const result = filtered.join(' ').trim();
-  // If stopword removal wiped everything (e.g. query was "what is the"), return original
-  return result.length > 0 ? result : query;
+  return result;
 }
 
 /**
@@ -522,8 +521,9 @@ async function rewriteQueryWithSource(query, env) {
     return { query: null, source: "rejected" };
   }
   if (!query) {
-    // Empty query - return as-is
-    return { query: "", source: "original" };
+    // Empty query should stop before any rewrite or search work.
+    console.log('[DEBUG] Query rejected: empty input');
+    return { query: null, source: "rejected" };
   }
 
   // First, check if query matches any synonym pattern (fast path)
@@ -541,6 +541,10 @@ async function rewriteQueryWithSource(query, env) {
   // The original `query` is still used in the augmented result for FAQ matching.
   const queryForLLMrewriting = removeStopWords(query);
   console.log('[DEBUG] Stopword-removed query for LLM', queryForLLMrewriting);
+  if (!queryForLLMrewriting) {
+    console.log('[DEBUG] Query rejected: stopword removal removed all content');
+    return { query: null, source: "rejected" };
+  }
   
   const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
 
@@ -917,15 +921,32 @@ async function answer(request, env) {
         // Handle rejected queries (likely prompt injection attempts)
         if (querySource === "rejected") {
           console.log('[DEBUG] Query rejected due to suspected injection attempt');
-          logContext.rejection_reason = "prompt_injection";
+          const trimmedQuestion = typeof question === "string" ? question.trim() : "";
+          const sanitizedQuestion = sanitizeQuery(question);
+          const stopwordRemovedQuestion = trimmedQuestion
+            ? removeStopWords(sanitizedQuestion || trimmedQuestion) // If sanitization produced something usable, run stopword removal on that. Otherwise, run it on the trimmed original text.
+            : "";
+
+          let rejectionReason = "prompt_injection";
+          if (!trimmedQuestion) {
+            rejectionReason = "empty_query";
+          } else if (!sanitizedQuestion) {
+            rejectionReason = "prompt_injection";
+          } else if (!stopwordRemovedQuestion) {
+            rejectionReason = "stopword_only_query";
+          }
+
+          logContext.rejection_reason = rejectionReason;
           logContext.detected_language = "english";
-          logContext.fact_check_passed = false;
+          logContext.fact_check_passed = rejectionReason === "prompt_injection" ? false : null;
           let rejectMessage = getCannotAnswerMessage("english");
 
-          // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqResult = await fetchPgFaqs(question, 5, env);
-          const dbFaqs = dbFaqResult.items;
-          rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
+          if (rejectionReason === "prompt_injection") {
+            // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
+            const dbFaqResult = await fetchPgFaqs(question, 5, env);
+            const dbFaqs = dbFaqResult.items;
+            rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
+          }
 
           logContext.response = rejectMessage;
 
