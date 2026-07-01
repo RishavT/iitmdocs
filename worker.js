@@ -1,4 +1,22 @@
 // ============================================================================
+// REQUEST FLOW
+// ============================================================================
+// Entry point: the Cloudflare Worker receives a chat request in fetch().
+// 1. Read the user's question and rewrite it into a search-friendly query.
+// 2. If the question is out of scope, return a rejection message with FAQ hints.
+// 3. Remove the language tag from the rewritten query.
+// 4. Search Weaviate for document chunks and search the PG FAQ API at the same time.
+// 5. Build the answer from the user's question, matching documents, and matching FAQs.
+// Example: "How do I reset my password?" becomes a clean search query, then the
+// document search and FAQ search run in parallel before the final answer is made.
+//
+// Project terms:
+// - Weaviate documents: indexed document chunks used as long-form context.
+// - PG FAQ API: the Postgres-backed FAQ search service used for short FAQ matches.
+// ASSUMPTION: both searches only need the cleaned rewritten query, so they can
+// run in parallel without changing answer quality.
+
+// ============================================================================
 // CONFIGURATION
 // ============================================================================
 
@@ -901,9 +919,12 @@ async function answer(request, env) {
         console.log('[DEBUG] Detected language:', detectedLanguage);
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
-        // Search Weaviate for relevant documents using clean query (without language tag)
-        const documents = await searchWeaviate(cleanQuery, numDocs, env);
-        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+        // These two searches do not depend on each other, so start both now.
+        // This keeps the answer the same while waiting for the slower search only once.
+        const [documents, dbFaqs] = await Promise.all([
+          searchWeaviate(cleanQuery, numDocs, env),
+          fetchPgFaqs(cleanQuery, 5, env),
+        ]);
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
@@ -958,6 +979,8 @@ async function answer(request, env) {
             close: () => {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
+              console.log("[DURATION] total_query took", Date.now() - startTime, "ms");
+              console.log("[DURATION] =======================")
               structuredLog("INFO", "conversation_turn", logContext);
               controller.close();
             },
