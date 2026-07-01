@@ -6,9 +6,11 @@
 // 2. If the question is out of scope, return a rejection message with FAQ hints.
 // 3. Remove the language tag from the rewritten query.
 // 4. Search Weaviate for document chunks, then search the PG FAQ API.
-// 5. Build the answer from the user's question, matching documents, and matching FAQs.
+// 5. If either search has no matches, stop with the standard cannot-answer message.
+// 6. Build the answer from the user's question, matching documents, and matching FAQs.
 // Example: "How do I reset my password?" becomes a clean search query, then the
-// document search and FAQ search provide context before the final answer is made.
+// document search and FAQ search run one after the other. If both searches return
+// useful context, the final answer is made.
 //
 // Project terms:
 // - Weaviate documents: indexed document chunks used as long-form context.
@@ -766,13 +768,17 @@ async function fetchPgFaqs(query, k, env) {
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
-      return [];
+      return { items: [], error: `pg_faq_api_error:${response.status}` };
     }
     const data = await response.json();
-    return Array.isArray(data?.results) ? data.results : [];
+    if (!Array.isArray(data?.results)) {
+      console.error("[DEBUG] PG FAQ API /search returned malformed results");
+      return { items: [], error: "pg_faq_response_malformed" };
+    }
+    return { items: data.results, error: null };
   } catch (e) {
     console.error("[DEBUG] PG FAQ API /search error:", e?.message || String(e));
-    return [];
+    return { items: [], error: `pg_faq_fetch_error:${e?.message || String(e)}` };
   }
 }
 
@@ -792,6 +798,30 @@ function formatDbFaqSuggestions(dbFaqs, language = "english") {
     .map((faq, i) => `${i + 1}. ${faq.question} [FAQID:${faq.id}]`)
     .join("\n");
   return `\n\n${header}\n\n${suggestions}`;
+}
+
+/**
+ * Finds why retrieval does not have enough context to answer safely.
+ * Called after Weaviate and PG FAQ API finish, before answer generation.
+ *
+ * Example:
+ * noSearchResultsReasons({ items: [] }, { items: [{ id: 7 }] })
+ * returns ["weaviate_documents_empty"].
+ */
+function noSearchResultsReasons(documentResult, faqResult) {
+  const documents = documentResult.items;
+  const dbFaqs = faqResult.items;
+  const reasons = [];
+
+  if (documentResult.error) reasons.push(documentResult.error);
+  if (faqResult.error) reasons.push(faqResult.error);
+
+  const noDocuments = !documents || documents.length === 0;
+  const noDbFaqs = !dbFaqs || dbFaqs.length === 0;
+
+  if (noDocuments && !documentResult.error) reasons.push("weaviate_documents_empty");
+  if (noDbFaqs && !faqResult.error) reasons.push("pg_faqs_empty");
+  return reasons;
 }
 
 /**
@@ -865,7 +895,7 @@ async function answer(request, env) {
     question: question,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", "original", or "rejected"
-    rejection_reason: null, // "prompt_injection", "fact_check_failed", or null
+    rejection_reason: null, // "prompt_injection", "fact_check_failed", "no_search_results", or null
     documents: [],
     response: null,
     fact_check_passed: null,
@@ -893,7 +923,8 @@ async function answer(request, env) {
           let rejectMessage = getCannotAnswerMessage("english");
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqs = await fetchPgFaqs(question, 5, env);
+          const dbFaqResult = await fetchPgFaqs(question, 5, env);
+          const dbFaqs = dbFaqResult.items;
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -917,9 +948,10 @@ async function answer(request, env) {
         console.log('[DEBUG] Detected language:', detectedLanguage);
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
-        // Search Weaviate for relevant documents using clean query (without language tag)
-        const documents = await searchWeaviate(cleanQuery, numDocs, env);
-        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+        const documentResult = await searchWeaviate(cleanQuery, numDocs, env);
+        const faqResult = await fetchPgFaqs(cleanQuery, 5, env);
+        const documents = documentResult.items;
+        const dbFaqs = faqResult.items;
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
@@ -930,6 +962,31 @@ async function answer(request, env) {
           id: faq.id,
           cosine_similarity: faq.cosine_similarity,
         }));
+
+        const noSearchContextReasons = noSearchResultsReasons(documentResult, faqResult);
+        if (noSearchContextReasons.length) {
+          const message = getCannotAnswerMessage(detectedLanguage);
+          logContext.rejection_reason = "no_search_results";
+          logContext.search_result_causes = noSearchContextReasons;
+          logContext.response = message;
+          logContext.latency_ms = Date.now() - startTime;
+
+          console.log("[DEBUG] Search returned no usable context:", noSearchContextReasons.join(","));
+          console.log("[DURATION] total_query took", Date.now() - startTime, "ms");
+          console.log("[DURATION] =======================");
+
+          const fallbackResponse = createSSEResponse(message, { rejected: true });
+          await fallbackResponse.body.pipeTo(
+            new WritableStream({
+              write: (chunk) => controller.enqueue(chunk),
+              close: () => {
+                structuredLog("INFO", "conversation_turn", logContext);
+                controller.close();
+              },
+            }),
+          );
+          return;
+        }
 
         // Stream documents first (single enqueue)
         if (documents?.length) {
@@ -1096,7 +1153,13 @@ async function searchWeaviate(query, limit, env) {
       throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
     }
 
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
+    let queryVector;
+    try {
+      queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
+    } catch (e) {
+      console.error('[DEBUG] GCE query embedding error:', e?.message || String(e));
+      return { items: [], error: `weaviate_embedding_error:${e?.message || String(e)}` };
+    }
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
@@ -1135,34 +1198,51 @@ async function searchWeaviate(query, limit, env) {
     }`;
   }
 
-  const weaviateGraphqlSearchStartTime = Date.now();
-  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-    method: "POST",
-    headers: embeddingHeaders,
-    body: JSON.stringify({ query: graphqlQuery }),
-  });
-  console.log("[DURATION] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
-
-  console.log('[DEBUG] Weaviate response received, status:', response.status);
-  const responseText = await response.text();
-  console.log('[DEBUG] Weaviate response text length:', responseText.length);
-  console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
-
-  let data;
   try {
-    data = JSON.parse(responseText);
-    console.log('[DEBUG] Weaviate JSON parsed successfully');
-  } catch (e) {
-    console.error('[DEBUG] Weaviate JSON parse error:', e.message);
-    console.error('[DEBUG] Full response text:', responseText);
-    throw new Error(`Failed to parse Weaviate response: ${e.message}`);
-  }
-  if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
+    const weaviateGraphqlSearchStartTime = Date.now();
+    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+      method: "POST",
+      headers: embeddingHeaders,
+      body: JSON.stringify({ query: graphqlQuery }),
+    });
+    console.log("[DURATION] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
 
-  const documents = data.data?.Get?.Document || [];
-  console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
-  // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
-  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
+    console.log('[DEBUG] Weaviate response received, status:', response.status);
+    const responseText = await response.text();
+    console.log('[DEBUG] Weaviate response text length:', responseText.length);
+    console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
+
+    if (!response.ok) {
+      console.error('[DEBUG] Weaviate HTTP error:', response.status, responseText);
+      return { items: [], error: `weaviate_api_error:${response.status}` };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      console.error('[DEBUG] Weaviate JSON parse error:', e.message);
+      console.error('[DEBUG] Full response text:', responseText);
+      return { items: [], error: `weaviate_response_malformed:${e.message}` };
+    }
+    console.log('[DEBUG] Weaviate JSON parsed successfully');
+    if (data.errors) {
+      const errorMessage = data.errors.map((e) => e.message).join(", ");
+      console.error('[DEBUG] Weaviate GraphQL error:', errorMessage);
+      return { items: [], error: `weaviate_graphql_error:${errorMessage}` };
+    }
+
+    const documents = data.data?.Get?.Document || [];
+    console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
+    // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
+    return {
+      items: documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 })),
+      error: null,
+    };
+  } catch (e) {
+    console.error('[DEBUG] Weaviate search error:', e?.message || String(e));
+    return { items: [], error: `weaviate_fetch_error:${e?.message || String(e)}` };
+  }
 }
 
 async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
