@@ -507,7 +507,7 @@ function findSynonymMatch(query) {
  * First checks synonym mapping, then falls back to LLM rewriting.
  * @param {string} query - The original user query
  * @param {Object} env - Environment variables containing API keys
- * @returns {Promise<{query: string, source: string}>} - The rewritten query and its source
+ * @returns {Promise<{query: string|null, source: string, rejectionReason: string|null}>} - The rewritten query, its source, and rejection reason when relevant
  */
 async function rewriteQueryWithSource(query, env) {
   // STEP 1
@@ -518,12 +518,12 @@ async function rewriteQueryWithSource(query, env) {
     // Original query had content but sanitization removed everything
     // This indicates a likely injection attempt - reject the query
     console.log('[DEBUG] Query rejected: sanitization removed all content');
-    return { query: null, source: "rejected" };
+    return { query: null, source: "rejected", rejectionReason: "prompt_injection" };
   }
   if (!query) {
     // Empty query should stop before any rewrite or search work.
     console.log('[DEBUG] Query rejected: empty input');
-    return { query: null, source: "rejected" };
+    return { query: null, source: "rejected", rejectionReason: "empty_query" };
   }
 
   // First, check if query matches any synonym pattern (fast path)
@@ -543,7 +543,7 @@ async function rewriteQueryWithSource(query, env) {
   console.log('[DEBUG] Stopword-removed query for LLM', queryForLLMrewriting);
   if (!queryForLLMrewriting) {
     console.log('[DEBUG] Query rejected: stopword removal removed all content');
-    return { query: null, source: "rejected" };
+    return { query: null, source: "rejected", rejectionReason: "stopword_only_query" };
   }
   
   const systemPrompt = `You are a search query optimizer for an IIT Madras BS programme chatbot.
@@ -612,7 +612,7 @@ Examples:
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
-      return { query: query, source: "original" };
+      return { query: query, source: "original", rejectionReason: null };
     }
 
     const result = await response.json();
@@ -626,10 +626,10 @@ Examples:
     const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
 
     console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
-    return { query: augmentedQuery, source: "llm" };
+    return { query: augmentedQuery, source: "llm", rejectionReason: null };
   } catch (error) {
     console.error('[DEBUG] Query rewrite error:', error.message);
-    return { query: query, source: "original" }; // Fallback to original query on error
+    return { query: query, source: "original", rejectionReason: null }; // Fallback to original query on error
   }
 }
 
@@ -914,39 +914,17 @@ async function answer(request, env) {
     async start(controller) {
       try {
         // Rewrite query for better search relevance
-        const { query: searchQuery, source: querySource } = await rewriteQueryWithSource(question, env);
+        const { query: searchQuery, source: querySource, rejectionReason } = await rewriteQueryWithSource(question, env);
         logContext.rewritten_query = searchQuery;
         logContext.query_source = querySource;
+        logContext.rejection_reason = rejectionReason;
 
-        // Handle rejected queries (likely prompt injection attempts)
+        // Handle rejected queries before any search or answer generation work.
         if (querySource === "rejected") {
-          console.log('[DEBUG] Query rejected due to suspected injection attempt');
-          const trimmedQuestion = typeof question === "string" ? question.trim() : "";
-          const sanitizedQuestion = sanitizeQuery(question);
-          const stopwordRemovedQuestion = trimmedQuestion
-            ? removeStopWords(sanitizedQuestion || trimmedQuestion) // If sanitization produced something usable, run stopword removal on that. Otherwise, run it on the trimmed original text.
-            : "";
-
-          let rejectionReason = "prompt_injection";
-          if (!trimmedQuestion) {
-            rejectionReason = "empty_query";
-          } else if (!sanitizedQuestion) {
-            rejectionReason = "prompt_injection";
-          } else if (!stopwordRemovedQuestion) {
-            rejectionReason = "stopword_only_query";
-          }
-
-          logContext.rejection_reason = rejectionReason;
+          console.log('[DEBUG] Query rejected before search:', rejectionReason);
           logContext.detected_language = "english";
-          logContext.fact_check_passed = rejectionReason === "prompt_injection" ? false : null;
+          logContext.fact_check_passed = null;
           let rejectMessage = getCannotAnswerMessage("english");
-
-          if (rejectionReason === "prompt_injection") {
-            // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-            const dbFaqResult = await fetchPgFaqs(question, 5, env);
-            const dbFaqs = dbFaqResult.items;
-            rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
-          }
 
           logContext.response = rejectMessage;
 
