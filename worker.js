@@ -980,7 +980,6 @@ async function answer(request, env) {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
               console.log("[DURATION] total_query took", Date.now() - startTime, "ms");
-              console.log("[DURATION] =======================")
               structuredLog("INFO", "conversation_turn", logContext);
               controller.close();
             },
