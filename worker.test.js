@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
+import { handleFeedback, structuredLog, findSynonymMatch, getCannotAnswerMessage, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource } from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -315,6 +315,42 @@ describe("Query Synonym Matching - findSynonymMatch()", () => {
   });
 });
 
+describe("Query Rewriting - rewriteQueryWithSource()", () => {
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("should remove malformed language tags from LLM rewrite output", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: "fee cost structure payment foundation diploma degree fees [LANG:hindi]",
+            },
+          },
+        ],
+      }),
+    });
+
+    const result = await rewriteQueryWithSource("फीस कितनी है", {
+      CHAT_API_KEY: "test-key",
+    });
+
+    expect(result.source).toBe("llm");
+    expect(result.query).toContain("फीस कितनी है");
+    expect(result.query).toContain("fee cost structure");
+    expect(result.query).not.toContain("[LANG:");
+  });
+});
+
 describe("Structured Logging - structuredLog()", () => {
   beforeEach(() => {
     mockLogs.length = 0;
@@ -369,183 +405,56 @@ describe("Session ID Generation", () => {
 });
 
 // ============================================================================
-// Task 5: Standardized "Can't Answer" Message with Language Detection
+// Task 5: Standardized English "Can't Answer" Message
 // ============================================================================
 
-describe("SUPPORTED_LANGUAGES constant", () => {
-  it("should be an array", () => {
-    expect(Array.isArray(SUPPORTED_LANGUAGES)).toBe(true);
-  });
-
-  it("should contain english", () => {
-    expect(SUPPORTED_LANGUAGES).toContain("english");
-  });
-
-  it("should contain hindi", () => {
-    expect(SUPPORTED_LANGUAGES).toContain("hindi");
-  });
-
-  it("should contain tamil", () => {
-    expect(SUPPORTED_LANGUAGES).toContain("tamil");
-  });
-
-  it("should contain hinglish", () => {
-    expect(SUPPORTED_LANGUAGES).toContain("hinglish");
-  });
-});
-
 describe("CANNOT_ANSWER_MESSAGE content (via getCannotAnswerMessage)", () => {
-  // getCannotAnswerMessage now takes a language parameter (synchronous)
-
   it("should be a non-empty string", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(typeof message).toBe("string");
     expect(message.length).toBeGreaterThan(0);
   });
 
   it("should contain apology", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("I'm sorry");
   });
 
   it("should mention rephrasing", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("rephrase");
   });
 
   it("should reference official website", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("official IITM BS degree program website");
   });
 
   it("should mention feedback option", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("feedback");
   });
 
   it("should include support email", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("support@study.iitm.ac.in");
   });
 
   it("should include support phone number", () => {
-    const message = getCannotAnswerMessage("english");
+    const message = getCannotAnswerMessage();
     expect(message).toContain("7850999966");
   });
 });
 
-describe("extractLanguage()", () => {
-  it("should return english when query is null", () => {
-    expect(extractLanguage(null)).toBe("english");
-  });
-
-  it("should return english when query is undefined", () => {
-    expect(extractLanguage(undefined)).toBe("english");
-  });
-
-  it("should return english when query is empty string", () => {
-    expect(extractLanguage("")).toBe("english");
-  });
-
-  it("should return english when no language tag present", () => {
-    expect(extractLanguage("admission application process")).toBe("english");
-  });
-
-  it("should extract english from [LANG:english]", () => {
-    expect(extractLanguage("admission application process [LANG:english]")).toBe("english");
-  });
-
-  it("should extract hindi from [LANG:hindi]", () => {
-    expect(extractLanguage("fee cost structure payment [LANG:hindi]")).toBe("hindi");
-  });
-
-  it("should extract tamil from [LANG:tamil]", () => {
-    expect(extractLanguage("fee cost structure payment [LANG:tamil]")).toBe("tamil");
-  });
-
-  it("should extract hinglish from [LANG:hinglish]", () => {
-    expect(extractLanguage("fee kitna hai [LANG:hinglish]")).toBe("hinglish");
-  });
-
-  it("should be case insensitive for language tag", () => {
-    expect(extractLanguage("query [LANG:HINDI]")).toBe("hindi");
-    expect(extractLanguage("query [LANG:Hindi]")).toBe("hindi");
-    expect(extractLanguage("query [lang:hindi]")).toBe("hindi");
-  });
-
-  it("should return english for unsupported language", () => {
-    expect(extractLanguage("query [LANG:spanish]")).toBe("english");
-    expect(extractLanguage("query [LANG:french]")).toBe("english");
-    expect(extractLanguage("query [LANG:unknown]")).toBe("english");
-  });
-
-  it("should handle tag at beginning of query", () => {
-    expect(extractLanguage("[LANG:hindi] fee structure")).toBe("hindi");
-  });
-
-  it("should handle tag in middle of query", () => {
-    expect(extractLanguage("fee [LANG:tamil] structure")).toBe("tamil");
-  });
-});
-
 describe("getCannotAnswerMessage()", () => {
-  // getCannotAnswerMessage is now synchronous and takes a language parameter
-
-  it("should return English message for 'english' language", () => {
-    const result = getCannotAnswerMessage("english");
+  it("should return English message", () => {
+    const result = getCannotAnswerMessage();
     expect(result).toContain("I'm sorry");
     expect(result).toContain("support@study.iitm.ac.in");
   });
 
-  it("should return English message for null language", () => {
-    const result = getCannotAnswerMessage(null);
-    expect(result).toContain("I'm sorry");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should return English message for undefined language", () => {
-    const result = getCannotAnswerMessage(undefined);
-    expect(result).toContain("I'm sorry");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should return Hindi message for 'hindi' language", () => {
-    const result = getCannotAnswerMessage("hindi");
-    expect(result).toContain("मुझे खेद है");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should return Tamil message for 'tamil' language", () => {
-    const result = getCannotAnswerMessage("tamil");
-    expect(result).toContain("மன்னிக்கவும்");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should return Hinglish message for 'hinglish' language", () => {
-    const result = getCannotAnswerMessage("hinglish");
-    expect(result).toContain("Maaf kijiye");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should be case insensitive for language", () => {
-    const result1 = getCannotAnswerMessage("ENGLISH");
-    const result2 = getCannotAnswerMessage("English");
-    const result3 = getCannotAnswerMessage("english");
-    expect(result1).toBe(result2);
-    expect(result2).toBe(result3);
-  });
-
-  it("should return English message for unknown language", () => {
-    const result = getCannotAnswerMessage("unknown_language");
-    expect(result).toContain("I'm sorry");
-    expect(result).toContain("support@study.iitm.ac.in");
-  });
-
-  it("should include support phone in all languages", () => {
-    expect(getCannotAnswerMessage("english")).toContain("7850999966");
-    expect(getCannotAnswerMessage("hindi")).toContain("7850999966");
-    expect(getCannotAnswerMessage("tamil")).toContain("7850999966");
-    expect(getCannotAnswerMessage("hinglish")).toContain("7850999966");
+  it("should include support phone", () => {
+    expect(getCannotAnswerMessage()).toContain("7850999966");
   });
 
   it("should use centralized contact info from CONTACT_INFO", () => {
@@ -553,12 +462,9 @@ describe("getCannotAnswerMessage()", () => {
     expect(CONTACT_INFO.email).toBe("support@study.iitm.ac.in");
     expect(CONTACT_INFO.phone).toBe("7850999966");
 
-    // Verify all languages use the centralized contact info
-    for (const lang of SUPPORTED_LANGUAGES) {
-      const message = getCannotAnswerMessage(lang);
-      expect(message).toContain(CONTACT_INFO.email);
-      expect(message).toContain(CONTACT_INFO.phone);
-    }
+    const message = getCannotAnswerMessage();
+    expect(message).toContain(CONTACT_INFO.email);
+    expect(message).toContain(CONTACT_INFO.phone);
   });
 });
 
@@ -900,7 +806,7 @@ describe("getFAQSuggestions()", () => {
       expect(result).toContain("[FAQ:fees_and_payments.md]");
     });
 
-    it("should format Hindi suggestions correctly", async () => {
+    it("should format Hindi-request suggestions in English", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({
@@ -925,10 +831,10 @@ describe("getFAQSuggestions()", () => {
 
       const result = await getFAQSuggestions("fee", env, "hindi");
 
-      expect(result).toContain("**क्या आपका मतलब था:**");
+      expect(result).toContain("**Did you mean:**");
     });
 
-    it("should format Tamil suggestions correctly", async () => {
+    it("should format Tamil-request suggestions in English", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({
@@ -953,10 +859,10 @@ describe("getFAQSuggestions()", () => {
 
       const result = await getFAQSuggestions("fee", env, "tamil");
 
-      expect(result).toContain("**நீங்கள் கருதுவது:**");
+      expect(result).toContain("**Did you mean:**");
     });
 
-    it("should format Hinglish suggestions correctly", async () => {
+    it("should format Hinglish-request suggestions in English", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => JSON.stringify({
@@ -981,7 +887,7 @@ describe("getFAQSuggestions()", () => {
 
       const result = await getFAQSuggestions("fee", env, "hinglish");
 
-      expect(result).toContain("**Kya aap ye poochna chahte the:**");
+      expect(result).toContain("**Did you mean:**");
     });
   });
 
