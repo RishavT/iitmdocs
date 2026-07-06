@@ -94,6 +94,8 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/RishavT/iitmdocs/blob/main/docs/program-contact-details.md";
+
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -103,10 +105,26 @@ const CORS_HEADERS = {
 
 // Translated "can't answer" messages with embedded contact info
 const CANNOT_ANSWER_MESSAGES = {
-  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
-  hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें। आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं`,
-  tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும். நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்`,
-  hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
+  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).
+
+You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}.`,
+  hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).
+
+आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं`,
+  tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).
+
+நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்`,
+  hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).
+
+Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
 };
 
 // Standardized RAAHAT message for mental health referrals - single source of truth
