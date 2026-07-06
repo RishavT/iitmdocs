@@ -100,6 +100,8 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/RishavT/iitmdocs/blob/main/docs/program-contact-details.md";
+
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -109,7 +111,11 @@ const CORS_HEADERS = {
 
 // Standard English "can't answer" message with embedded contact info.
 const CANNOT_ANSWER_MESSAGES = {
-  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
+  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).
+
+You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}.`,
 };
 
 // Standardized RAAHAT message for mental health referrals - single source of truth
