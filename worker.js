@@ -94,7 +94,7 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
-const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/RishavT/iitmdocs/blob/main/docs/program-contact-details.md";
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
 
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {

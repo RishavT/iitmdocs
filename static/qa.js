@@ -118,7 +118,7 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 
-const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/RishavT/iitmdocs/blob/main/docs/program-contact-details.md";
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
 
 // Configure marked to open links in new window
 marked.use({
