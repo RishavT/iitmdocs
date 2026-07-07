@@ -126,7 +126,7 @@ marked.use({
     link(href, title, text) {
       const titleAttr = title ? ` title="${title}"` : "";
       if (href === PROGRAM_CONTACT_DETAILS_URL) {
-        return `<a href="${href}"${titleAttr} class="ref-doc-link" data-name="program-contact-details.md">${text}</a>`;
+        return `<a href="${href}"${titleAttr} class="ref-doc-link" data-name="program-contact-details">${text}</a>`;
       }
       return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
     }
