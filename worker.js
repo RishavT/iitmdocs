@@ -122,7 +122,7 @@ Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT
   hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
 Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain
 
-Kya aapko program-wise contacts chahiye? [Sabh program contact details dekhein](${PROGRAM_CONTACT_DETAILS_URL}).
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${PROGRAM_CONTACT_DETAILS_URL}).
 `,
 };
 

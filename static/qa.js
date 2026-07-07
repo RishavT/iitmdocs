@@ -123,7 +123,7 @@ const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/RishavT/iitmdocs/blob/ma
 // Configure marked to open links in new window
 marked.use({
   renderer: {
-    link({ href, title, text }) {
+    link(href, title, text) {
       const titleAttr = title ? ` title="${title}"` : "";
       if (href === PROGRAM_CONTACT_DETAILS_URL) {
         return `<a href="${href}"${titleAttr} class="ref-doc-link" data-name="program-contact-details">${text}</a>`;
