@@ -52,7 +52,7 @@ describe("Program Contact Details CTA", () => {
     expect(qaJs).toContain("PROGRAM_CONTACT_DETAILS_URL");
     expect(qaJs).toContain("docs/program-contact-details.md");
     expect(qaJs).toContain('class="ref-doc-link"');
-    expect(qaJs).toContain('data-name="program-contact-details.md"');
+    expect(qaJs).toContain('data-name="program-contact-details"');
   });
 });
 
