@@ -530,7 +530,7 @@ async function rewriteQueryWithSource(query, env) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
-    console.log("[DURATION] query_rewrite_chat_api took", 0, "ms");
+    console.log("[DURATION] query_rewrite_synonym took", 0, "ms");
     return { query: augmentedSynonym, source: "synonym" };
   }
 
