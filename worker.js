@@ -778,6 +778,24 @@ async function fetchPgFaqs(query, k, env) {
   }
 }
 
+/**
+ * Searches Weaviate for document chunks used by the chat answer.
+ * Called while the PG FAQ search runs in parallel.
+ * Returns [] when Weaviate is unavailable so the request can still use FAQs.
+ *
+ * Example:
+ *   await searchWeaviateOrEmpty("grading formula", 2, env)
+ *   returns [{ filename: "grading.md", relevance: 0.9, ... }] or []
+ */
+async function searchWeaviateOrEmpty(query, limit, env) {
+  try {
+    return await searchWeaviate(query, limit, env);
+  } catch (error) {
+    logError("weaviate_search_failed", error, { query, limit });
+    return [];
+  }
+}
+
 function formatDbFaqSuggestions(dbFaqs, language = "english") {
   if (!dbFaqs || !dbFaqs.length) return "";
 
@@ -922,7 +940,7 @@ async function answer(request, env) {
         // These two searches do not depend on each other, so start both now.
         // This keeps the answer the same while waiting for the slower search only once.
         const [documents, dbFaqs] = await Promise.all([
-          searchWeaviate(cleanQuery, numDocs, env),
+          searchWeaviateOrEmpty(cleanQuery, numDocs, env),
           fetchPgFaqs(cleanQuery, 5, env),
         ]);
 
