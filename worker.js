@@ -129,10 +129,11 @@ Please don't hesitate to contact them - that's what they're there for. You're no
  * @returns {string} - Detected language (lowercase), defaults to 'english'
  */
 function extractLanguage(rewrittenQuery) {
-  if (!rewrittenQuery) return 'english';
-  const match = rewrittenQuery.match(/\[LANG:(\w+)\]/i);
-  const lang = match ? match[1].toLowerCase() : 'english';
-  return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'english';
+  return 'english'; // Default to English for now
+  // if (!rewrittenQuery) return 'english';
+  // const match = rewrittenQuery.match(/\[LANG:(\w+)\]/i);
+  // const lang = match ? match[1].toLowerCase() : 'english';
+  // return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'english';
 }
 
 /**
