@@ -118,11 +118,16 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
+
 // Configure marked to open links in new window
 marked.use({
   renderer: {
     link(href, title, text) {
       const titleAttr = title ? ` title="${title}"` : "";
+      if (href === PROGRAM_CONTACT_DETAILS_URL) {
+        return `<a href="${href}"${titleAttr} class="ref-doc-link" data-name="program-contact-details">${text}</a>`;
+      }
       return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
     }
   }
