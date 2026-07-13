@@ -549,12 +549,14 @@ async function rewriteQueryWithSource(query, env) {
   }
 
   // First, check if query matches any synonym pattern (fast path)
+  const synonymStartTime = Date.now();
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
-    logDuration(env, "query_rewrite_synonym", 0);
+    const synonymDurationMs = Date.now() - synonymStartTime;
+    logDuration(env, "query_rewrite_synonym", synonymDurationMs);
     return { query: augmentedSynonym, source: "synonym" };
   }
 
