@@ -1,4 +1,20 @@
 // ============================================================================
+// REQUEST FLOW
+// ============================================================================
+// Entry point: the Cloudflare Worker receives a chat request in fetch().
+// 1. Read the user's question and rewrite it into a search-friendly query.
+// 2. If the question is out of scope, return a rejection message with FAQ hints.
+// 3. Remove the language tag from the rewritten query.
+// 4. Search Weaviate for document chunks, then search the PG FAQ API.
+// 5. Build the answer from the user's question, matching documents, and matching FAQs.
+// Example: "How do I reset my password?" becomes a clean search query, then the
+// document search and FAQ search provide context before the final answer is made.
+//
+// Project terms:
+// - Weaviate documents: indexed document chunks used as long-form context.
+// - PG FAQ API: the Postgres-backed FAQ search service used for short FAQ matches.
+
+// ============================================================================
 // CONFIGURATION
 // ============================================================================
 
@@ -42,6 +58,30 @@ function structuredLog(severity, message, data = {}) {
   // Remove nested labels from root level
   delete logEntry.labels;
   console.log(JSON.stringify(logEntry));
+}
+
+/**
+ * Logs how long one operation took, unless duration logs are turned off.
+ * ASSUMPTION: duration logs stay on unless ENABLE_DURATION_LOGS is set to "false".
+ * @param {Object} env - Worker environment variables
+ * @param {string} operation - Short operation name, such as "pg_faq_search"
+ * @param {number} durationMs - Time taken in milliseconds
+ * @returns {void}
+ *
+ * Example:
+ * logDuration(env, "pg_faq_search", 125)
+ * // prints a DEBUG structured log with operation="pg_faq_search" and duration_ms=125
+ */
+function logDuration(env, operation, durationMs) {
+  if (env?.ENABLE_DURATION_LOGS === "false") {
+    return;
+  }
+
+  structuredLog("DEBUG", "duration", {
+    operation,
+    duration_ms: durationMs,
+    labels: { type: "duration" },
+  });
 }
 
 
@@ -527,11 +567,14 @@ async function rewriteQueryWithSource(query, env) {
   }
 
   // First, check if query matches any synonym pattern (fast path)
+  const synonymStartTime = Date.now();
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    const synonymDurationMs = Date.now() - synonymStartTime;
+    logDuration(env, "query_rewrite_synonym", synonymDurationMs);
     return { query: augmentedSynonym, source: "synonym" };
   }
 
@@ -586,6 +629,7 @@ Examples:
 
   try {
     console.log('[DEBUG] No synonym match, using LLM rewrite for:', query);
+    const queryRewriteStartTime = Date.now();
     const response = await fetch(chatEndpoint, {
       method: "POST",
       headers: {
@@ -602,6 +646,7 @@ Examples:
         max_tokens: 100,
       }),
     });
+    logDuration(env, "query_rewrite_chat_api", Date.now() - queryRewriteStartTime);
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
@@ -691,7 +736,9 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   try {
     const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqDirectLookupStartTime = Date.now();
     const response = await fetch(url, { headers: authHeaders });
+    logDuration(env, "pg_faq_direct_lookup", Date.now() - pgFaqDirectLookupStartTime);
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
@@ -735,9 +782,11 @@ async function getPgFaqAuthHeaders(env) {
     "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity" +
     `?audience=${encodeURIComponent(audience)}&format=full`;
 
+  const pgFaqIdentityTokenStartTime = Date.now();
   const response = await fetch(tokenUrl, {
     headers: { "Metadata-Flavor": "Google" },
   });
+  logDuration(env, "pg_faq_identity_token", Date.now() - pgFaqIdentityTokenStartTime);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch identity token: ${response.status}`);
@@ -751,11 +800,13 @@ async function fetchPgFaqs(query, k, env) {
   try {
     const url = `${getPgFaqApiUrl(env)}/search`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqSearchStartTime = Date.now();
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ q: query, k }),
     });
+    logDuration(env, "pg_faq_search", Date.now() - pgFaqSearchStartTime);
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
@@ -967,6 +1018,7 @@ async function answer(request, env) {
             close: () => {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
+              logDuration(env, "total_query", Date.now() - startTime);
               structuredLog("INFO", "conversation_turn", logContext);
               controller.close();
             },
@@ -1012,13 +1064,15 @@ async function answer(request, env) {
  * @param {string} model - The embedding model name
  * @returns {Promise<number[]>} - The embedding vector
  */
-async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
+async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3", env = {}) {
   console.log('[DEBUG] Getting embedding from Ollama:', ollamaUrl);
+  const ollamaEmbeddingStartTime = Date.now();
   const response = await fetch(`${ollamaUrl}/api/embeddings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt: text }),
   });
+  logDuration(env, "ollama_embedding", Date.now() - ollamaEmbeddingStartTime);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1086,7 +1140,7 @@ async function searchWeaviate(query, limit, env) {
       throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
     }
 
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
@@ -1125,11 +1179,13 @@ async function searchWeaviate(query, limit, env) {
     }`;
   }
 
+  const weaviateGraphqlSearchStartTime = Date.now();
   const response = await fetch(`${weaviateUrl}/v1/graphql`, {
     method: "POST",
     headers: embeddingHeaders,
     body: JSON.stringify({ query: graphqlQuery }),
   });
+  logDuration(env, "weaviate_graphql_search", Date.now() - weaviateGraphqlSearchStartTime);
 
   console.log('[DEBUG] Weaviate response received, status:', response.status);
   const responseText = await response.text();
@@ -1255,6 +1311,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   console.log('[DEBUG] Sending', messages.length, 'messages to chat API');
 
   // Step 1: Get non-streaming response from LLM
+  const answerChatApiStartTime = Date.now();
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1265,6 +1322,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       stream: false, // Non-streaming to collect full response for fact-checking
     }),
   });
+  logDuration(env, "answer_chat_api", Date.now() - answerChatApiStartTime);
 
   console.log('[DEBUG] Chat API response status:', response.status);
   if (!response.ok) {
@@ -1561,6 +1619,7 @@ Output your fact-check result as JSON:`;
 
   try {
     console.log('[DEBUG] checkResponse() - Calling LLM for fact-check');
+    const factCheckChatApiStartTime = Date.now();
     const factCheckResponse = await fetch(chatEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1576,6 +1635,7 @@ Output your fact-check result as JSON:`;
         stream: false,
       }),
     });
+    logDuration(env, "fact_check_chat_api", Date.now() - factCheckChatApiStartTime);
 
     if (!factCheckResponse.ok) {
       console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
