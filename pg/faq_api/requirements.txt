@@ -1,5 +1,6 @@
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
+# Data-layer deps for the shared FAQ modules (orm.py + repository.py), used by
+# embed.py and the Django backend. The FastAPI HTTP service (main.py) was removed
+# in the Django migration (issue #146), so fastapi/uvicorn are no longer needed.
 psycopg[binary]==3.2.1
 SQLAlchemy==2.0.36
 pgvector==0.3.6

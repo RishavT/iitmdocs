@@ -1,0 +1,14 @@
+# Django backend for the IITM BS chatbot (replaces worker.js + pg/faq_api FastAPI).
+Django>=5.1,<5.2
+djangorestframework>=3.15,<3.16
+django-cors-headers>=4.4
+whitenoise>=6.7
+gunicorn>=22.0
+requests>=2.32
+python-dotenv>=1.0.0
+
+# FAQ data layer is REUSED from pg/faq_api/{orm,repository}.py (shared with embed.py),
+# so the Django image needs the same DB stack.
+SQLAlchemy>=2.0.0
+psycopg[binary]>=3.2.0
+pgvector>=0.3.0

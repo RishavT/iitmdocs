@@ -1,0 +1,38 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps first for better layer caching.
+COPY backend/requirements.txt /app/backend/requirements.txt
+RUN pip install --no-cache-dir -r /app/backend/requirements.txt
+
+# Django app + reused FAQ data layer (pg.faq_api, shared with embed.py) + static frontend.
+COPY backend /app/backend
+COPY pg /app/pg
+COPY static /app/static
+
+# /app       -> makes `pg.faq_api.*` importable
+# /app/backend-> makes `config` / `chatbot` importable
+ENV PYTHONPATH=/app/backend:/app
+ENV DJANGO_SETTINGS_MODULE=config.settings
+
+# STATIC_ROOT is unused at runtime (the frontend is served from static/ via WHITENOISE_ROOT),
+# but WhiteNoise warns if the dir is missing — create it to keep startup logs clean.
+RUN mkdir -p /app/backend/staticfiles
+
+EXPOSE 8787
+
+# gthread workers so simulated-streaming SSE generators don't block; 120s for long LLM calls.
+CMD ["gunicorn", "config.wsgi:application", \
+     "--chdir", "/app/backend", \
+     "--bind", "0.0.0.0:8787", \
+     "--worker-class", "gthread", \
+     "--workers", "2", \
+     "--threads", "8", \
+     "--timeout", "120"]

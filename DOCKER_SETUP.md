@@ -26,12 +26,6 @@ WEAVIATE_API_KEY=your-weaviate-api-key
 OPENAI_API_KEY=your-openai-api-key
 ```
 
-Also create `.dev.vars` with the same content (required by Wrangler):
-
-```bash
-cp .env .dev.vars
-```
-
 ### 2. Run the Embedding Service
 
 First, populate Weaviate with document embeddings:
@@ -49,7 +43,7 @@ docker-compose --profile embed up embed
 
 **⚠️ CRITICAL: Embedding Provider Compatibility**
 - OpenAI and Cohere embeddings use **incompatible vector spaces**
-- Worker and embed service MUST use the **same `EMBEDDING_PROVIDER`**
+- Django backend and embed service MUST use the **same `EMBEDDING_PROVIDER`**
 - Using mismatched providers will cause semantic search to **fail silently**
 
 This will:
@@ -60,17 +54,17 @@ This will:
 - Upload embeddings to Weaviate Cloud
 - Exit when complete
 
-### 3. Start the Worker Service
+### 3. Start the Django Backend
 
-Once embeddings are complete, start the Cloudflare Worker:
+Once embeddings are complete, start the Django backend:
 
 ```bash
-docker-compose up worker
+docker compose --profile local up -d --build django
 ```
 
 This will:
-- Build the Node.js environment
-- Start the Wrangler dev server
+- Build the Django image (`Dockerfile.django`)
+- Start the gunicorn server
 - Expose the API at http://localhost:8787
 
 ### 4. Test the Chatbot
@@ -95,8 +89,8 @@ curl http://localhost:8787/answer \
 # First time: run embeddings
 docker-compose --profile embed up embed
 
-# Then start the worker
-docker-compose up worker
+# Then start the Django backend
+docker compose --profile local up -d --build django
 ```
 
 ### Re-run Embeddings (when you update src/ files)
@@ -108,8 +102,8 @@ docker-compose --profile embed up embed --build
 ### View Logs
 
 ```bash
-# Worker logs
-docker-compose logs -f worker
+# Django backend logs
+docker-compose logs -f django
 
 # Embedding logs
 docker-compose --profile embed logs embed
@@ -127,7 +121,7 @@ docker-compose down
 docker-compose down
 docker-compose build --no-cache
 docker-compose --profile embed up embed
-docker-compose up worker
+docker compose --profile local up -d --build django
 ```
 
 ## Architecture
@@ -146,11 +140,11 @@ docker-compose up worker
 │  └────────────────┘              │         │
 │                                  │         │
 │  ┌────────────────┐              ▼         │
-│  │ worker service │      ┌──────────────┐  │
-│  │ (Node.js)      │      │   Weaviate   │  │
+│  │ django service │      ┌──────────────┐  │
+│  │ (Python)       │      │   Weaviate   │  │
 │  │                │◄─────┤    Cloud     │  │
-│  │  - Wrangler    │      └──────────────┘  │
-│  │    dev server  │              ▲         │
+│  │  - Django +    │      └──────────────┘  │
+│  │    gunicorn    │              ▲         │
 │  │  - Port 8787   │              │         │
 │  └────────┬───────┘              │         │
 │           │                      │         │
@@ -175,7 +169,7 @@ lsof -ti:8787 | xargs kill -9
 
 ### Environment variables not loading
 
-Make sure both `.env` and `.dev.vars` exist with identical content.
+Make sure `.env` exists and is populated.
 
 ### Weaviate connection issues
 

@@ -1,0 +1,21 @@
+"""URL routing for the chatbot backend.
+
+Public contract (must match the old Worker + FAQ API byte-for-byte):
+  POST /answer        -> SSE stream (text/event-stream)
+  POST /feedback      -> JSON
+  POST /search        -> JSON  (FAQ semantic search; was the FastAPI service)
+  GET  /faq/<int:id>  -> JSON  (direct FAQ lookup)
+  GET  /health        -> {"ok": true}
+Everything else (GET /, /qa.html, /qa.js, ...) is served from static/ by WhiteNoise.
+"""
+from django.urls import path
+
+from chatbot import views
+
+urlpatterns = [
+    path("answer", views.AnswerView.as_view(), name="answer"),
+    path("feedback", views.FeedbackView.as_view(), name="feedback"),
+    path("search", views.SearchView.as_view(), name="search"),
+    path("faq/<int:faq_id>", views.FaqDetailView.as_view(), name="faq-detail"),
+    path("health", views.HealthView.as_view(), name="health"),
+]

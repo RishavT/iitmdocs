@@ -10,7 +10,7 @@ The project uses Google Cloud Build for CI/CD with automatic deployment to Cloud
 
 #### Architecture
 
-- **Cloud Run Service**: Hosts the chatbot worker (auto-scales, serverless)
+- **Cloud Run Service**: Hosts the chatbot Django backend (auto-scales, serverless)
 - **GCE VM** (`iitm-ollama-vm`): Runs Weaviate + Ollama for embeddings (persistent, cost-effective)
 - **VPC Connector**: Allows Cloud Run to communicate with the GCE VM's internal IP
 - **Cloud Run Job**: Runs embedding updates when `src/` files change
@@ -203,9 +203,9 @@ Choose one of two deployment modes:
 
 ### Option 1: Local Development (Recommended for development)
 
-Uses Docker Compose with local Weaviate + Ollama, plus a local Postgres-backed FAQ search service.
+Uses Docker Compose with local Weaviate + Ollama, plus a local Postgres database for FAQ search.
 
-**Environment Variables (`.env` and `.dev.vars`):**
+**Environment Variables (`.env`):**
 ```bash
 DEPLOYMENT_MODE=local
 LOCAL_WEAVIATE_URL=http://weaviate:8080
@@ -219,13 +219,13 @@ OPENAI_API_KEY=sk-...
 ```
 
 **Setup:**
-1. Start the local stack: `docker compose --profile local up -d`
-2. Wait for Ollama to pull the model (~2 min first time)
+1. Start the local stack: `docker compose --profile local up -d --build django`
+2. Pull the embedding model once: `docker exec iitm-ollama ollama pull bge-m3`
 3. Run embeddings: `docker compose --profile embed run --rm embed`
 4. Test at `http://localhost:8787`
 
 **Smoke tests (simple checks):**
-- Worker reachable (expect `200`):
+- Django backend reachable (expect `200`):
   - `curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:8787/`
 - Weaviate has documents (expect a non-zero count):
   - `curl -sS -X POST http://localhost:8080/v1/graphql -H 'Content-Type: application/json' -d '{"query":"{ Aggregate { Document { meta { count } } } }"}'`
@@ -264,7 +264,6 @@ OPENAI_API_KEY=sk-...
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
-| `PG_FAQ_API_URL` | All | `http://pg-faq-api:8000` | PG FAQ API base URL (FAQ suggestions + direct `faq_id` lookups) |
 | `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
 
 ### PG FAQ Seed Contract
@@ -278,7 +277,7 @@ Each FAQ question in `pg/seed/faqs.json` must be unique. If duplicate questions 
 The chatbot uses two techniques to improve search relevance:
 
 ### Hybrid Search
-Combines BM25 keyword search with vector semantic search (configurable via `alpha` parameter in worker.js). This catches both exact keyword matches and conceptually similar content.
+Combines BM25 keyword search with vector semantic search (configurable via `alpha` parameter in `backend/chatbot/services/weaviate.py`). This catches both exact keyword matches and conceptually similar content.
 
 ### Query Rewriting
 Before searching, user queries are expanded using an LLM to add relevant keywords. This helps with:
@@ -286,7 +285,7 @@ Before searching, user queries are expanded using an LLM to add relevant keyword
 - **Hinglish support**: "fee kitna hai" → adds "cost structure payment"
 - **Short queries**: "OPPE" → adds "programming exam proctored online"
 
-The query rewriter uses the `KNOWLEDGE_BASE_SUMMARY` constant defined in `worker.js` as context. This constant lists all topics and their main keywords.
+The query rewriter uses the `KNOWLEDGE_BASE_SUMMARY` constant defined in `backend/chatbot/business.py` as context. This constant lists all topics and their main keywords.
 
 ### Regenerating the Knowledge Base Summary
 
@@ -294,7 +293,7 @@ When source documents change significantly, regenerate the summary:
 
 1. Use the prompt in `generate-summary-prompt.txt` with Claude or GPT
 2. Save output to `src/_knowledge_base_summary.md`
-3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `worker.js` (condensed version)
+3. Update the `KNOWLEDGE_BASE_SUMMARY` constant in `backend/chatbot/business.py` (condensed version)
 4. The summary is **excluded from Weaviate embeddings** (see `EXCLUDED_FILES` in embed.py)
 
 ## Guardrails & Safety
@@ -387,7 +386,7 @@ Add this code to embed the chatbot on any website:
 <script type="module" src="{{chatbot url}}/chatbot.js"></script>
 ```
 
-Replace with your deployed URL (Cloud Run or Cloudflare Workers).
+Replace with your deployed URL (Cloud Run).
 
 The `chatbot.js` script will automatically create a floating chat button (bottom-right), load the chat interface in an iframe, and inject all necessary CSS.
 
