@@ -432,6 +432,12 @@ describe("CANNOT_ANSWER_MESSAGE content (via getCannotAnswerMessage)", () => {
     const message = getCannotAnswerMessage("english");
     expect(message).toContain("7850999966");
   });
+
+  it("should include a compact program contact details link", () => {
+    const message = getCannotAnswerMessage();
+    expect(message).toContain("[View all program contact details]");
+    expect(message).toContain("docs/program-contact-details.md");
+  });
 });
 
 describe("extractLanguage()", () => {

@@ -1,4 +1,20 @@
 // ============================================================================
+// REQUEST FLOW
+// ============================================================================
+// Entry point: the Cloudflare Worker receives a chat request in fetch().
+// 1. Read the user's question and rewrite it into a search-friendly query.
+// 2. If the question is out of scope, return a rejection message with FAQ hints.
+// 3. Remove the language tag from the rewritten query.
+// 4. Search Weaviate for document chunks, then search the PG FAQ API.
+// 5. Build the answer from the user's question, matching documents, and matching FAQs.
+// Example: "How do I reset my password?" becomes a clean search query, then the
+// document search and FAQ search provide context before the final answer is made.
+//
+// Project terms:
+// - Weaviate documents: indexed document chunks used as long-form context.
+// - PG FAQ API: the Postgres-backed FAQ search service used for short FAQ matches.
+
+// ============================================================================
 // CONFIGURATION
 // ============================================================================
 
@@ -42,6 +58,30 @@ function structuredLog(severity, message, data = {}) {
   // Remove nested labels from root level
   delete logEntry.labels;
   console.log(JSON.stringify(logEntry));
+}
+
+/**
+ * Logs how long one operation took, unless duration logs are turned off.
+ * ASSUMPTION: duration logs stay on unless ENABLE_DURATION_LOGS is set to "false".
+ * @param {Object} env - Worker environment variables
+ * @param {string} operation - Short operation name, such as "pg_faq_search"
+ * @param {number} durationMs - Time taken in milliseconds
+ * @returns {void}
+ *
+ * Example:
+ * logDuration(env, "pg_faq_search", 125)
+ * // prints a DEBUG structured log with operation="pg_faq_search" and duration_ms=125
+ */
+function logDuration(env, operation, durationMs) {
+  if (env?.ENABLE_DURATION_LOGS === "false") {
+    return;
+  }
+
+  structuredLog("DEBUG", "duration", {
+    operation,
+    duration_ms: durationMs,
+    labels: { type: "duration" },
+  });
 }
 
 
@@ -94,6 +134,8 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
+const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
+
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -103,10 +145,25 @@ const CORS_HEADERS = {
 
 // Translated "can't answer" messages with embedded contact info
 const CANNOT_ANSWER_MESSAGES = {
-  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option. You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}`,
-  hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें। आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं`,
-  tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும். நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்`,
-  hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein. Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain`,
+  english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
+  You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}.
+
+Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).`,
+  hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
+आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं
+
+क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें](${PROGRAM_CONTACT_DETAILS_URL})।
+`,
+  tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
+நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்
+
+நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க](${PROGRAM_CONTACT_DETAILS_URL}).
+`,
+  hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
+Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain
+
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${PROGRAM_CONTACT_DETAILS_URL}).
+`,
 };
 
 // Standardized RAAHAT message for mental health referrals - single source of truth
@@ -129,10 +186,11 @@ Please don't hesitate to contact them - that's what they're there for. You're no
  * @returns {string} - Detected language (lowercase), defaults to 'english'
  */
 function extractLanguage(rewrittenQuery) {
-  if (!rewrittenQuery) return 'english';
-  const match = rewrittenQuery.match(/\[LANG:(\w+)\]/i);
-  const lang = match ? match[1].toLowerCase() : 'english';
-  return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'english';
+  return 'english'; // Default to English for now
+  // if (!rewrittenQuery) return 'english';
+  // const match = rewrittenQuery.match(/\[LANG:(\w+)\]/i);
+  // const lang = match ? match[1].toLowerCase() : 'english';
+  // return SUPPORTED_LANGUAGES.includes(lang) ? lang : 'english';
 }
 
 /**
@@ -509,11 +567,15 @@ async function rewriteQueryWithSource(query, env) {
   }
 
   // First, check if query matches any synonym pattern (fast path)
+  const synonymStartTime = Date.now();
   const synonymMatch = findSynonymMatch(query);
   if (synonymMatch) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    
+    const synonymDurationMs = Date.now() - synonymStartTime;
+    logDuration(env, "query_rewrite_synonym", synonymDurationMs);
     return { query: augmentedSynonym, source: "synonym", tokens: null };
   }
 
@@ -568,6 +630,7 @@ Examples:
 
   try {
     console.log('[DEBUG] No synonym match, using LLM rewrite for:', query);
+    const queryRewriteStartTime = Date.now();
     const response = await fetch(chatEndpoint, {
       method: "POST",
       headers: {
@@ -584,6 +647,7 @@ Examples:
         max_tokens: 100,
       }),
     });
+    logDuration(env, "query_rewrite_chat_api", Date.now() - queryRewriteStartTime);
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
@@ -676,7 +740,9 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   try {
     const url = `${getPgFaqApiUrl(env)}/faq/${encodeURIComponent(String(faqId))}`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqDirectLookupStartTime = Date.now();
     const response = await fetch(url, { headers: authHeaders });
+    logDuration(env, "pg_faq_direct_lookup", Date.now() - pgFaqDirectLookupStartTime);
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
@@ -720,9 +786,11 @@ async function getPgFaqAuthHeaders(env) {
     "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity" +
     `?audience=${encodeURIComponent(audience)}&format=full`;
 
+  const pgFaqIdentityTokenStartTime = Date.now();
   const response = await fetch(tokenUrl, {
     headers: { "Metadata-Flavor": "Google" },
   });
+  logDuration(env, "pg_faq_identity_token", Date.now() - pgFaqIdentityTokenStartTime);
 
   if (!response.ok) {
     throw new Error(`Failed to fetch identity token: ${response.status}`);
@@ -736,11 +804,13 @@ async function fetchPgFaqs(query, k, env) {
   try {
     const url = `${getPgFaqApiUrl(env)}/search`;
     const authHeaders = await getPgFaqAuthHeaders(env);
+    const pgFaqSearchStartTime = Date.now();
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify({ q: query, k }),
     });
+    logDuration(env, "pg_faq_search", Date.now() - pgFaqSearchStartTime);
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
@@ -970,6 +1040,7 @@ async function answer(request, env) {
             close: () => {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
+              logDuration(env, "total_query", Date.now() - startTime);
               structuredLog("INFO", "conversation_turn", logContext);
               controller.close();
             },
@@ -1015,13 +1086,15 @@ async function answer(request, env) {
  * @param {string} model - The embedding model name
  * @returns {Promise<number[]>} - The embedding vector
  */
-async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
+async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3", env = {}) {
   console.log('[DEBUG] Getting embedding from Ollama:', ollamaUrl);
+  const ollamaEmbeddingStartTime = Date.now();
   const response = await fetch(`${ollamaUrl}/api/embeddings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model, prompt: text }),
   });
+  logDuration(env, "ollama_embedding", Date.now() - ollamaEmbeddingStartTime);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1089,7 +1162,7 @@ async function searchWeaviate(query, limit, env) {
       throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
     }
 
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
+    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
@@ -1128,11 +1201,13 @@ async function searchWeaviate(query, limit, env) {
     }`;
   }
 
+  const weaviateGraphqlSearchStartTime = Date.now();
   const response = await fetch(`${weaviateUrl}/v1/graphql`, {
     method: "POST",
     headers: embeddingHeaders,
     body: JSON.stringify({ query: graphqlQuery }),
   });
+  logDuration(env, "weaviate_graphql_search", Date.now() - weaviateGraphqlSearchStartTime);
 
   console.log('[DEBUG] Weaviate response received, status:', response.status);
   const responseText = await response.text();
@@ -1258,6 +1333,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   console.log('[DEBUG] Sending', messages.length, 'messages to chat API');
 
   // Step 1: Get non-streaming response from LLM
+  const answerChatApiStartTime = Date.now();
   const response = await fetch(chatEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1268,6 +1344,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       stream: false, // Non-streaming to collect full response for fact-checking
     }),
   });
+  logDuration(env, "answer_chat_api", Date.now() - answerChatApiStartTime);
 
   console.log('[DEBUG] Chat API response status:', response.status);
   if (!response.ok) {
@@ -1605,6 +1682,7 @@ Output your fact-check result as JSON:`;
 
   try {
     console.log('[DEBUG] checkResponse() - Calling LLM for fact-check');
+    const factCheckChatApiStartTime = Date.now();
     const factCheckResponse = await fetch(chatEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${chatApiKey}` },
@@ -1620,6 +1698,7 @@ Output your fact-check result as JSON:`;
         stream: false,
       }),
     });
+    logDuration(env, "fact_check_chat_api", Date.now() - factCheckChatApiStartTime);
 
     if (!factCheckResponse.ok) {
       console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
