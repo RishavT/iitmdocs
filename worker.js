@@ -573,9 +573,10 @@ async function rewriteQueryWithSource(query, env) {
     // Augment: Prepend original query to synonym keywords for better FAQ matching
     const augmentedSynonym = `${query} ${synonymMatch}`;
     console.log('[DEBUG] Synonym match augmented:', query, '→', augmentedSynonym);
+    
     const synonymDurationMs = Date.now() - synonymStartTime;
     logDuration(env, "query_rewrite_synonym", synonymDurationMs);
-    return { query: augmentedSynonym, source: "synonym" };
+    return { query: augmentedSynonym, source: "synonym", tokens: null };
   }
 
   // Fall back to LLM rewriting for unmatched queries
@@ -650,11 +651,14 @@ Examples:
 
     if (!response.ok) {
       console.error('[DEBUG] Query rewrite API failed, using original query');
-      return { query: query, source: "original" };
+      return { query: query, source: "original", tokens: null };
     }
 
     const result = await response.json();
     const llmRewrite = result.choices?.[0]?.message?.content?.trim() || query;
+    
+    // Track tokens from query rewrite (if available in context, will be added by caller)
+    const queryRewriteTokens = result.usage ? { input: result.usage.prompt_tokens || 0, output: result.usage.completion_tokens || 0 } : null;
 
     // Augment: Prepend original query to LLM keywords for better FAQ matching
     // Extract language tag from LLM response, combine original + keywords, re-add tag
@@ -664,7 +668,7 @@ Examples:
     const augmentedQuery = `${query} ${keywordsOnly} ${langTag}`;
 
     console.log('[DEBUG] Query augmented:', query, '→', augmentedQuery);
-    return { query: augmentedQuery, source: "llm" };
+    return { query: augmentedQuery, source: "llm", tokens: queryRewriteTokens };
   } catch (error) {
     console.error('[DEBUG] Query rewrite error:', error.message);
     return { query: query, source: "original" }; // Fallback to original query on error
@@ -911,12 +915,24 @@ async function answer(request, env) {
     query_source: "original", // "synonym", "llm", "original", or "rejected"
     rejection_reason: null, // "prompt_injection", "fact_check_failed", or null
     documents: [],
+    db_faqs: [],
     response: null,
     fact_check_passed: null,
     contains_raahat: false,
     history_length: Array.isArray(history) ? history.length : 0,
     latency_ms: null,
     error: null,
+    original_answer: null,
+    tokens: {
+      query_rewrite_input: 0,
+      query_rewrite_output: 0,
+      answer_generation_input: 0,
+      answer_generation_output: 0,
+      fact_check_input: 0,
+      fact_check_output: 0,
+      total_input_tokens: 0,
+      total_output_tokens: 0,
+    },
   };
 
   const encoder = new TextEncoder();
@@ -924,9 +940,15 @@ async function answer(request, env) {
     async start(controller) {
       try {
         // Rewrite query for better search relevance
-        const { query: searchQuery, source: querySource } = await rewriteQueryWithSource(question, env);
+        const { query: searchQuery, source: querySource, tokens: queryRewriteTokens } = await rewriteQueryWithSource(question, env);
         logContext.rewritten_query = searchQuery;
         logContext.query_source = querySource;
+        
+        // Track query rewrite tokens if available
+        if (queryRewriteTokens) {
+          logContext.tokens.query_rewrite_input = queryRewriteTokens.input;
+          logContext.tokens.query_rewrite_output = queryRewriteTokens.output;
+        }
 
         // Handle rejected queries (likely prompt injection attempts)
         if (querySource === "rejected") {
@@ -1334,6 +1356,15 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
   // Step 2: Parse the response
   const result = await response.json();
   const answerText = result.choices?.[0]?.message?.content || "";
+  if (logContext) {
+    logContext.original_answer = answerText;
+  }
+  
+  // Track tokens from answer generation
+  if (result.usage && logContext) {
+    logContext.tokens.answer_generation_input = result.usage.prompt_tokens || 0;
+    logContext.tokens.answer_generation_output = result.usage.completion_tokens || 0;
+  }
   console.log('[DEBUG] Generated answer length:', answerText.length);
   console.log('[DEBUG] Generated answer preview:', answerText.substring(0, 500));
   // console.log('\n========== [DEBUG] LLM FULL RESPONSE ==========\n' + answerText + '\n================================================\n');
@@ -1355,12 +1386,26 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     if (otherStatementCount > 2) {
       // There's substantial non-RAAHAT content - fact-check it
       console.log('[DEBUG] Fact-checking non-RAAHAT chunk (', otherStatementCount, 'statements)');
-      let isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: validatedHistory, env });
+      let factCheckResult = await checkResponse({ response: otherChunk, context, history: validatedHistory, env });
+      let isOtherChunkValid = factCheckResult.approved;
+      
+      // Track fact-check tokens
+      if (factCheckResult.tokens && logContext) {
+        logContext.tokens.fact_check_input += factCheckResult.tokens.input;
+        logContext.tokens.fact_check_output += factCheckResult.tokens.output;
+      }
 
       // Retry without history if needed
       if (!isOtherChunkValid && validatedHistory.length > 0) {
         console.log('[DEBUG] Retrying fact-check without history...');
-        isOtherChunkValid = await checkResponse({ response: otherChunk, context, history: [], env });
+        factCheckResult = await checkResponse({ response: otherChunk, context, history: [], env });
+        isOtherChunkValid = factCheckResult.approved;
+        
+        // Track retry tokens
+        if (factCheckResult.tokens && logContext) {
+          logContext.tokens.fact_check_input += factCheckResult.tokens.input;
+          logContext.tokens.fact_check_output += factCheckResult.tokens.output;
+        }
       }
 
       factCheckPassed = isOtherChunkValid;
@@ -1384,14 +1429,28 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     // No RAAHAT content - normal fact-checking flow
     console.log('[DEBUG] No RAAHAT content, using normal fact-check flow');
     console.log('[DEBUG] Starting fact-check with history length:', validatedHistory.length);
-    let isFactuallyCorrect = await checkResponse({ response: answerText, context, history: validatedHistory, env });
+    let factCheckResult = await checkResponse({ response: answerText, context, history: validatedHistory, env });
+    let isFactuallyCorrect = factCheckResult.approved;
     console.log('[DEBUG] Fact-check result:', isFactuallyCorrect);
+    
+    // Track fact-check tokens
+    if (factCheckResult.tokens && logContext) {
+      logContext.tokens.fact_check_input += factCheckResult.tokens.input;
+      logContext.tokens.fact_check_output += factCheckResult.tokens.output;
+    }
 
     // Retry without history if needed
     if (!isFactuallyCorrect && validatedHistory.length > 0) {
       console.log('[DEBUG] Fact-check failed with history, retrying without history...');
-      isFactuallyCorrect = await checkResponse({ response: answerText, context, history: [], env });
+      factCheckResult = await checkResponse({ response: answerText, context, history: [], env });
+      isFactuallyCorrect = factCheckResult.approved;
       console.log('[DEBUG] Fact-check retry result (no history):', isFactuallyCorrect);
+      
+      // Track retry tokens
+      if (factCheckResult.tokens && logContext) {
+        logContext.tokens.fact_check_input += factCheckResult.tokens.input;
+        logContext.tokens.fact_check_output += factCheckResult.tokens.output;
+      }
     }
 
     factCheckPassed = isFactuallyCorrect;
@@ -1425,6 +1484,10 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
     logContext.response = finalAnswer;
     logContext.fact_check_passed = factCheckPassed;
     logContext.contains_raahat = hasRaahat;
+    
+    // Calculate total tokens
+    logContext.tokens.total_input_tokens = logContext.tokens.query_rewrite_input + logContext.tokens.answer_generation_input + logContext.tokens.fact_check_input;
+    logContext.tokens.total_output_tokens = logContext.tokens.query_rewrite_output + logContext.tokens.answer_generation_output + logContext.tokens.fact_check_output;
   }
 
   // Step 5: Return a simulated streaming response for compatibility with existing SSE format
@@ -1640,7 +1703,7 @@ Output your fact-check result as JSON:`;
     if (!factCheckResponse.ok) {
       console.error('[DEBUG] checkResponse() - Fact-check API error:', factCheckResponse.status);
       // On API error, return true to avoid blocking valid responses
-      return true;
+      return { approved: true, tokens: null };
     }
 
     const result = await factCheckResponse.json();
@@ -1649,6 +1712,9 @@ Output your fact-check result as JSON:`;
     console.log('[DEBUG] checkResponse() - Raw fact-check response:', rawAnswer);
     // console.log('\n========== [DEBUG] FACT-CHECKER FULL RESPONSE ==========\n' + rawAnswer + '\n=========================================================\n');
 
+    // Extract tokens from fact-check response
+    const factCheckTokens = result.usage ? { input: result.usage.prompt_tokens || 0, output: result.usage.completion_tokens || 0 } : null;
+
     // Parse JSON response
     try {
       const factCheckResult = JSON.parse(rawAnswer);
@@ -1656,15 +1722,15 @@ Output your fact-check result as JSON:`;
       if (factCheckResult.incorrect && factCheckResult.incorrect.length > 0) {
         console.log('[DEBUG] checkResponse() - Incorrect statements:', factCheckResult.incorrect);
       }
-      return factCheckResult.approved?.toUpperCase() === "YES";
+      return { approved: factCheckResult.approved?.toUpperCase() === "YES", tokens: factCheckTokens };
     } catch (parseError) {
       // Fallback: strict check for exactly "YES"
       console.log('[DEBUG] checkResponse() - JSON parse failed, falling back to strict text check');
-      return rawAnswer?.toUpperCase() === "YES";
+      return { approved: rawAnswer?.toUpperCase() === "YES", tokens: factCheckTokens };
     }
   } catch (error) {
     console.error('[DEBUG] checkResponse() - Error during fact-check:', error.message);
     // On error, return true to avoid blocking valid responses
-    return true;
+    return { approved: true, tokens: null };
   }
 }
