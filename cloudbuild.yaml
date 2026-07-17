@@ -156,6 +156,8 @@ steps:
             sudo rm -rf weaviate_data
             echo "[remote] recreating weaviate_data"
             sudo mkdir weaviate_data
+            echo "[remote] allowing weaviate to write data"
+            sudo chown -R 1000:1000 weaviate_data
             echo "[remote] starting weaviate"
             sudo docker compose up -d weaviate
             echo "[remote] reset complete"'
