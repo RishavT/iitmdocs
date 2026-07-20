@@ -835,17 +835,17 @@ function formatDbFaqSuggestions(dbFaqs, language = "english") {
  * returns ["weaviate_documents_empty"].
  */
 function searchContextIssues(documentResult, faqResult) {
-  const documents = documentResult.items || [];
-  const dbFaqs = faqResult.items || [];
+  const documents = documentResult?.items || [];
+  const dbFaqs = faqResult?.items || [];
   const reasons = [];
 
-  if (documentResult.error) {
+  if (documentResult?.error) {
     reasons.push(documentResult.error);
   } else if (documents.length === 0) {
     reasons.push("weaviate_documents_empty");
   }
 
-  if (faqResult.error) {
+  if (faqResult?.error) {
     reasons.push(faqResult.error);
   } else if (dbFaqs.length === 0) {
     reasons.push("pg_faqs_empty");
