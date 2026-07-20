@@ -701,6 +701,13 @@ export default {
       return await handleFeedback(request);
     }
 
+    if (request.method == "GET" && url.pathname == "/runtime-config") {
+      return Response.json(
+        { githubBranchBaseUrl: env.GITHUB_BRANCH_BASE_URL },
+        { headers: CORS_HEADERS },
+      );
+    }
+
     // Serve static assets with CORS headers for cross-origin embedding
     const assetResponse = await env.ASSETS.fetch(request);
     const newHeaders = new Headers(assetResponse.headers);
