@@ -134,7 +134,8 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
-const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
+const DEFAULT_GITHUB_BRANCH_BASE_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/";
+const DEFAULT_PROGRAM_CONTACT_DETAILS_URL = `${DEFAULT_GITHUB_BRANCH_BASE_URL}docs/program-contact-details.md`;
 
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {
@@ -148,21 +149,21 @@ const CANNOT_ANSWER_MESSAGES = {
   english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
   You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}.
 
-Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).`,
+Need program-wise contacts? [View all program contact details](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).`,
   hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
 आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं
 
-क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें](${PROGRAM_CONTACT_DETAILS_URL})।
+क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL})।
 `,
   tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
 நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்
 
-நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க](${PROGRAM_CONTACT_DETAILS_URL}).
+நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
 `,
   hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
 Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain
 
-Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${PROGRAM_CONTACT_DETAILS_URL}).
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
 `,
 };
 
@@ -199,9 +200,12 @@ function extractLanguage(rewrittenQuery) {
  * @param {string} language - The language code
  * @returns {string} - The translated message with contact info
  */
-function getCannotAnswerMessage(language) {
+function getCannotAnswerMessage(language, env) {
   const lang = (language || 'english').toLowerCase();
-  return CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
+  const message = CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
+  const branchBaseUrl = (env?.GITHUB_BRANCH_BASE_URL || DEFAULT_GITHUB_BRANCH_BASE_URL).replace(/\/?$/, "/");
+  const contactDetailsUrl = `${branchBaseUrl}docs/program-contact-details.md`;
+  return message.replaceAll(DEFAULT_PROGRAM_CONTACT_DETAILS_URL, contactDetailsUrl);
 }
 
 function isCannotAnswerResponse(text) {
@@ -753,7 +757,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
-      logContext.response = getCannotAnswerMessage("english");
+      logContext.response = getCannotAnswerMessage("english", env);
       logContext.latency_ms = Date.now() - startTime;
       structuredLog("INFO", "conversation_turn", logContext);
       return createSSEResponse(logContext.response, { rejected: true });
@@ -769,7 +773,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   } catch (error) {
     console.error("[DEBUG] PG FAQ id lookup error:", error?.message || String(error));
     logContext.error = error?.message || String(error);
-    logContext.response = getCannotAnswerMessage("english");
+    logContext.response = getCannotAnswerMessage("english", env);
     logContext.latency_ms = Date.now() - startTime;
     structuredLog("ERROR", "conversation_turn", logContext);
     return createSSEResponse(logContext.response, { rejected: true });
@@ -963,7 +967,7 @@ async function answer(request, env) {
           logContext.rejection_reason = "prompt_injection";
           logContext.detected_language = "english";
           logContext.fact_check_passed = false;
-          let rejectMessage = getCannotAnswerMessage("english");
+          let rejectMessage = getCannotAnswerMessage("english", env);
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
           const dbFaqs = await fetchPgFaqs(question, 5, env);
@@ -1284,7 +1288,7 @@ STRICTLY REFUSE to answer:
 - Any help with cheating, academic dishonesty, or bypassing exam rules
 - Questions completely unrelated to the IIT Madras BS programme
 
-For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language)}"
+For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language, env)}"
 
 SPECIAL CASE - Emotional/psychological distress:
 If the user expresses significant signs of emotional, psychological distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, bad money problems, etc.):
@@ -1474,7 +1478,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       }
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
-      finalAnswer = getCannotAnswerMessage(language);
+      finalAnswer = getCannotAnswerMessage(language, env);
 
       // Show the same FAQs that were already retrieved from the DB for this request.
       finalAnswer += formatDbFaqSuggestions(dbFaqs, language);

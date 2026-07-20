@@ -503,6 +503,15 @@ describe("getCannotAnswerMessage()", () => {
     expect(result).toContain("support@study.iitm.ac.in");
   });
 
+  it("should use the configured GitHub branch base URL", () => {
+    const result = getCannotAnswerMessage("english", {
+      GITHUB_BRANCH_BASE_URL: "https://github.com/example/docs/blob/test-branch/",
+    });
+
+    expect(result).toContain("https://github.com/example/docs/blob/test-branch/docs/program-contact-details.md");
+    expect(result).not.toContain("blob/main/docs/program-contact-details.md");
+  });
+
   it("should return English message for null language", () => {
     const result = getCannotAnswerMessage(null);
     expect(result).toContain("I'm sorry");
