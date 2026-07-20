@@ -1264,6 +1264,11 @@ async function searchWeaviate(query, limit, env) {
     }
     console.log('[DEBUG] Weaviate JSON parsed successfully');
 
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      console.error('[DEBUG] Weaviate response is not a valid JSON object:', responseText);
+      return { items: [], error: "weaviate_response_malformed:not_an_object" };
+    }
+
     if (data.errors) {
       const errorMessage = data.errors.map((e) => e.message).join(", ");
       console.error('[DEBUG] Weaviate GraphQL error:', errorMessage);
