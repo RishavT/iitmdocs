@@ -981,8 +981,8 @@ async function answer(request, env) {
         // Search Weaviate for relevant documents using clean query (without language tag)
         const documentResult = await searchWeaviate(cleanQuery, numDocs, env);
         const faqResult = await fetchPgFaqs(cleanQuery, 5, env);
-        const documents = documentResult.items;
-        const dbFaqs = faqResult.items;
+        const documents = documentResult?.items || [];
+        const dbFaqs = faqResult?.items || [];
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
