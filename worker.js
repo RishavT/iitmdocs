@@ -925,7 +925,7 @@ async function answer(request, env) {
     question: question,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", "original", or "rejected"
-    rejection_reason: null, // "prompt_injection", "fact_check_failed", "no_search_results", or null
+    rejection_reason: null, // "prompt_injection", "fact_check_failed", "no_search_results", "cannot_answer", or null
     documents: [],
     response: null,
     fact_check_passed: null,
