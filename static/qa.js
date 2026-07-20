@@ -118,7 +118,14 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 
-const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
+const configResponse = await fetch("./runtime-config");
+if (!configResponse.ok) {
+  throw new Error("Could not load the application configuration.");
+}
+
+const runtimeConfig = await configResponse.json();
+const githubBranchBaseUrl = runtimeConfig.githubBranchBaseUrl.replace(/\/?$/, "/");
+const PROGRAM_CONTACT_DETAILS_URL = `${githubBranchBaseUrl}docs/program-contact-details.md`;
 
 // Configure marked to open links in new window
 marked.use({
