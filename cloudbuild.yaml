@@ -151,13 +151,15 @@ steps:
           --command='set -euo pipefail
             cd /opt/iitm-chatbot
             echo "[remote] stopping weaviate"
-            docker compose stop weaviate || true
+            sudo -n docker compose stop weaviate
             echo "[remote] removing stale weaviate_data"
-            sudo rm -rf weaviate_data
+            sudo -n rm -rf -- weaviate_data
             echo "[remote] recreating weaviate_data"
-            sudo mkdir weaviate_data
+            sudo -n mkdir weaviate_data
+            echo "[remote] allowing weaviate to write data"
+            sudo -n chown 1000:1000 weaviate_data
             echo "[remote] starting weaviate"
-            docker compose up -d weaviate
+            sudo -n docker compose up -d weaviate
             echo "[remote] reset complete"'
 
   # Step 6: Check if embedding is needed (based on tag name)
