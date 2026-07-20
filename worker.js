@@ -1190,9 +1190,12 @@ async function searchWeaviate(query, limit, env) {
     let queryVector;
     try {
       queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
+      if (!Array.isArray(queryVector)) {
+        throw new Error("Ollama embedding response is not an array");
+      }
     } catch (e) {
       console.error('[DEBUG] GCE query embedding error:', e?.message || String(e));
-      return { items: [], error: `weaviate_embedding_error:${e?.message || String(e)}` };
+      return { items: [], error: "weaviate_embedding_error:" + (e?.message || String(e)) };
     }
     const vectorStr = `[${queryVector.join(",")}]`;
 
