@@ -123,7 +123,7 @@ const DEFAULT_GITHUB_BRANCH_BASE_URL =
 let githubBranchBaseUrl = DEFAULT_GITHUB_BRANCH_BASE_URL;
 
 try {
-  const configResponse = await fetch("./runtime-config");
+  const configResponse = await fetch("./github-config");
   if (configResponse.ok) {
     const runtimeConfig = await configResponse.json();
     if (typeof runtimeConfig.githubBranchBaseUrl === "string") {

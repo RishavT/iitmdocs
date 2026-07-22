@@ -705,7 +705,7 @@ export default {
       return await handleFeedback(request);
     }
 
-    if (request.method == "GET" && url.pathname == "/runtime-config") {
+    if (request.method == "GET" && url.pathname == "/github-config") {
       return Response.json(
         { githubBranchBaseUrl: env.GITHUB_BRANCH_BASE_URL || DEFAULT_GITHUB_BRANCH_BASE_URL },
         { headers: CORS_HEADERS },

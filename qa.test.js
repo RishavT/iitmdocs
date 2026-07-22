@@ -50,7 +50,7 @@ describe("Welcome Message", () => {
 describe("Program Contact Details CTA", () => {
   it("should route the program contact details link through the document viewer", () => {
     expect(qaJs).toContain("PROGRAM_CONTACT_DETAILS_URL");
-    expect(qaJs).toContain('fetch("./runtime-config")');
+    expect(qaJs).toContain('fetch("./github-config")');
     expect(qaJs).toContain("runtimeConfig.githubBranchBaseUrl");
     expect(qaJs).toContain("docs/program-contact-details.md");
     expect(qaJs).toContain('class="ref-doc-link"');
