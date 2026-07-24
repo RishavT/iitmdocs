@@ -960,6 +960,12 @@ async function answer(request, env) {
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
           const dbFaqs = await fetchPgFaqs(question, 5, env);
+          logContext.db_faqs = (dbFaqs || []).map((faq) => ({
+            id: faq.id,
+            cosine_similarity: faq.cosine_similarity,
+            question: faq.question,
+            answer: faq.answer,
+          }));
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
