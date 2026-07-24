@@ -995,6 +995,8 @@ async function answer(request, env) {
         logContext.db_faqs = (dbFaqs || []).map((faq) => ({
           id: faq.id,
           cosine_similarity: faq.cosine_similarity,
+          question: faq.question,
+          answer: faq.answer,
         }));
 
         // Stream documents first (single enqueue)
