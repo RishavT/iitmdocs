@@ -138,6 +138,22 @@ This is where the chatbot figures out what the user actually wants and translate
 - The backend **skips the entire pipeline** (no query rewriting, no LLM answer generation, no fact-checking).
 - It calls the **PG FAQ API** to fetch the FAQ by id and returns that question + answer directly — this is fast and guaranteed accurate (because it is a direct lookup).
 
+#### Why `worker.js` has two `const logContext` objects
+
+The normal question flow and the direct FAQ lookup flow each create their own
+`logContext`. A `logContext` is a temporary object that collects the information
+to be written for one request.
+
+- The `logContext` inside `answer()` records the full pipeline, including query
+  rewriting, document retrieval, FAQ search, answer generation, and
+  fact-checking.
+- The `logContext` inside `handleDirectFAQIdLookup()` records the shorter direct
+  lookup flow, which skips those pipeline steps.
+
+The two variables can have the same name because each one exists only inside its
+own function. They do not share or overwrite each other's data. Keeping them
+separate also makes it clear which fields belong to each request flow.
+
 ### Step 11: FAQ seed bootstrap
 
 - `pg/seed/faqs.json` is the source of truth for the Postgres FAQ database.
