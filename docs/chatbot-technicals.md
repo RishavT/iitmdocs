@@ -553,6 +553,39 @@ Simple way to think about it:
 
 ## 11. Logging and Analytics
 
+### `logContext` versus `structuredLog`
+
+`logContext` is a plain JavaScript object that collects information about one
+chatbot request while it is being processed. The worker updates fields such as
+the retrieved documents, retrieved FAQ snapshots, response, and latency as each
+step finishes. Updating `logContext` does not write a log; the data remains in
+memory until the worker passes it to the logging function.
+
+`structuredLog` is the function that emits the collected information:
+
+```javascript
+structuredLog("INFO", "conversation_turn", logContext);
+```
+
+The function adds standard fields such as the severity, timestamp, and
+application label. It then serializes the result as JSON and writes it with
+`console.log`. Cloud Logging recognizes that JSON as a structured log, and the
+logging sink makes its fields available in BigQuery under paths such as
+`jsonPayload.question`, `jsonPayload.db_faqs`, and `jsonPayload.response`.
+
+The relationship is:
+
+```text
+logContext collects one request's data
+    → structuredLog formats and emits it
+    → Cloud Logging stores the structured log
+    → BigQuery and Looker read its fields
+```
+
+In short, `logContext` is the temporary content of one conversation-turn log,
+`structuredLog` is the function that sends that content to the logging system,
+and a structured log is the resulting stored JSON record.
+
 ### Structured logging format
 
 Every conversation turn is logged as structured JSON:
