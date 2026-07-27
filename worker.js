@@ -1013,7 +1013,7 @@ async function answer(request, env) {
           logContext.error = searchIssues.join("; ");
         }
 
-        if (!documents.length && !dbFaqs.length) {
+        if (!documents.length && !dbFaqs.length) { // No usable context from either source
           const message = getCannotAnswerMessage(detectedLanguage);
           logContext.rejection_reason = "no_search_results";
           logContext.response = message;
@@ -1028,7 +1028,7 @@ async function answer(request, env) {
           })}\n\ndata: [DONE]\n\n`;
           controller.enqueue(encoder.encode(sseData));
           logDuration(env, "total_query", Date.now() - startTime);
-          structuredLog("ERROR", "conversation_turn", logContext);
+          structuredLog("CRITICAL", "conversation_turn", logContext);
           controller.close();
           return;
         }
@@ -1077,7 +1077,14 @@ async function answer(request, env) {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
               logDuration(env, "total_query", Date.now() - startTime);
-              structuredLog(logContext.error ? "ERROR" : "INFO", "conversation_turn", logContext);
+
+              // Retrieval issues are critical, while unrelated errors stay ERROR and successful turns stay INFO.
+              const severity = searchIssues.length
+                ? "CRITICAL"
+                : logContext.error
+                  ? "ERROR"
+                  : "INFO";
+              structuredLog(severity, "conversation_turn", logContext);
               controller.close();
             },
             abort: (reason) => {
