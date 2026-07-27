@@ -997,12 +997,14 @@ async function answer(request, env) {
         const searchIssues = searchContextIssues(documentResult, faqResult);
         if (searchIssues.length) {
           logContext.search_result_causes = searchIssues;
+          logContext.error = searchIssues.join("; ");
         }
 
         if (!documents.length && !dbFaqs.length) {
           const message = getCannotAnswerMessage(detectedLanguage);
           logContext.rejection_reason = "no_search_results";
           logContext.response = message;
+          logContext.error = searchIssues.join("; ") || "no_search_results";
           logContext.latency_ms = Date.now() - startTime;
 
           console.log("[DEBUG] Both searches returned no usable context:", searchIssues.join(","));
@@ -1013,7 +1015,7 @@ async function answer(request, env) {
               write: (chunk) => controller.enqueue(chunk),
               close: () => {
                 logDuration(env, "total_query", Date.now() - startTime);
-                structuredLog("INFO", "conversation_turn", logContext);
+                structuredLog("ERROR", "conversation_turn", logContext);
                 controller.close();
               },
             }),
@@ -1065,7 +1067,7 @@ async function answer(request, env) {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
               logDuration(env, "total_query", Date.now() - startTime);
-              structuredLog("INFO", "conversation_turn", logContext);
+              structuredLog(logContext.error ? "ERROR" : "INFO", "conversation_turn", logContext);
               controller.close();
             },
             abort: (reason) => {
