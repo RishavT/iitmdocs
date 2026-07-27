@@ -12,6 +12,7 @@ import {
   searchContextIssues,
   searchWeaviate,
 } from "./worker.js";
+import worker from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -1287,6 +1288,131 @@ describe("Retrieval result envelopes", () => {
     ).resolves.toEqual({
       items: [],
       error: "weaviate_embedding_error:Ollama unavailable",
+    });
+  });
+});
+
+describe("POST /answer retrieval control flow", () => {
+  const routeEnv = {
+    DEPLOYMENT_MODE: "local",
+    PG_FAQ_API_URL: "http://pg-faq-api:8000",
+    CHAT_API_ENDPOINT: "https://chat.test/completions",
+  };
+
+  beforeEach(() => {
+    mockLogs.length = 0;
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function getConversationLog() {
+    return mockLogs
+      .map(([value]) => {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      })
+      .find((entry) => entry?.message === "conversation_turn");
+  }
+
+  function answerRequest() {
+    return {
+      method: "POST",
+      url: "https://worker.test/answer",
+      json: async () => ({ q: "fees" }),
+    };
+  }
+
+  function getChatRequests() {
+    return global.fetch.mock.calls
+      .filter(([url]) => url === routeEnv.CHAT_API_ENDPOINT)
+      .map(([, options]) => JSON.parse(options.body));
+  }
+
+  it("rejects and skips answer generation when both retrieval sources fail", async () => {
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/v1/graphql")) {
+        return Promise.resolve({ ok: false, status: 503, text: async () => "unavailable" });
+      }
+      if (url === routeEnv.CHAT_API_ENDPOINT) {
+        return Promise.resolve({ ok: false, status: 503, text: async () => "unavailable" });
+      }
+      return Promise.resolve({ ok: false, status: 503, text: async () => "unavailable" });
+    });
+
+    const response = await worker.fetch(answerRequest(), routeEnv);
+    const body = await response.text();
+    const conversationLog = getConversationLog();
+
+    expect(body).toContain('"rejected":true');
+    expect(body).toContain("data: [DONE]");
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(getChatRequests()).toHaveLength(1);
+    expect(getChatRequests()[0].stream).toBeUndefined();
+    expect(getChatRequests().filter((request) => request.stream === false)).toHaveLength(0);
+    expect(conversationLog).toMatchObject({
+      severity: "CRITICAL",
+      rejection_reason: "no_search_results",
+      error: "weaviate_api_error:503; pg_faq_api_error:503",
+    });
+  });
+
+  it("continues to answer when one retrieval source provides context", async () => {
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/v1/graphql")) {
+        return Promise.resolve({
+          ok: true,
+          text: async () =>
+            JSON.stringify({
+              data: {
+                Get: {
+                  Document: [{ filename: "fees.md", content: "Programme fees are listed here.", _additional: { score: 0.9 } }],
+                },
+              },
+            }),
+        });
+      }
+      if (url.includes("/search")) {
+        return Promise.resolve({ ok: true, json: async () => ({ results: [] }) });
+      }
+      if (url === routeEnv.CHAT_API_ENDPOINT) {
+        const chatCallNumber = global.fetch.mock.calls.filter(([callUrl]) => callUrl === routeEnv.CHAT_API_ENDPOINT).length;
+        const contentByCall = {
+          1: "fees fee structure [LANG:english]",
+          2: "Programme fees are listed here.",
+          3: '{"approved":"YES","incorrect":[]}',
+        };
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            choices: [
+              {
+                message: {
+                  content: contentByCall[chatCallNumber],
+                },
+              },
+            ],
+          }),
+        });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const response = await worker.fetch(answerRequest(), routeEnv);
+    const body = await response.text();
+    const conversationLog = getConversationLog();
+
+    expect(body).toContain("Programme fees are listed here.");
+    expect(body).not.toContain('"rejected":true');
+    expect(getChatRequests()).toHaveLength(3);
+    expect(getChatRequests().filter((request) => request.stream === false)).toHaveLength(2);
+    expect(conversationLog).toMatchObject({
+      severity: "CRITICAL",
+      error: "pg_faqs_empty",
     });
   });
 });
