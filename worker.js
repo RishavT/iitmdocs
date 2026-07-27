@@ -1279,12 +1279,14 @@ async function searchWeaviate(query, limit, env) {
     try {
       data = JSON.parse(responseText);
     } catch (e) {
+      // Return the standard retrieval envelope so callers can log the real response failure.
       console.error('[DEBUG] Weaviate JSON parse error:', e.message);
       console.error('[DEBUG] Full response text:', responseText);
       return { items: [], error: `weaviate_response_malformed:${e.message}` };
     }
     console.log('[DEBUG] Weaviate JSON parsed successfully');
 
+    // A parsed value must still be a JSON object with the expected response shape.
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       console.error('[DEBUG] Weaviate response is not a valid JSON object:', responseText);
       return { items: [], error: "weaviate_response_malformed:not_an_object" };
@@ -1304,6 +1306,7 @@ async function searchWeaviate(query, limit, env) {
     }
 
     console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
+    // Keep usable documents even when GraphQL also reports partial errors.
     // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
     return {
       items: documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 })),
