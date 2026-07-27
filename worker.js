@@ -1192,8 +1192,10 @@ async function searchWeaviate(query, limit, env) {
     let queryVector;
     try {
       queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
-      if (!Array.isArray(queryVector)) {
-        throw new Error("Ollama embedding response is not an array");
+      const hasValidEmbedding =
+        Array.isArray(queryVector) && queryVector.length > 0 && queryVector.every(Number.isFinite);
+      if (!hasValidEmbedding) {
+        throw new Error("Ollama embedding response is not a non-empty array of finite numbers");
       }
     } catch (e) {
       console.error('[DEBUG] GCE query embedding error:', e?.message || String(e));
