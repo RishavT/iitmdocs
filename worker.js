@@ -1022,17 +1022,14 @@ async function answer(request, env) {
 
           console.log("[DEBUG] Both searches returned no usable context:", searchIssues.join(","));
 
-          const fallbackResponse = createSSEResponse(message, { rejected: true });
-          await fallbackResponse.body.pipeTo(
-            new WritableStream({
-              write: (chunk) => controller.enqueue(chunk),
-              close: () => {
-                logDuration(env, "total_query", Date.now() - startTime);
-                structuredLog("ERROR", "conversation_turn", logContext);
-                controller.close();
-              },
-            }),
-          );
+          const sseData = `data: ${JSON.stringify({
+            choices: [{ delta: { content: message } }],
+            rejected: true,
+          })}\n\ndata: [DONE]\n\n`;
+          controller.enqueue(encoder.encode(sseData));
+          logDuration(env, "total_query", Date.now() - startTime);
+          structuredLog("ERROR", "conversation_turn", logContext);
+          controller.close();
           return;
         }
 
