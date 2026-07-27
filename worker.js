@@ -1271,18 +1271,19 @@ async function searchWeaviate(query, limit, env) {
       return { items: [], error: "weaviate_response_malformed:not_an_object" };
     }
 
-    if (data.errors) {
+    const documents = data.data?.Get?.Document || [];
+    let graphqlError = null;
+    if (Array.isArray(data.errors) && data.errors.length) {
       const errorMessage = data.errors.map((e) => e.message).join(", ");
-      console.error('[DEBUG] Weaviate GraphQL error:', errorMessage);
-      return { items: [], error: `weaviate_graphql_error:${errorMessage}` };
+      console.error('[ERROR] Weaviate GraphQL error:', errorMessage);
+      graphqlError = `weaviate_graphql_error:${errorMessage}`;
     }
 
-    const documents = data.data?.Get?.Document || [];
     console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
     // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
     return {
       items: documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 })),
-      error: null,
+      error: graphqlError,
     };
   } catch (e) {
     console.error('[DEBUG] Weaviate search error:', e?.message || String(e));
