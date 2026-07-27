@@ -656,7 +656,20 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource };
+export {
+  handleFeedback,
+  structuredLog,
+  findSynonymMatch,
+  extractLanguage,
+  getCannotAnswerMessage,
+  SUPPORTED_LANGUAGES,
+  CONTACT_INFO,
+  sanitizeQuery,
+  rewriteQueryWithSource,
+  fetchPgFaqs,
+  searchContextIssues,
+  searchWeaviate,
+};
 
 export default {
   async fetch(request, env) {

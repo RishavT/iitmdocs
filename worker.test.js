@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery } from "./worker.js";
+import {
+  handleFeedback,
+  structuredLog,
+  findSynonymMatch,
+  extractLanguage,
+  getCannotAnswerMessage,
+  SUPPORTED_LANGUAGES,
+  CONTACT_INFO,
+  sanitizeQuery,
+  fetchPgFaqs,
+  searchContextIssues,
+  searchWeaviate,
+} from "./worker.js";
 
 // Mock console.log to capture structured logs
 const mockLogs = [];
@@ -1115,6 +1127,166 @@ Tags: qualifier, exam`,
       const result = await getFAQSuggestions("qualifier clearing", env, "english");
 
       expect(result).toContain("What should I do after clearing the qualifier?");
+    });
+  });
+});
+
+describe("Retrieval result envelopes", () => {
+  const localEnv = { DEPLOYMENT_MODE: "local", PG_FAQ_API_URL: "http://pg-faq-api:8000" };
+  let originalFetch;
+
+  beforeEach(() => {
+    originalFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  it("keeps retrieval errors ahead of empty-result causes", () => {
+    expect(
+      searchContextIssues(
+        { items: [], error: "weaviate_api_error:503" },
+        { items: [], error: null },
+      ),
+    ).toEqual(["weaviate_api_error:503", "pg_faqs_empty"]);
+  });
+
+  it("reports empty results when both services succeed without matches", () => {
+    expect(searchContextIssues({ items: [], error: null }, { items: [], error: null })).toEqual([
+      "weaviate_documents_empty",
+      "pg_faqs_empty",
+    ]);
+  });
+
+  it("reports no issues when either source provides context", () => {
+    expect(searchContextIssues({ items: [{ filename: "fees.md" }], error: null }, { items: [], error: null })).toEqual([
+      "pg_faqs_empty",
+    ]);
+  });
+
+  it("returns PG FAQ results on a successful response", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: [{ id: 1, question: "What are the fees?" }] }),
+    });
+
+    await expect(fetchPgFaqs("fees", 5, localEnv)).resolves.toEqual({
+      items: [{ id: 1, question: "What are the fees?" }],
+      error: null,
+    });
+  });
+
+  it("returns a PG FAQ HTTP error envelope", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => "unavailable",
+    });
+
+    await expect(fetchPgFaqs("fees", 5, localEnv)).resolves.toEqual({
+      items: [],
+      error: "pg_faq_api_error:503",
+    });
+  });
+
+  it("returns a PG FAQ malformed-response envelope", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ results: "not an array" }),
+    });
+
+    await expect(fetchPgFaqs("fees", 5, localEnv)).resolves.toEqual({
+      items: [],
+      error: "pg_faq_response_malformed",
+    });
+  });
+
+  it("returns a PG FAQ fetch-error envelope", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("network down"));
+
+    await expect(fetchPgFaqs("fees", 5, localEnv)).resolves.toEqual({
+      items: [],
+      error: "pg_faq_fetch_error:network down",
+    });
+  });
+
+  it("preserves Weaviate documents from a partial GraphQL response", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          data: { Get: { Document: [{ filename: "fees.md", _additional: { score: 0.8 } }] } },
+          errors: [{ message: "one optional field failed" }],
+        }),
+    });
+
+    await expect(searchWeaviate("fees", 2, localEnv)).resolves.toEqual({
+      items: [{ filename: "fees.md", _additional: { score: 0.8 }, relevance: 0.8 }],
+      error: "weaviate_graphql_error:one optional field failed",
+    });
+  });
+
+  it("reports a malformed Weaviate errors field without throwing", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ errors: "upstream unavailable" }),
+    });
+
+    await expect(searchWeaviate("fees", 2, localEnv)).resolves.toEqual({
+      items: [],
+      error: "weaviate_response_malformed:errors_not_array",
+    });
+  });
+
+  it("returns a Weaviate HTTP error envelope", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => "unavailable",
+    });
+
+    await expect(searchWeaviate("fees", 2, localEnv)).resolves.toEqual({
+      items: [],
+      error: "weaviate_api_error:503",
+    });
+  });
+
+  it("returns a Weaviate malformed-JSON envelope", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => "not json" });
+
+    const result = await searchWeaviate("fees", 2, localEnv);
+
+    expect(result.items).toEqual([]);
+    expect(result.error).toMatch(/^weaviate_response_malformed:/);
+  });
+
+  it("returns an unsupported deployment-mode envelope", async () => {
+    await expect(searchWeaviate("fees", 2, { DEPLOYMENT_MODE: "unknown" })).resolves.toEqual({
+      items: [],
+      error: "weaviate_config_error:unsupported_DEPLOYMENT_MODE_unknown",
+    });
+  });
+
+  it("returns a missing GCE configuration envelope", async () => {
+    await expect(searchWeaviate("fees", 2, { DEPLOYMENT_MODE: "gce" })).resolves.toEqual({
+      items: [],
+      error: "weaviate_config_error:missing_GCE_WEAVIATE_URL",
+    });
+  });
+
+  it("returns an embedding error when Ollama fails", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("Ollama unavailable"));
+
+    await expect(
+      searchWeaviate("fees", 2, {
+        DEPLOYMENT_MODE: "gce",
+        GCE_WEAVIATE_URL: "http://weaviate:8080",
+        GCE_OLLAMA_URL: "http://ollama:11434",
+      }),
+    ).resolves.toEqual({
+      items: [],
+      error: "weaviate_embedding_error:Ollama unavailable",
     });
   });
 });
