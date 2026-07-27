@@ -1273,10 +1273,15 @@ async function searchWeaviate(query, limit, env) {
 
     const documents = data.data?.Get?.Document || [];
     let graphqlError = null;
-    if (Array.isArray(data.errors) && data.errors.length) {
-      const errorMessage = data.errors.map((e) => e.message).join(", ");
-      console.error('[ERROR] Weaviate GraphQL error:', errorMessage);
-      graphqlError = `weaviate_graphql_error:${errorMessage}`;
+    if (data.errors !== undefined) {
+      if (!Array.isArray(data.errors)) {
+        console.error('[ERROR] Weaviate response has malformed errors:', data.errors);
+        graphqlError = "weaviate_response_malformed:errors_not_array";
+      } else if (data.errors.length) {
+        const errorMessage = data.errors.map((error) => error?.message || String(error)).join(", ");
+        console.error('[ERROR] Weaviate GraphQL error:', errorMessage);
+        graphqlError = `weaviate_graphql_error:${errorMessage}`;
+      }
     }
 
     console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
