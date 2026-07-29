@@ -778,24 +778,6 @@ async function fetchPgFaqs(query, k, env) {
   }
 }
 
-/**
- * Searches Weaviate for document chunks used by the chat answer.
- * Called while the PG FAQ search runs in parallel.
- * Returns [] when Weaviate is unavailable so the request can still use FAQs.
- *
- * Example:
- *   await searchWeaviateOrEmpty("grading formula", 2, env)
- *   returns [{ filename: "grading.md", relevance: 0.9, ... }] or []
- */
-async function searchWeaviateOrEmpty(query, limit, env) {
-  try {
-    return await searchWeaviate(query, limit, env);
-  } catch (error) {
-    logError("weaviate_search_failed", error, { query, limit });
-    return [];
-  }
-}
-
 function formatDbFaqSuggestions(dbFaqs, language = "english") {
   if (!dbFaqs || !dbFaqs.length) return "";
 
@@ -940,7 +922,7 @@ async function answer(request, env) {
         // These two searches do not depend on each other, so start both now.
         // This keeps the answer the same while waiting for the slower search only once.
         const [documents, dbFaqs] = await Promise.all([
-          searchWeaviateOrEmpty(cleanQuery, numDocs, env),
+          searchWeaviate(cleanQuery, numDocs, env),
           fetchPgFaqs(cleanQuery, 5, env),
         ]);
 
@@ -1064,128 +1046,141 @@ async function getOllamaEmbedding(text, ollamaUrl, model = "bge-m3") {
   return result.embedding;
 }
 
+/**
+ * Searches Weaviate for document chunks while the PG FAQ search runs.
+ * Returns [] after logging an error so the answer can still use FAQ context.
+ *
+ * Example:
+ *   await searchWeaviate("grading formula", 2, env)
+ *   returns [{ filename: "grading.md", relevance: 0.9, ... }] or []
+ */
 async function searchWeaviate(query, limit, env) {
-  console.log('[DEBUG] searchWeaviate() called, query:', query);
-
-  // Determine deployment mode: 'local' or 'gce'
-  const deploymentMode = env.DEPLOYMENT_MODE || "local";
-  console.log('[DEBUG] Deployment mode:', deploymentMode);
-
-  if (deploymentMode !== "local" && deploymentMode !== "gce") {
-    throw new Error(
-      `Unsupported DEPLOYMENT_MODE='${deploymentMode}'. Supported values: local, gce.`
-    );
-  }
-
-  // Configure Weaviate URL and headers based on mode
-  let weaviateUrl;
-  const embeddingHeaders = {
-    "Content-Type": "application/json",
-  };
-
-  if (deploymentMode === "local") {
-    // Local mode: connect to local Weaviate (no auth needed)
-    weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
-    console.log('[DEBUG] Using local Weaviate at:', weaviateUrl);
-  } else if (deploymentMode === "gce") {
-    // GCE mode: connect to remote Weaviate on GCE VM
-    weaviateUrl = env.GCE_WEAVIATE_URL;
-    if (!weaviateUrl) {
-      throw new Error("GCE_WEAVIATE_URL is required for DEPLOYMENT_MODE=gce");
-    }
-    console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
-  }
-
-  // Escape special characters in query to prevent GraphQL injection
-  const sanitizedQuery = query
-    .replace(/\\/g, "\\\\")  // Escape backslashes first
-    .replace(/"/g, '\\"')     // Escape quotes
-    .replace(/\n/g, " ")      // Replace newlines with spaces
-    .replace(/\r/g, " ")      // Replace carriage returns with spaces
-    .replace(/\t/g, " ");     // Replace tabs with spaces
-
-  console.log('[DEBUG] Fetching from Weaviate:', weaviateUrl);
-
-  let graphqlQuery;
-
-  if (deploymentMode === "gce") {
-    // GCE mode: get embedding from Ollama first, then use hybrid search with vector
-    const ollamaUrl = env.GCE_OLLAMA_URL;
-    const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
-
-    console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
-
-    if (!ollamaUrl) {
-      throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
-    }
-
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
-    const vectorStr = `[${queryVector.join(",")}]`;
-
-    // Use hybrid search combining BM25 keyword search with vector similarity
-    // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            vector: ${vectorStr}
-            alpha: 0.5
-          }
-          limit: ${limit}
-        ) {
-          filename filepath content file_size
-          _additional { score }
-        }
-      }
-    }`;
-  } else {
-    // Local mode: use hybrid search (Weaviate handles embedding for vector part)
-    // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
-    graphqlQuery = `{
-      Get {
-        Document(
-          hybrid: {
-            query: "${sanitizedQuery}"
-            alpha: 0.5
-          }
-          limit: ${limit}
-        ) {
-          filename filepath content file_size
-          _additional { score }
-        }
-      }
-    }`;
-  }
-
-  const weaviateGraphqlSearchStartTime = Date.now();
-  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-    method: "POST",
-    headers: embeddingHeaders,
-    body: JSON.stringify({ query: graphqlQuery }),
-  });
-  console.log("[DURATION] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
-
-  console.log('[DEBUG] Weaviate response received, status:', response.status);
-  const responseText = await response.text();
-  console.log('[DEBUG] Weaviate response text length:', responseText.length);
-  console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
-
-  let data;
   try {
-    data = JSON.parse(responseText);
-    console.log('[DEBUG] Weaviate JSON parsed successfully');
-  } catch (e) {
-    console.error('[DEBUG] Weaviate JSON parse error:', e.message);
-    console.error('[DEBUG] Full response text:', responseText);
-    throw new Error(`Failed to parse Weaviate response: ${e.message}`);
-  }
-  if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
+    console.log('[DEBUG] searchWeaviate() called, query:', query);
 
-  const documents = data.data?.Get?.Document || [];
-  console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
-  // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
-  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
+    // Determine deployment mode: 'local' or 'gce'
+    const deploymentMode = env.DEPLOYMENT_MODE || "local";
+    console.log('[DEBUG] Deployment mode:', deploymentMode);
+
+    if (deploymentMode !== "local" && deploymentMode !== "gce") {
+      throw new Error(
+        `Unsupported DEPLOYMENT_MODE='${deploymentMode}'. Supported values: local, gce.`
+      );
+    }
+
+    // Configure Weaviate URL and headers based on mode
+    let weaviateUrl;
+    const embeddingHeaders = {
+      "Content-Type": "application/json",
+    };
+
+    if (deploymentMode === "local") {
+      // Local mode: connect to local Weaviate (no auth needed)
+      weaviateUrl = env.LOCAL_WEAVIATE_URL || "http://weaviate:8080";
+      console.log('[DEBUG] Using local Weaviate at:', weaviateUrl);
+    } else if (deploymentMode === "gce") {
+      // GCE mode: connect to remote Weaviate on GCE VM
+      weaviateUrl = env.GCE_WEAVIATE_URL;
+      if (!weaviateUrl) {
+        throw new Error("GCE_WEAVIATE_URL is required for DEPLOYMENT_MODE=gce");
+      }
+      console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
+    }
+
+    // Escape special characters in query to prevent GraphQL injection
+    const sanitizedQuery = query
+      .replace(/\\/g, "\\\\")  // Escape backslashes first
+      .replace(/"/g, '\\"')     // Escape quotes
+      .replace(/\n/g, " ")      // Replace newlines with spaces
+      .replace(/\r/g, " ")      // Replace carriage returns with spaces
+      .replace(/\t/g, " ");     // Replace tabs with spaces
+
+    console.log('[DEBUG] Fetching from Weaviate:', weaviateUrl);
+
+    let graphqlQuery;
+
+    if (deploymentMode === "gce") {
+      // GCE mode: get embedding from Ollama first, then use hybrid search with vector
+      const ollamaUrl = env.GCE_OLLAMA_URL;
+      const embeddingModel = env.OLLAMA_MODEL || "bge-m3";
+
+      console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
+
+      if (!ollamaUrl) {
+        throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
+      }
+
+      const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel);
+      const vectorStr = `[${queryVector.join(",")}]`;
+
+      // Use hybrid search combining BM25 keyword search with vector similarity
+      // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
+      graphqlQuery = `{
+        Get {
+          Document(
+            hybrid: {
+              query: "${sanitizedQuery}"
+              vector: ${vectorStr}
+              alpha: 0.5
+            }
+            limit: ${limit}
+          ) {
+            filename filepath content file_size
+            _additional { score }
+          }
+        }
+      }`;
+    } else {
+      // Local mode: use hybrid search (Weaviate handles embedding for vector part)
+      // alpha: 0 = pure BM25, 1 = pure vector, 0.5 = balanced
+      graphqlQuery = `{
+        Get {
+          Document(
+            hybrid: {
+              query: "${sanitizedQuery}"
+              alpha: 0.5
+            }
+            limit: ${limit}
+          ) {
+            filename filepath content file_size
+            _additional { score }
+          }
+        }
+      }`;
+    }
+
+    const weaviateGraphqlSearchStartTime = Date.now();
+    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+      method: "POST",
+      headers: embeddingHeaders,
+      body: JSON.stringify({ query: graphqlQuery }),
+    });
+    console.log("[DURATION] weaviate_graphql_search took", Date.now() - weaviateGraphqlSearchStartTime, "ms");
+
+    console.log('[DEBUG] Weaviate response received, status:', response.status);
+    const responseText = await response.text();
+    console.log('[DEBUG] Weaviate response text length:', responseText.length);
+    console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log('[DEBUG] Weaviate JSON parsed successfully');
+    } catch (e) {
+      console.error('[DEBUG] Weaviate JSON parse error:', e.message);
+      console.error('[DEBUG] Full response text:', responseText);
+      throw new Error(`Failed to parse Weaviate response: ${e.message}`);
+    }
+    if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
+
+    const documents = data.data?.Get?.Document || [];
+    console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
+    // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
+    return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
+  } catch (error) {
+    logError("weaviate_search_failed", error, { query, limit });
+    return [];
+  }
 }
 
 async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
