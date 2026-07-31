@@ -1042,9 +1042,11 @@ async function answer(request, env) {
         console.log('[DEBUG] Detected language:', detectedLanguage);
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
-        // Search Weaviate for relevant documents using clean query (without language tag)
-        const documentResult = await searchWeaviate(cleanQuery, numDocs, env);
-        const faqResult = await fetchPgFaqs(cleanQuery, 5, env);
+        // These searches only need the cleaned query, so start them together.
+        const [documentResult, faqResult] = await Promise.all([
+          searchWeaviate(cleanQuery, numDocs, env),
+          fetchPgFaqs(cleanQuery, 5, env),
+        ]);
         const documents = documentResult?.items || [];
         const dbFaqs = faqResult?.items || [];
 
