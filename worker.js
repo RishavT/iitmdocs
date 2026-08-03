@@ -1017,14 +1017,14 @@ async function answer(request, env) {
           let rejectMessage = getCannotAnswerMessage("english", env);
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
-          const dbFaqs = await fetchPgFaqs(question, 5, env);
-          logContext.db_faqs = (dbFaqs || []).map((faq) => ({
+          const dbFaqResult = await fetchPgFaqs(question, 5, env);
+          const dbFaqs = dbFaqResult?.items || [];
+          logContext.db_faqs = dbFaqs.map((faq) => ({
             id: faq.id,
             cosine_similarity: faq.cosine_similarity,
             question: faq.question,
             answer: faq.answer,
           }));
-          const dbFaqs = dbFaqResult?.items || [];
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -1073,7 +1073,7 @@ async function answer(request, env) {
         }
 
         if (!documents.length && !dbFaqs.length) { // No usable context from either source
-          const message = getCannotAnswerMessage(detectedLanguage);
+          const message = getCannotAnswerMessage(detectedLanguage, env);
           logContext.rejection_reason = "no_search_results";
           logContext.response = message;
           logContext.error = searchIssues.join("; ") || "no_search_results";
