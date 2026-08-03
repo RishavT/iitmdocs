@@ -399,7 +399,7 @@ steps:
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
-          --set-env-vars "DEPLOYMENT_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},PG_FAQ_API_URL=$$PG_FAQ_API_URL"
+          --set-env-vars "DEPLOYMENT_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},PG_FAQ_API_URL=$$PG_FAQ_API_URL,GITHUB_BRANCH_BASE_URL=${_GITHUB_BRANCH_BASE_URL}"
 
 # Store images in Google Container Registry
 # Note: embed images are conditionally built, but worker and PG FAQ API images are always built
@@ -414,6 +414,7 @@ substitutions:
   _OPENAI_API_KEY: ''
   _CHAT_API_ENDPOINT: 'https://api.openai.com/v1/chat/completions'
   _CHAT_MODEL: 'gpt-4o-mini'
+  _GITHUB_BRANCH_BASE_URL: 'https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/'
 
 # 40 minutes timeout for first-time setup
 timeout: '2400s'

@@ -6,9 +6,11 @@
 // 2. If the question is out of scope, return a rejection message with FAQ hints.
 // 3. Remove the language tag from the rewritten query.
 // 4. Search Weaviate for document chunks, then search the PG FAQ API.
-// 5. Build the answer from the user's question, matching documents, and matching FAQs.
+// 5. If both searches return no usable context, stop with the standard cannot-answer message.
+// 6. Build the answer from the user's question, matching documents, and matching FAQs.
 // Example: "How do I reset my password?" becomes a clean search query, then the
 // document search and FAQ search provide context before the final answer is made.
+// If both searches fail or return nothing, no answer is generated.
 //
 // Project terms:
 // - Weaviate documents: indexed document chunks used as long-form context.
@@ -134,7 +136,8 @@ const CONTACT_INFO = {
   phone: '7850999966',
 };
 
-const PROGRAM_CONTACT_DETAILS_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/docs/program-contact-details.md";
+const DEFAULT_GITHUB_BRANCH_BASE_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/";
+const DEFAULT_PROGRAM_CONTACT_DETAILS_URL = `${DEFAULT_GITHUB_BRANCH_BASE_URL}docs/program-contact-details.md`;
 
 // Centralized CORS policy - allows cross-origin embedding of chatbot
 const CORS_HEADERS = {
@@ -148,21 +151,21 @@ const CANNOT_ANSWER_MESSAGES = {
   english: `I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
   You can reach out to us at ${CONTACT_INFO.email} or call us at ${CONTACT_INFO.phone}.
 
-Need program-wise contacts? [View all program contact details](${PROGRAM_CONTACT_DETAILS_URL}).`,
+Need program-wise contacts? [View all program contact details](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).`,
   hindi: `मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
 आप हमसे ${CONTACT_INFO.email} पर संपर्क कर सकते हैं या ${CONTACT_INFO.phone} पर कॉल कर सकते हैं
 
-क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें](${PROGRAM_CONTACT_DETAILS_URL})।
+क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL})।
 `,
   tamil: `மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
 நீங்கள் எங்களை ${CONTACT_INFO.email} இல் தொடர்பு கொள்ளலாம் அல்லது ${CONTACT_INFO.phone} என்ற எண்ணில் அழைக்கலாம்
 
-நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க](${PROGRAM_CONTACT_DETAILS_URL}).
+நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
 `,
   hinglish: `Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
 Aap humse ${CONTACT_INFO.email} par sampark kar sakte hain ya ${CONTACT_INFO.phone} par call kar sakte hain
 
-Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${PROGRAM_CONTACT_DETAILS_URL}).
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein](${DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
 `,
 };
 
@@ -199,9 +202,12 @@ function extractLanguage(rewrittenQuery) {
  * @param {string} language - The language code
  * @returns {string} - The translated message with contact info
  */
-function getCannotAnswerMessage(language) {
+function getCannotAnswerMessage(language, env) {
   const lang = (language || 'english').toLowerCase();
-  return CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
+  const message = CANNOT_ANSWER_MESSAGES[lang] || CANNOT_ANSWER_MESSAGES.english;
+  const branchBaseUrl = (env?.GITHUB_BRANCH_BASE_URL || DEFAULT_GITHUB_BRANCH_BASE_URL).replace(/\/?$/, "/");
+  const contactDetailsUrl = `${branchBaseUrl}docs/program-contact-details.md`;
+  return message.replaceAll(DEFAULT_PROGRAM_CONTACT_DETAILS_URL, contactDetailsUrl);
 }
 
 function isCannotAnswerResponse(text) {
@@ -676,7 +682,20 @@ Examples:
 }
 
 // Export functions for testing
-export { handleFeedback, structuredLog, findSynonymMatch, extractLanguage, getCannotAnswerMessage, SUPPORTED_LANGUAGES, CONTACT_INFO, sanitizeQuery, rewriteQueryWithSource };
+export {
+  handleFeedback,
+  structuredLog,
+  findSynonymMatch,
+  extractLanguage,
+  getCannotAnswerMessage,
+  SUPPORTED_LANGUAGES,
+  CONTACT_INFO,
+  sanitizeQuery,
+  rewriteQueryWithSource,
+  fetchPgFaqs,
+  searchContextIssues,
+  searchWeaviate,
+};
 
 export default {
   async fetch(request, env) {
@@ -699,6 +718,13 @@ export default {
     // Handle POST /feedback
     if (request.method == "POST" && url.pathname == "/feedback") {
       return await handleFeedback(request);
+    }
+
+    if (request.method == "GET" && url.pathname == "/github-config") {
+      return Response.json(
+        { githubBranchBaseUrl: env.GITHUB_BRANCH_BASE_URL || DEFAULT_GITHUB_BRANCH_BASE_URL },
+        { headers: CORS_HEADERS },
+      );
     }
 
     // Serve static assets with CORS headers for cross-origin embedding
@@ -746,7 +772,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
     if (!response.ok) {
       console.error("[DEBUG] PG FAQ API /faq/:id failed:", response.status);
       logContext.error = `PG FAQ lookup failed: ${response.status}`;
-      logContext.response = getCannotAnswerMessage("english");
+      logContext.response = getCannotAnswerMessage("english", env);
       logContext.latency_ms = Date.now() - startTime;
       structuredLog("INFO", "conversation_turn", logContext);
       return createSSEResponse(logContext.response, { rejected: true });
@@ -762,7 +788,7 @@ async function handleDirectFAQIdLookup(faqId, question, sessionId, conversationI
   } catch (error) {
     console.error("[DEBUG] PG FAQ id lookup error:", error?.message || String(error));
     logContext.error = error?.message || String(error);
-    logContext.response = getCannotAnswerMessage("english");
+    logContext.response = getCannotAnswerMessage("english", env);
     logContext.latency_ms = Date.now() - startTime;
     structuredLog("ERROR", "conversation_turn", logContext);
     return createSSEResponse(logContext.response, { rejected: true });
@@ -814,13 +840,17 @@ async function fetchPgFaqs(query, k, env) {
     if (!response.ok) {
       const text = await response.text();
       console.error("[DEBUG] PG FAQ API /search failed:", response.status, text);
-      return [];
+      return { items: [], error: `pg_faq_api_error:${response.status}` };
     }
     const data = await response.json();
-    return Array.isArray(data?.results) ? data.results : [];
+    if (!Array.isArray(data?.results)) {
+      console.error("[DEBUG] PG FAQ API /search returned malformed results");
+      return { items: [], error: "pg_faq_response_malformed" };
+    }
+    return { items: data.results, error: null };
   } catch (e) {
     console.error("[DEBUG] PG FAQ API /search error:", e?.message || String(e));
-    return [];
+    return { items: [], error: `pg_faq_fetch_error:${e?.message || String(e)}` };
   }
 }
 
@@ -840,6 +870,34 @@ function formatDbFaqSuggestions(dbFaqs, language = "english") {
     .map((faq, i) => `${i + 1}. ${faq.question} [FAQID:${faq.id}]`)
     .join("\n");
   return `\n\n${header}\n\n${suggestions}`;
+}
+
+/**
+ * Returns retrieval problems so logs show empty results or service failures.
+ * Called after Weaviate and PG FAQ API finish, before answer generation.
+ *
+ * Example:
+ * searchContextIssues({ items: [] }, { items: [{ id: 7 }] })
+ * returns ["weaviate_documents_empty"].
+ */
+function searchContextIssues(documentResult, faqResult) {
+  const documents = documentResult?.items || [];
+  const dbFaqs = faqResult?.items || [];
+  const reasons = [];
+
+  if (documentResult?.error) {
+    reasons.push(documentResult.error);
+  } else if (documents.length === 0) {
+    reasons.push("weaviate_documents_empty");
+  }
+
+  if (faqResult?.error) {
+    reasons.push(faqResult.error);
+  } else if (dbFaqs.length === 0) {
+    reasons.push("pg_faqs_empty");
+  }
+
+  return reasons;
 }
 
 /**
@@ -913,7 +971,7 @@ async function answer(request, env) {
     question: question,
     rewritten_query: null,
     query_source: "original", // "synonym", "llm", "original", or "rejected"
-    rejection_reason: null, // "prompt_injection", "fact_check_failed", or null
+    rejection_reason: null, // "prompt_injection", "fact_check_failed", "no_search_results", "cannot_answer", or null
     documents: [],
     db_faqs: [],
     response: null,
@@ -956,7 +1014,7 @@ async function answer(request, env) {
           logContext.rejection_reason = "prompt_injection";
           logContext.detected_language = "english";
           logContext.fact_check_passed = false;
-          let rejectMessage = getCannotAnswerMessage("english");
+          let rejectMessage = getCannotAnswerMessage("english", env);
 
           // Add "Did you mean?" suggestions from the Postgres FAQ DB (no LLM needed)
           const dbFaqs = await fetchPgFaqs(question, 5, env);
@@ -966,6 +1024,7 @@ async function answer(request, env) {
             question: faq.question,
             answer: faq.answer,
           }));
+          const dbFaqs = dbFaqResult?.items || [];
           rejectMessage += formatDbFaqSuggestions(dbFaqs, "english");
 
           logContext.response = rejectMessage;
@@ -990,8 +1049,10 @@ async function answer(request, env) {
         console.log('[DEBUG] Clean query for search:', cleanQuery);
 
         // Search Weaviate for relevant documents using clean query (without language tag)
-        const documents = await searchWeaviate(cleanQuery, numDocs, env);
-        const dbFaqs = await fetchPgFaqs(cleanQuery, 5, env);
+        const documentResult = await searchWeaviate(cleanQuery, numDocs, env);
+        const faqResult = await fetchPgFaqs(cleanQuery, 5, env);
+        const documents = documentResult?.items || [];
+        const dbFaqs = faqResult?.items || [];
 
         // Log document metadata (not full content)
         logContext.documents = (documents || []).map((doc) => ({
@@ -1004,6 +1065,32 @@ async function answer(request, env) {
           question: faq.question,
           answer: faq.answer,
         }));
+
+        const searchIssues = searchContextIssues(documentResult, faqResult);
+        if (searchIssues.length) {
+          logContext.search_result_causes = searchIssues;
+          logContext.error = searchIssues.join("; ");
+        }
+
+        if (!documents.length && !dbFaqs.length) { // No usable context from either source
+          const message = getCannotAnswerMessage(detectedLanguage);
+          logContext.rejection_reason = "no_search_results";
+          logContext.response = message;
+          logContext.error = searchIssues.join("; ") || "no_search_results";
+          logContext.latency_ms = Date.now() - startTime;
+
+          console.log("[DEBUG] Both searches returned no usable context:", searchIssues.join(","));
+
+          const sseData = `data: ${JSON.stringify({
+            choices: [{ delta: { content: message } }],
+            rejected: true,
+          })}\n\ndata: [DONE]\n\n`;
+          controller.enqueue(encoder.encode(sseData));
+          logDuration(env, "total_query", Date.now() - startTime);
+          structuredLog("CRITICAL", "conversation_turn", logContext);
+          controller.close();
+          return;
+        }
 
         // Stream documents first (single enqueue)
         if (documents?.length) {
@@ -1049,7 +1136,14 @@ async function answer(request, env) {
               // Log the conversation when stream closes
               logContext.latency_ms = Date.now() - startTime;
               logDuration(env, "total_query", Date.now() - startTime);
-              structuredLog("INFO", "conversation_turn", logContext);
+
+              // Retrieval issues are critical, while unrelated errors stay ERROR and successful turns stay INFO.
+              const severity = searchIssues.length
+                ? "CRITICAL"
+                : logContext.error
+                  ? "ERROR"
+                  : "INFO";
+              structuredLog(severity, "conversation_turn", logContext);
               controller.close();
             },
             abort: (reason) => {
@@ -1123,9 +1217,10 @@ async function searchWeaviate(query, limit, env) {
   console.log('[DEBUG] Deployment mode:', deploymentMode);
 
   if (deploymentMode !== "local" && deploymentMode !== "gce") {
-    throw new Error(
-      `Unsupported DEPLOYMENT_MODE='${deploymentMode}'. Supported values: local, gce.`
-    );
+    return {
+      items: [],
+      error: `weaviate_config_error:unsupported_DEPLOYMENT_MODE_${deploymentMode}`, // A Weaviate configuration problem should be logged as a retrieval cause. It should not crash the whole request before PG FAQ has a chance to return context.
+    };
   }
 
   // Configure Weaviate URL and headers based on mode
@@ -1142,7 +1237,7 @@ async function searchWeaviate(query, limit, env) {
     // GCE mode: connect to remote Weaviate on GCE VM
     weaviateUrl = env.GCE_WEAVIATE_URL;
     if (!weaviateUrl) {
-      throw new Error("GCE_WEAVIATE_URL is required for DEPLOYMENT_MODE=gce");
+      return { items: [], error: "weaviate_config_error:missing_GCE_WEAVIATE_URL" }; // This makes the failure visible in `search_result_causes` and lets the pipeline continue if PG FAQ has usable context.
     }
     console.log('[DEBUG] Using GCE Weaviate at:', weaviateUrl);
   }
@@ -1167,10 +1262,21 @@ async function searchWeaviate(query, limit, env) {
     console.log('[DEBUG] GCE query embedding config:', { ollamaUrl, embeddingModel });
 
     if (!ollamaUrl) {
-      throw new Error("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce");
+      return { items: [], error: "weaviate_config_error:missing_GCE_OLLAMA_URL" }; // In GCE mode, Weaviate search needs an Ollama embedding first. If that configuration is missing, the issue is now logged as a Weaviate retrieval cause instead of throwing error immediately.
     }
 
-    const queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
+    let queryVector;
+    try {
+      queryVector = await getOllamaEmbedding(query, ollamaUrl, embeddingModel, env);
+      const hasValidEmbedding =
+        Array.isArray(queryVector) && queryVector.length > 0 && queryVector.every(Number.isFinite);
+      if (!hasValidEmbedding) {
+        throw new Error("Ollama embedding response is not a non-empty array of finite numbers");
+      }
+    } catch (e) {
+      console.error('[DEBUG] GCE query embedding error:', e?.message || String(e));
+      return { items: [], error: "weaviate_embedding_error:" + (e?.message || String(e)) };
+    }
     const vectorStr = `[${queryVector.join(",")}]`;
 
     // Use hybrid search combining BM25 keyword search with vector similarity
@@ -1209,34 +1315,66 @@ async function searchWeaviate(query, limit, env) {
     }`;
   }
 
-  const weaviateGraphqlSearchStartTime = Date.now();
-  const response = await fetch(`${weaviateUrl}/v1/graphql`, {
-    method: "POST",
-    headers: embeddingHeaders,
-    body: JSON.stringify({ query: graphqlQuery }),
-  });
-  logDuration(env, "weaviate_graphql_search", Date.now() - weaviateGraphqlSearchStartTime);
-
-  console.log('[DEBUG] Weaviate response received, status:', response.status);
-  const responseText = await response.text();
-  console.log('[DEBUG] Weaviate response text length:', responseText.length);
-  console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
-
-  let data;
   try {
-    data = JSON.parse(responseText);
-    console.log('[DEBUG] Weaviate JSON parsed successfully');
-  } catch (e) {
-    console.error('[DEBUG] Weaviate JSON parse error:', e.message);
-    console.error('[DEBUG] Full response text:', responseText);
-    throw new Error(`Failed to parse Weaviate response: ${e.message}`);
-  }
-  if (data.errors) throw new Error(`Weaviate error: ${data.errors.map((e) => e.message).join(", ")}`);
+    const weaviateGraphqlSearchStartTime = Date.now();
+    const response = await fetch(`${weaviateUrl}/v1/graphql`, {
+      method: "POST",
+      headers: embeddingHeaders,
+      body: JSON.stringify({ query: graphqlQuery }),
+    });
+    logDuration(env, "weaviate_graphql_search", Date.now() - weaviateGraphqlSearchStartTime);
 
-  const documents = data.data?.Get?.Document || [];
-  console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
-  // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
-  return documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 }));
+    console.log('[DEBUG] Weaviate response received, status:', response.status);
+    const responseText = await response.text();
+    console.log('[DEBUG] Weaviate response text length:', responseText.length);
+    console.log('[DEBUG] Weaviate response preview:', responseText.substring(0, 200));
+
+    if (!response.ok) {
+      console.error('[DEBUG] Weaviate HTTP error:', response.status, responseText);
+      return { items: [], error: `weaviate_api_error:${response.status}` };
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (e) {
+      // Return the standard retrieval envelope so callers can log the real response failure.
+      console.error('[DEBUG] Weaviate JSON parse error:', e.message);
+      console.error('[DEBUG] Full response text:', responseText);
+      return { items: [], error: `weaviate_response_malformed:${e.message}` };
+    }
+    console.log('[DEBUG] Weaviate JSON parsed successfully');
+
+    // A parsed value must still be a JSON object with the expected response shape.
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      console.error('[DEBUG] Weaviate response is not a valid JSON object:', responseText);
+      return { items: [], error: "weaviate_response_malformed:not_an_object" };
+    }
+
+    const documents = data.data?.Get?.Document || [];
+    let graphqlError = null;
+    if (data.errors !== undefined) {
+      if (!Array.isArray(data.errors)) {
+        console.error('[ERROR] Weaviate response has malformed errors:', data.errors);
+        graphqlError = "weaviate_response_malformed:errors_not_array";
+      } else if (data.errors.length) {
+        const errorMessage = data.errors.map((error) => error?.message || String(error)).join(", ");
+        console.error('[ERROR] Weaviate GraphQL error:', errorMessage);
+        graphqlError = `weaviate_graphql_error:${errorMessage}`;
+      }
+    }
+
+    console.log('[DEBUG] Weaviate returned', documents.length, 'documents');
+    // Keep usable documents even when GraphQL also reports partial errors.
+    // Hybrid search returns 'score' (higher is better), not 'distance' (lower is better)
+    return {
+      items: documents.map((doc) => ({ ...doc, relevance: doc._additional?.score || 0 })),
+      error: graphqlError,
+    };
+  } catch (e) {
+    console.error('[DEBUG] Weaviate search error:', e?.message || String(e));
+    return { items: [], error: `weaviate_fetch_error:${e?.message || String(e)}` };
+  }
 }
 
 async function generateAnswer(question, documents, dbFaqs, history, env, logContext = null, language = 'english') {
@@ -1285,7 +1423,7 @@ STRICTLY REFUSE to answer:
 - Any help with cheating, academic dishonesty, or bypassing exam rules
 - Questions completely unrelated to the IIT Madras BS programme
 
-For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language)}"
+For cheating/unrelated questions, respond in ${language}: "${getCannotAnswerMessage(language, env)}"
 
 SPECIAL CASE - Emotional/psychological distress:
 If the user expresses significant signs of emotional, psychological distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, bad money problems, etc.):
@@ -1475,7 +1613,7 @@ Current date: ${new Date().toISOString().split("T")[0]}.${contextNote}`;
       }
     } else {
       // Get "cannot answer" message in the detected language (no API call needed)
-      finalAnswer = getCannotAnswerMessage(language);
+      finalAnswer = getCannotAnswerMessage(language, env);
 
       // Show the same FAQs that were already retrieved from the DB for this request.
       finalAnswer += formatDbFaqSuggestions(dbFaqs, language);
