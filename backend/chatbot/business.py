@@ -126,6 +126,8 @@ def is_cannot_answer_response(text: Optional[str]) -> bool:
         return True
     if "please rephrase your question" in normalized:
         return True
+
+    # Check whether the response starts like any standard "cannot answer" message.
     for message in CANNOT_ANSWER_MESSAGES.values():
         prefix = re.sub(r"\s+", " ", message.lower()).strip()[:80]
         if prefix and prefix in normalized:
@@ -256,6 +258,8 @@ QUERY_SYNONYMS = [
      "Masters MTech MS PhD GATE CFTI route CGPA 8.0 research campus upgrade"),
 ]
 
+# Compile each synonym into a case-insensitive whole-word regex for query matching.
+# For example: "Can you explain the grading policy?" can be rewritten using the canonical query: "grading formula score calculation GAA quiz end term OPPE weightage"
 COMPILED_SYNONYMS = [
     ([re.compile(rf"\b{re.escape(p)}\b", re.IGNORECASE) for p in patterns], canonical)
     for patterns, canonical in QUERY_SYNONYMS
@@ -300,6 +304,15 @@ STOPWORDS = {
 
 
 def remove_stop_words(query: str) -> str:
+    """Remove common filler words before synonym matching and retrieval.
+
+    Words such as "the"" and "how" are removed, while important words such
+    as "not" and "only" are kept. If every word would be removed, return
+    the original query so the search still has useful input.
+
+    Example: "What is the grading policy?" becomes
+    "grading policy?".
+    """
     words = re.split(r"\s+", query.strip())
     filtered = []
     for word in words:
