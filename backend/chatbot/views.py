@@ -21,6 +21,12 @@ from .services.logs import structured_log
 
 
 def _sse_response(generator) -> StreamingHttpResponse:
+    """Return a streaming HTTP response for chatbot Server-Sent Events.
+
+    ``generator`` yields already-formatted events while ``AnswerView.post``
+    processes a question. The returned response sends those events gradually
+    to the browser and disables buffering so the user sees each update promptly.
+    """
     resp = StreamingHttpResponse(generator, content_type="text/event-stream")
     resp["Cache-Control"] = "no-cache"
     resp["X-Accel-Buffering"] = "no"  # disable proxy buffering so events flush promptly
