@@ -23,7 +23,7 @@ from .services.logs import structured_log
 def _sse_response(generator) -> StreamingHttpResponse:
     """Return a streaming HTTP response for chatbot Server-Sent Events.
 
-    ``generator`` yields already-formatted events while ``AnswerView.post``
+    `generator` yields already-formatted events while `AnswerView.post`
     processes a question. The returned response sends those events gradually
     to the browser and disables buffering so the user sees each update promptly.
     """
@@ -43,7 +43,16 @@ def _json_body(request) -> dict:
 
 @method_decorator(csrf_exempt, name="dispatch")
 class AnswerView(View):
-    """POST /answer -> text/event-stream (port of worker.js answer())."""
+    """Handle the main chatbot question endpoint.
+
+    Flow: read the JSON body, validate `q` and `ndocs`, choose either a
+    direct FAQ lookup or the normal answer pipeline, and return a
+    `text/event-stream` response. The pipeline performs rewriting, retrieval,
+    answer generation, and fact-checking while this view stays focused on HTTP.
+
+    Example: `POST /answer` with `{"q": "How are grades calculated?"}`
+    returns events that the browser can display as the answer is produced.
+    """
 
     def post(self, request):
         body = _json_body(request)
@@ -84,7 +93,16 @@ class AnswerView(View):
 
 
 class FeedbackView(APIView):
-    """POST /feedback (port of worker.js handleFeedback)."""
+    """Receive and record feedback about a chatbot response.
+
+    Flow: read the JSON fields, validate the required identifiers and allowed
+    feedback values, trim optional feedback text, write a structured log, and
+    return a small JSON success response. This view records feedback; it does
+    not change the generated answer or store feedback in a database.
+
+    Example: `POST /feedback` with `feedback_type="up"` returns
+    `{"success": true}` when the required identifiers are present.
+    """
 
     VALID_FEEDBACK_TYPES = ("up", "down", "report")
     VALID_CATEGORIES = ("wrong_info", "outdated", "unhelpful", "other")
@@ -131,7 +149,17 @@ class FeedbackView(APIView):
 
 
 class SearchView(APIView):
-    """POST /search — FAQ semantic search (compat; was the FastAPI service)."""
+    """Search the FAQ database for questions similar to a user query.
+
+    Flow: read `q` and `k`, validate their values, call the FAQ search
+    service for embeddings and PostgreSQL lookup, map service failures to HTTP
+    status codes, and return matching FAQ rows as JSON. This endpoint preserves
+    the old FastAPI FAQ API contract for callers that need search results
+    directly.
+
+    Example: `POST /search` with `{"q": "grading", "k": 5}` returns up
+    to five FAQ results.
+    """
 
     def post(self, request):
         body = request.data if isinstance(request.data, dict) else {}
@@ -160,7 +188,15 @@ class SearchView(APIView):
 
 
 class FaqDetailView(APIView):
-    """GET /faq/<id> — direct FAQ lookup (compat)."""
+    """Return one FAQ by its database id.
+
+    Flow: receive `faq_id` from the URL, ask the FAQ service for the matching
+    row, return the row as JSON, or return `404` when the id does not exist.
+    This supports direct FAQ click-through from suggestions and preserves the
+    old FAQ API behavior.
+
+    Example: `GET /faq/42` returns the FAQ with id `42` if it exists.
+    """
 
     def get(self, request, faq_id):
         try:
@@ -173,7 +209,12 @@ class FaqDetailView(APIView):
 
 
 class HealthView(APIView):
-    """GET /health."""
+    """Confirm that the Django HTTP application is responding.
+
+    Flow: receive `GET /health` and return `{"ok": true}`. This is a
+    lightweight liveness check for deployment or monitoring systems; it does
+    not verify that Weaviate, Ollama, or PostgreSQL are healthy.
+    """
 
     def get(self, request):
         return Response({"ok": True})
