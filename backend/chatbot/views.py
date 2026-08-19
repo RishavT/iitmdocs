@@ -177,8 +177,6 @@ class SearchView(APIView):
 
         try:
             results = faq.search(q, k)
-        except faq.FaqTooManyConcurrent:
-            return Response({"detail": "Too many concurrent searches"}, status=429)
         except faq.FaqEmbeddingError:
             return Response({"detail": "Embedding service failed"}, status=502)
         except faq.FaqDatabaseError:

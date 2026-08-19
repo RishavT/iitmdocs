@@ -1,7 +1,7 @@
 """FAQ semantic search — replaces the FastAPI PG FAQ API by reusing its data layer.
 
-This ports the thin HTTP wrapper from pg/faq_api/main.py (Ollama embedding, the
-BoundedSemaphore concurrency guard, and the 429/502/500 error mapping) but calls
+This ports the thin HTTP wrapper from pg/faq_api/main.py (Ollama embedding and
+the 502/500 error mapping) but calls
 the EXISTING pg.faq_api.repository / orm functions directly — the same code path
 embed.py uses. No separate service, no HTTP hop, one pgvector implementation.
 """
@@ -16,13 +16,8 @@ from .. import appconfig
 
 OLLAMA_TIMEOUT_SECONDS = 60
 
-_lock = threading.Lock()
+_lock = threading.Lock() # protects the lazy creation of the database session factory
 _session_factory = None
-_semaphore = None
-
-
-class FaqTooManyConcurrent(Exception):
-    """Search-slot semaphore exhausted (-> HTTP 429)."""
 
 
 class FaqEmbeddingError(Exception):
@@ -34,8 +29,17 @@ class FaqDatabaseError(Exception):
 
 
 def _get_session_factory():
-    global _session_factory
+    global _session_factory 
+    # A session_factory is a reusable session creator for the database
+    # A database session is a temporary connection/context used to:
+
+    # 1. Connect to PostgreSQL.
+    # 2. Run queries.
+    # 3. Commit or roll back changes.
+    # 4. Close the connection safely.
+
     if _session_factory is None:
+        # Without the lock, two requests arriving at the same time could both see _session_factory is None and create two separate engines/factories.
         with _lock:
             if _session_factory is None:
                 # Lazy import + connect so unrelated code (unit tests) needn't reach Postgres.
@@ -45,17 +49,8 @@ def _get_session_factory():
     return _session_factory
 
 
-def _get_semaphore():
-    global _semaphore
-    if _semaphore is None:
-        with _lock:
-            if _semaphore is None:
-                _semaphore = threading.BoundedSemaphore(appconfig.faq_search_max_concurrent())
-    return _semaphore
-
-
 def request_embedding(text: str, ollama_url: str, model: str):
-    """Port of pg/faq_api/main.py request_embedding (urllib, dimension-checked)."""
+    """Get embedding from Ollama for the given text."""
     payload = json.dumps({"model": model, "prompt": text}).encode("utf-8")
     req = urllib.request.Request(
         f"{ollama_url.rstrip('/')}/api/embeddings",
@@ -85,40 +80,45 @@ def request_embedding(text: str, ollama_url: str, model: str):
 
 
 def search(q: str, k: int):
-    """Semantic FAQ search (was POST /search). Raises the mapped Faq* exceptions."""
+    """
+    Search the FAQ database for the k most relevant entries to the query q.
+    Returns a list of dicts with keys: id, question, answer, cosine_similarity.
+    """
     from pg.faq_api.orm import session_scope
     from pg.faq_api.repository import search_faqs_by_embedding
 
-    semaphore = _get_semaphore()
-    if not semaphore.acquire(blocking=False):
-        raise FaqTooManyConcurrent("Too many concurrent searches")
     try:
-        try:
-            query_vec = request_embedding(q, appconfig.faq_ollama_url(), appconfig.ollama_model())
-        except Exception as exc:  # noqa: BLE001
-            raise FaqEmbeddingError("Embedding service failed") from exc
+        query_vec = request_embedding(q, appconfig.faq_ollama_url(), appconfig.ollama_model())
+    except Exception as exc:  # noqa: BLE001
+        raise FaqEmbeddingError("Embedding service failed") from exc
 
-        try:
-            with session_scope(_get_session_factory()) as session:
-                rows = search_faqs_by_embedding(session, query_vec, k)
-        except Exception as exc:  # noqa: BLE001
-            raise FaqDatabaseError("Internal error") from exc
+    try:
+        
+        with session_scope(_get_session_factory()) as session:
+            rows = search_faqs_by_embedding(session, query_vec, k)
+            # Meaning: Create a database session
+            # → run the FAQ search
+            # → close the session safely
+            # The factory itself is not one active database session. It is a reusable session-making tool.
+    except Exception as exc:
+        raise FaqDatabaseError("Internal error") from exc
 
-        return [
-            {
-                "id": row.id,
-                "question": row.question,
-                "answer": row.answer,
-                "cosine_similarity": row.cosine_similarity,
-            }
-            for row in rows
-        ]
-    finally:
-        semaphore.release()
+    return [
+        {
+            "id": row.id,
+            "question": row.question,
+            "answer": row.answer,
+            "cosine_similarity": row.cosine_similarity,
+        }
+        for row in rows
+    ]
 
 
 def get_faq(faq_id: int):
-    """Direct FAQ lookup (was GET /faq/{id}). Returns dict or None (404)."""
+    """
+    Returns the FAQ entry with the given ID, or None if not found.
+    Returns a dict with keys: id, question, answer, cosine_similarity. NOTE that cosine_similarity is always 1.0 for a direct lookup by ID.
+    """
     from pg.faq_api.orm import session_scope
     from pg.faq_api.repository import get_faq_by_id
 

@@ -57,11 +57,6 @@ def faq_ollama_url() -> str:
     return os.getenv("OLLAMA_URL", "http://ollama:11434")
 
 
-def faq_search_max_concurrent() -> int:
-    """Return the maximum number of FAQ searches allowed at the same time."""
-    return int(os.getenv("FAQ_SEARCH_MAX_CONCURRENT", "4"))
-
-
 def embedding_dimension() -> int:
     """Return the vector size expected by the FAQ semantic-search database."""
     try:
