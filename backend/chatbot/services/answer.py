@@ -50,6 +50,8 @@ def _relevance(doc) -> float:
         return 0.0
 
 
+# TODO: Reuse HistoryMessageSerializer for role/content validation while keeping
+# these service-level limits and the current behavior of skipping invalid messages.
 def _validate_history(history):
     if not isinstance(history, list):
         return []
@@ -146,23 +148,28 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
     rejected_for_history = False
     rejection_reason = None
 
-    if has_raahat:
-        other_statement_count = count_statements(other_chunk)
+    if has_raahat: # If the answer contains RAAHAT content
+        other_statement_count = count_statements(other_chunk) # count of non-RAAHAT statements in the generated answer
         if other_statement_count > 2:
             is_other_valid = check_response(other_chunk, context, validated_history)
-            if not is_other_valid and len(validated_history) > 0:
+            if not is_other_valid and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
                 is_other_valid = check_response(other_chunk, context, [])
             fact_check_passed = is_other_valid
-            if is_other_valid:
+
+            if is_other_valid: # If the other chunk is valid, we can include it in the final answer along with the standard RAAHAT message.
                 final_answer = other_chunk + "\n\n---\n\n" + STANDARD_RAAHAT_MESSAGE
-            else:
+
+            else: # If the other chunk is not valid, we still want to provide the RAAHAT message, but we don't want to include the invalid content.
                 final_answer = STANDARD_RAAHAT_MESSAGE
-        else:
+                # TODO: Set rejection_reason to "fact_check_failed" here.
+
+        else: # If there are two or fewer non-RAAHAT statements, skip fact-checking and return only the standard RAAHAT message.
             final_answer = STANDARD_RAAHAT_MESSAGE
             fact_check_passed = True
-    else:
+
+    else: # If the answer does not contain RAAHAT content
         is_correct = check_response(answer_text, context, validated_history)
-        if not is_correct and len(validated_history) > 0:
+        if not is_correct and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
             is_correct = check_response(answer_text, context, [])
         fact_check_passed = is_correct
 
