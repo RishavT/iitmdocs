@@ -9,6 +9,7 @@ Public contract (must match the old Worker + FAQ API byte-for-byte):
 Everything else (GET /, /qa.html, /qa.js, ...) is served from static/ by WhiteNoise.
 """
 from django.urls import path
+from django.views.generic import RedirectView
 
 from chatbot import views
 
@@ -18,4 +19,5 @@ urlpatterns = [
     path("search", views.SearchView.as_view(), name="search"),
     path("faq/<int:faq_id>", views.FaqDetailView.as_view(), name="faq-detail"),
     path("health", views.HealthView.as_view(), name="health"),
+    path("qa", RedirectView.as_view(url="/qa.html", query_string=True), name="qa"),
 ]
