@@ -50,8 +50,6 @@ def _relevance(doc) -> float:
         return 0.0
 
 
-# TODO: Reuse HistoryMessageSerializer for role/content validation while keeping
-# these service-level limits and the current behavior of skipping invalid messages.
 def _validate_history(history):
     if not isinstance(history, list):
         return []
