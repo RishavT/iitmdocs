@@ -1431,6 +1431,63 @@ describe("POST /answer retrieval control flow", () => {
     });
   });
 
+  it("starts both retrieval calls before either one finishes", async () => {
+    let finishWeaviate;
+    let finishFaqs;
+    const weaviateResponse = new Promise((resolve) => {
+      finishWeaviate = resolve;
+    });
+    const faqResponse = new Promise((resolve) => {
+      finishFaqs = resolve;
+    });
+    const startedUrls = [];
+
+    global.fetch = vi.fn().mockImplementation((url) => {
+      if (url.includes("/v1/graphql")) {
+        startedUrls.push("weaviate");
+        return weaviateResponse;
+      }
+      if (url.includes("/search")) {
+        startedUrls.push("faqs");
+        return faqResponse;
+      }
+      if (url === routeEnv.CHAT_API_ENDPOINT) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: '{"approved":"YES","incorrect":[]}' } }],
+          }),
+        });
+      }
+      throw new Error(`Unexpected fetch URL: ${url}`);
+    });
+
+    const responsePromise = worker.fetch(answerRequest(), routeEnv);
+
+    await vi.waitFor(() => {
+      expect(startedUrls).toEqual(["weaviate", "faqs"]);
+    });
+
+    finishWeaviate({
+      ok: true,
+      text: async () =>
+        JSON.stringify({
+          data: { Get: { Document: [] } },
+        }),
+    });
+    finishFaqs({
+      ok: true,
+      json: async () => ({
+        results: [{ id: "faq-1", question: "What are the fees?", answer: "See the fee table." }],
+      }),
+    });
+
+    const response = await responsePromise;
+    await response.text();
+
+    expect(startedUrls).toEqual(["weaviate", "faqs"]);
+  });
+
   it("logs FAQ questions and answers for normal retrieval", async () => {
     global.fetch = vi.fn().mockImplementation((url) => {
       if (url.includes("/v1/graphql")) {
@@ -1464,32 +1521,6 @@ describe("POST /answer retrieval control flow", () => {
         return Promise.resolve({
           ok: true,
           json: async () => ({ choices: [{ message: { content: contentByCall[chatCallNumber] } }] }),
-  it("starts both retrieval calls before either one finishes", async () => {
-    let finishWeaviate;
-    let finishFaqs;
-    const weaviateResponse = new Promise((resolve) => {
-      finishWeaviate = resolve;
-    });
-    const faqResponse = new Promise((resolve) => {
-      finishFaqs = resolve;
-    });
-    const startedUrls = [];
-
-    global.fetch = vi.fn().mockImplementation((url) => {
-      if (url.includes("/v1/graphql")) {
-        startedUrls.push("weaviate");
-        return weaviateResponse;
-      }
-      if (url.includes("/search")) {
-        startedUrls.push("faqs");
-        return faqResponse;
-      }
-      if (url === routeEnv.CHAT_API_ENDPOINT) {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({
-            choices: [{ message: { content: '{"approved":"YES","incorrect":[]}' } }],
-          }),
         });
       }
       throw new Error(`Unexpected fetch URL: ${url}`);
@@ -1543,29 +1574,5 @@ describe("POST /answer retrieval control flow", () => {
         },
       ],
     });
-    const responsePromise = worker.fetch(answerRequest(), routeEnv);
-
-    await vi.waitFor(() => {
-      expect(startedUrls).toEqual(["weaviate", "faqs"]);
-    });
-
-    finishWeaviate({
-      ok: true,
-      text: async () =>
-        JSON.stringify({
-          data: { Get: { Document: [] } },
-        }),
-    });
-    finishFaqs({
-      ok: true,
-      json: async () => ({
-        results: [{ id: "faq-1", question: "What are the fees?", answer: "See the fee table." }],
-      }),
-    });
-
-    const response = await responsePromise;
-    await response.text();
-
-    expect(startedUrls).toEqual(["weaviate", "faqs"]);
   });
 });
