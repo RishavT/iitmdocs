@@ -1,5 +1,6 @@
 """Pipeline SSE-order + logging tests (services mocked — no network/DB)."""
 import json
+import threading
 from unittest import mock
 
 from django.test import SimpleTestCase
@@ -102,6 +103,39 @@ class AnswerEventsTests(SimpleTestCase):
         m_gen.assert_called_once()
         self.assertEqual(m_log.call_args.args[:2], ("CRITICAL", "conversation_turn"))
         self.assertEqual(m_log.call_args.kwargs["search_result_causes"], ["weaviate_fetch_error:down"])
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_starts_both_retrieval_calls_together(self, m_rewrite, m_weaviate, m_faq, m_gen, _m_log):
+        barrier = threading.Barrier(2)
+
+        def document_search(*_args):
+            barrier.wait(timeout=1)
+            return {"items": [{"filename": "fees.md", "content": "c", "relevance": 0.8}], "error": None}
+
+        def faq_search(*_args):
+            barrier.wait(timeout=1)
+            return {"items": [{"id": 3, "question": "Fee?", "answer": "32000"}], "error": None}
+
+        m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
+        m_weaviate.side_effect = document_search
+        m_faq.search_result.side_effect = faq_search
+        m_gen.return_value = {
+            "final_answer": "The fee is 32000",
+            "rejected": False,
+            "fact_check_passed": True,
+            "contains_raahat": False,
+            "rejection_reason": None,
+        }
+
+        chunks = list(pipeline.answer_events("what is the fee", 2, [], "s", "m", None))
+
+        self.assertTrue("".join(chunks).rstrip().endswith("data: [DONE]"))
+        m_weaviate.assert_called_once_with("fees", 2)
+        m_faq.search_result.assert_called_once_with("fees", 5)
 
     @mock.patch("chatbot.services.pipeline.structured_log")
     @mock.patch("chatbot.services.pipeline.faq")

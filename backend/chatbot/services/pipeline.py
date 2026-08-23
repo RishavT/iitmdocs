@@ -5,6 +5,7 @@ Each function is a generator that yields SSE strings and emits the exact
 """
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import re
 import time
 
@@ -49,6 +50,23 @@ def search_context_issues(document_result, faq_result):
         reasons.append("pg_faqs_empty")
 
     return reasons
+
+
+def retrieve_context(query, num_docs):
+    """Run independent document and FAQ searches at the same time.
+
+    Called once per accepted question. Both results are collected before any
+    references or answer text are emitted, so public SSE ordering is unchanged.
+
+    Example: ``retrieve_context("fee structure", 2)`` returns two result
+    envelopes: first Weaviate, then FAQ search.
+    """
+    # ASSUMPTION: each FAQ search creates its own database session, so it is safe
+    # to run beside the independent Weaviate HTTP request.
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        document_future = executor.submit(search_weaviate, query, num_docs)
+        faq_future = executor.submit(faq.search_result, query, 5)
+        return document_future.result(), faq_future.result()
 
 
 def answer_events(question, num_docs, history, session_id, message_id, username):
@@ -99,8 +117,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         clean_query = _LANG_TAG_RE.sub("", search_query).strip()
         log_ctx["detected_language"] = detected_language
 
-        document_result = search_weaviate(clean_query, num_docs)
-        faq_result = faq.search_result(clean_query, 5)
+        document_result, faq_result = retrieve_context(clean_query, num_docs)
         documents = document_result.get("items") or []
         db_faqs = faq_result.get("items") or []
 
