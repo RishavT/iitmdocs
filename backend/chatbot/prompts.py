@@ -53,7 +53,11 @@ Examples:
 
 def build_answer_system_prompt(language: str, current_date: str) -> str:
     """System prompt for answer generation (worker.js generateAnswer)."""
-    language_instruction = "" if language == "english" else f" Respond in {language}."
+    language_instruction = (
+        " Always respond in English."
+        if language == "english"
+        else f" Always respond in {language}."
+    )
     context_note = ""
     return f"""You are a helpful assistant answering questions about the IIT Madras BS programme, being an expert at understanding user queries, reading documents, and giving factually correct answers.
 
