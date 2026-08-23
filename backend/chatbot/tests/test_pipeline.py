@@ -85,6 +85,7 @@ class AnswerEventsTests(SimpleTestCase):
 
         chunks = list(pipeline.answer_events("unknown question", 2, [], "s", "m", None))
 
+        self.assertTrue("".join(chunks).rstrip().endswith("data: [DONE]"))
         payload = json.loads(_payloads(chunks)[0])
         self.assertTrue(payload["rejected"])
         self.assertIn("don't have the information", payload["choices"][0]["delta"]["content"])
@@ -121,6 +122,48 @@ class AnswerEventsTests(SimpleTestCase):
         m_gen.assert_called_once()
         self.assertEqual(m_log.call_args.args[:2], ("CRITICAL", "conversation_turn"))
         self.assertEqual(m_log.call_args.kwargs["search_result_causes"], ["weaviate_fetch_error:down"])
+        self.assertEqual(m_log.call_args.kwargs["error"], "weaviate_fetch_error:down")
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_faq_failure_with_documents_still_generates(
+        self,
+        m_rewrite,
+        m_weaviate,
+        m_faq,
+        m_gen,
+        m_log,
+    ):
+        m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
+        m_weaviate.return_value = {
+            "items": [{"filename": "fees.md", "content": "Programme fees", "relevance": 0.9}],
+            "error": None,
+        }
+        m_faq.search_result.return_value = {
+            "items": [],
+            "error": "pg_faq_database_error",
+        }
+        m_gen.return_value = {
+            "final_answer": "Programme fees are listed here.",
+            "rejected": False,
+            "fact_check_passed": True,
+            "contains_raahat": False,
+            "rejection_reason": None,
+        }
+
+        chunks = list(pipeline.answer_events("what is the fee", 2, [], "s", "m", None))
+
+        self.assertIn("Programme fees are listed here.", "".join(chunks))
+        m_gen.assert_called_once()
+        self.assertEqual(m_log.call_args.args[:2], ("CRITICAL", "conversation_turn"))
+        self.assertEqual(
+            m_log.call_args.kwargs["search_result_causes"],
+            ["pg_faq_database_error"],
+        )
+        self.assertEqual(m_log.call_args.kwargs["error"], "pg_faq_database_error")
 
     @mock.patch("chatbot.services.pipeline.structured_log")
     @mock.patch("chatbot.services.pipeline.generate_answer")
