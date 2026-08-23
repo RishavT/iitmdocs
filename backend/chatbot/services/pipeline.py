@@ -28,6 +28,29 @@ def _elapsed_ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)
 
 
+def search_context_issues(document_result, faq_result):
+    """Describe empty or failed retrieval sources before answer generation.
+
+    Example: a successful FAQ result plus no documents returns
+    ``["weaviate_documents_empty"]``.
+    """
+    documents = (document_result or {}).get("items") or []
+    db_faqs = (faq_result or {}).get("items") or []
+    reasons = []
+
+    if (document_result or {}).get("error"):
+        reasons.append(document_result["error"])
+    elif not documents:
+        reasons.append("weaviate_documents_empty")
+
+    if (faq_result or {}).get("error"):
+        reasons.append(faq_result["error"])
+    elif not db_faqs:
+        reasons.append("pg_faqs_empty")
+
+    return reasons
+
+
 def answer_events(question, num_docs, history, session_id, message_id, username):
     """Main /answer pipeline (non-faq_id path)."""
     start_time = time.monotonic()
@@ -76,8 +99,10 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         clean_query = _LANG_TAG_RE.sub("", search_query).strip()
         log_ctx["detected_language"] = detected_language
 
-        documents = search_weaviate(clean_query, num_docs)
-        db_faqs = faq.search_soft(clean_query, 5)
+        document_result = search_weaviate(clean_query, num_docs)
+        faq_result = faq.search_result(clean_query, 5)
+        documents = document_result.get("items") or []
+        db_faqs = faq_result.get("items") or []
 
         log_ctx["documents"] = [
             {"filename": d.get("filename"), "relevance": d.get("relevance")} for d in (documents or [])
@@ -85,6 +110,21 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         log_ctx["db_faqs"] = [
             {"id": f.get("id"), "cosine_similarity": f.get("cosine_similarity")} for f in (db_faqs or [])
         ]
+
+        search_issues = search_context_issues(document_result, faq_result)
+        if search_issues:
+            log_ctx["search_result_causes"] = search_issues
+            log_ctx["error"] = "; ".join(search_issues)
+
+        if not documents and not db_faqs:
+            message = get_cannot_answer_message(detected_language)
+            log_ctx["rejection_reason"] = "no_search_results"
+            log_ctx["response"] = message
+            log_ctx["error"] = "; ".join(search_issues) or "no_search_results"
+            log_ctx["latency_ms"] = _elapsed_ms(start_time)
+            yield sse_content(message, rejected=True)
+            structured_log("CRITICAL", "conversation_turn", **log_ctx)
+            return
 
         # Stream document records first.
         if documents:
@@ -99,7 +139,8 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
 
         yield sse_content(gen["final_answer"], rejected=gen["rejected"])
         log_ctx["latency_ms"] = _elapsed_ms(start_time)
-        structured_log("INFO", "conversation_turn", **log_ctx)
+        severity = "CRITICAL" if search_issues else "ERROR" if log_ctx["error"] else "INFO"
+        structured_log(severity, "conversation_turn", **log_ctx)
 
     except Exception as error:  # noqa: BLE001
         log_ctx["latency_ms"] = _elapsed_ms(start_time)

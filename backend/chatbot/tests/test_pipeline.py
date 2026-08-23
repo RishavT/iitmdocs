@@ -20,8 +20,14 @@ class AnswerEventsTests(SimpleTestCase):
     @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
     def test_normal_flow_order(self, m_rewrite, m_weaviate, m_faq, m_gen, m_log):
         m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
-        m_weaviate.return_value = [{"filename": "fees_and_payments.md", "content": "c", "relevance": 0.8}]
-        m_faq.search_soft.return_value = [{"id": 3, "question": "Fee?", "answer": "32000", "cosine_similarity": 0.9}]
+        m_weaviate.return_value = {
+            "items": [{"filename": "fees_and_payments.md", "content": "c", "relevance": 0.8}],
+            "error": None,
+        }
+        m_faq.search_result.return_value = {
+            "items": [{"id": 3, "question": "Fee?", "answer": "32000", "cosine_similarity": 0.9}],
+            "error": None,
+        }
         m_gen.return_value = {
             "final_answer": "The fee is 32000",
             "rejected": False,
@@ -47,6 +53,55 @@ class AnswerEventsTests(SimpleTestCase):
         self.assertEqual(args[1], "conversation_turn")
         self.assertEqual(kwargs["query_source"], "synonym")
         self.assertEqual(kwargs["response"], "The fee is 32000")
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_both_empty_rejects_without_generating(self, m_rewrite, m_weaviate, m_faq, m_gen, m_log):
+        m_rewrite.return_value = {"query": "unknown [LANG:english]", "source": "llm"}
+        m_weaviate.return_value = {"items": [], "error": "weaviate_api_error:503"}
+        m_faq.search_result.return_value = {"items": [], "error": "pg_faq_embedding_error"}
+
+        chunks = list(pipeline.answer_events("unknown question", 2, [], "s", "m", None))
+
+        payload = json.loads(_payloads(chunks)[0])
+        self.assertTrue(payload["rejected"])
+        self.assertIn("don't have the information", payload["choices"][0]["delta"]["content"])
+        m_gen.assert_not_called()
+        self.assertEqual(m_log.call_args.args[:2], ("CRITICAL", "conversation_turn"))
+        self.assertEqual(m_log.call_args.kwargs["rejection_reason"], "no_search_results")
+        self.assertEqual(
+            m_log.call_args.kwargs["search_result_causes"],
+            ["weaviate_api_error:503", "pg_faq_embedding_error"],
+        )
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_one_source_failure_still_generates(self, m_rewrite, m_weaviate, m_faq, m_gen, m_log):
+        m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
+        m_weaviate.return_value = {"items": [], "error": "weaviate_fetch_error:down"}
+        m_faq.search_result.return_value = {
+            "items": [{"id": 3, "question": "Fee?", "answer": "32000", "cosine_similarity": 0.9}],
+            "error": None,
+        }
+        m_gen.return_value = {
+            "final_answer": "The fee is 32000",
+            "rejected": False,
+            "fact_check_passed": True,
+            "contains_raahat": False,
+            "rejection_reason": None,
+        }
+
+        list(pipeline.answer_events("what is the fee", 2, [], "s", "m", None))
+
+        m_gen.assert_called_once()
+        self.assertEqual(m_log.call_args.args[:2], ("CRITICAL", "conversation_turn"))
+        self.assertEqual(m_log.call_args.kwargs["search_result_causes"], ["weaviate_fetch_error:down"])
 
     @mock.patch("chatbot.services.pipeline.structured_log")
     @mock.patch("chatbot.services.pipeline.faq")

@@ -144,3 +144,22 @@ def search_soft(q: str, k: int):
         return search(q, k)
     except Exception:  # noqa: BLE001
         return []
+
+
+def search_result(q: str, k: int):
+    """Return FAQ matches and preserve the reason when search fails.
+
+    The answer pipeline calls this after query rewriting. It lets the pipeline
+    continue when Weaviate still has usable context while retaining a concise
+    failure cause for the conversation log.
+
+    Example: ``{"items": [], "error": "pg_faq_embedding_error"}``.
+    """
+    try:
+        return {"items": search(q, k), "error": None}
+    except FaqEmbeddingError:
+        return {"items": [], "error": "pg_faq_embedding_error"}
+    except FaqDatabaseError:
+        return {"items": [], "error": "pg_faq_database_error"}
+    except Exception:  # noqa: BLE001
+        return {"items": [], "error": "pg_faq_search_error"}

@@ -25,18 +25,27 @@ def _sanitize_graphql(query: str) -> str:
 
 
 def search_weaviate(query: str, limit: int):
+    """Search for documents without preventing FAQ-only answers on failure.
+
+    Called by the answer pipeline after query rewriting. The return envelope
+    always contains ``items`` and ``error`` so the pipeline can stop only when
+    neither retrieval source produced usable context.
+
+    Example: ``{"items": [{"filename": "fees.md"}], "error": None}``.
+    """
     deployment_mode = appconfig.deployment_mode()
     if deployment_mode not in ("local", "gce"):
-        raise RuntimeError(
-            f"Unsupported DEPLOYMENT_MODE='{deployment_mode}'. Supported values: local, gce."
-        )
+        return {
+            "items": [],
+            "error": f"weaviate_config_error:unsupported_DEPLOYMENT_MODE_{deployment_mode}",
+        }
 
     if deployment_mode == "local":
         weaviate_url = appconfig.local_weaviate_url()
     else:
         weaviate_url = appconfig.gce_weaviate_url()
         if not weaviate_url:
-            raise RuntimeError("GCE_WEAVIATE_URL is required for DEPLOYMENT_MODE=gce")
+            return {"items": [], "error": "weaviate_config_error:missing_GCE_WEAVIATE_URL"}
 
     sanitized_query = _sanitize_graphql(query)
 
@@ -44,8 +53,11 @@ def search_weaviate(query: str, limit: int):
         ollama_url = appconfig.gce_ollama_url()
         embedding_model = appconfig.ollama_model()
         if not ollama_url:
-            raise RuntimeError("GCE_OLLAMA_URL is required for DEPLOYMENT_MODE=gce")
-        query_vector = get_ollama_embedding(query, ollama_url, embedding_model)
+            return {"items": [], "error": "weaviate_config_error:missing_GCE_OLLAMA_URL"}
+        try:
+            query_vector = get_ollama_embedding(query, ollama_url, embedding_model)
+        except Exception as exc:  # noqa: BLE001
+            return {"items": [], "error": f"weaviate_embedding_error:{exc}"}
         vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
         graphql_query = (
             "{\n"
@@ -82,23 +94,44 @@ def search_weaviate(query: str, limit: int):
             "    }"
         )
 
-    resp = requests.post(
-        f"{weaviate_url}/v1/graphql",
-        json={"query": graphql_query},
-        headers={"Content-Type": "application/json"},
-        timeout=60,
-    )
-    response_text = resp.text
     try:
-        data = json.loads(response_text)
-    except Exception as exc:  # noqa: BLE001 - mirror Worker's parse-error message
-        raise RuntimeError(f"Failed to parse Weaviate response: {exc}")
-
-    if data.get("errors"):
-        raise RuntimeError(
-            "Weaviate error: " + ", ".join(e.get("message", "") for e in data["errors"])
+        resp = requests.post(
+            f"{weaviate_url}/v1/graphql",
+            json={"query": graphql_query},
+            headers={"Content-Type": "application/json"},
+            timeout=60,
         )
+        response_text = resp.text
+        if not resp.ok:
+            return {"items": [], "error": f"weaviate_api_error:{resp.status_code}"}
 
-    documents = (((data.get("data") or {}).get("Get") or {}).get("Document")) or []
-    # Hybrid search returns 'score' (higher is better).
-    return [{**doc, "relevance": (doc.get("_additional") or {}).get("score") or 0} for doc in documents]
+        try:
+            data = json.loads(response_text)
+        except Exception as exc:  # noqa: BLE001
+            return {"items": [], "error": f"weaviate_response_malformed:{exc}"}
+
+        if not isinstance(data, dict):
+            return {"items": [], "error": "weaviate_response_malformed:not_an_object"}
+
+        documents = (((data.get("data") or {}).get("Get") or {}).get("Document")) or []
+        graphql_error = None
+        if "errors" in data:
+            errors = data["errors"]
+            if not isinstance(errors, list):
+                graphql_error = "weaviate_response_malformed:errors_not_array"
+            elif errors:
+                messages = []
+                for error in errors:
+                    if isinstance(error, dict):
+                        messages.append(error.get("message") or str(error))
+                    else:
+                        messages.append(str(error))
+                graphql_error = "weaviate_graphql_error:" + ", ".join(messages)
+
+        items = [
+            {**doc, "relevance": (doc.get("_additional") or {}).get("score") or 0}
+            for doc in documents
+        ]
+        return {"items": items, "error": graphql_error}
+    except Exception as exc:  # noqa: BLE001
+        return {"items": [], "error": f"weaviate_fetch_error:{exc}"}
