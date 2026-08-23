@@ -18,6 +18,8 @@ from typing import Optional
 # defaults False so each message is treated as a new conversation.
 import os
 
+from . import appconfig
+
 
 def enable_history() -> bool:
     raw = os.getenv("ENABLE_HISTORY")
@@ -58,6 +60,11 @@ CONTACT_INFO = {
     "phone": "7850999966",
 }
 
+DEFAULT_GITHUB_BRANCH_BASE_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/"
+DEFAULT_PROGRAM_CONTACT_DETAILS_URL = (
+    f"{DEFAULT_GITHUB_BRANCH_BASE_URL}docs/program-contact-details.md"
+)
+
 # Kept for parity with the Worker (django-cors-headers applies the real headers).
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -66,33 +73,25 @@ CORS_HEADERS = {
 }
 
 CANNOT_ANSWER_MESSAGES = {
-    "english": (
-        "I'm sorry, I don't have the information to answer that question right now. "
-        "Please rephrase your question and try again. Please refer to the official IITM BS degree "
-        "program website or contact support for more details. If this is an error - please report "
-        "this response using the feedback option. You can reach out to us at "
-        f"{CONTACT_INFO['email']} or call us at {CONTACT_INFO['phone']}"
-    ),
-    "hindi": (
-        "मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः "
-        "प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। "
-        "यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें। आप हमसे "
-        f"{CONTACT_INFO['email']} पर संपर्क कर सकते हैं या {CONTACT_INFO['phone']} पर कॉल कर सकते हैं"
-    ),
-    "tamil": (
-        "மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி "
-        "முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது "
-        "ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் "
-        f"புகாரளிக்கவும். நீங்கள் எங்களை {CONTACT_INFO['email']} இல் தொடர்பு கொள்ளலாம் அல்லது {CONTACT_INFO['phone']} "
-        "என்ற எண்ணில் அழைக்கலாம்"
-    ),
-    "hinglish": (
-        "Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara "
-        "likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website "
-        "dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is "
-        f"response ki report karein. Aap humse {CONTACT_INFO['email']} par sampark kar sakte hain ya "
-        f"{CONTACT_INFO['phone']} par call kar sakte hain"
-    ),
+    "english": f"""I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
+  You can reach out to us at {CONTACT_INFO['email']} or call us at {CONTACT_INFO['phone']}.
+
+Need program-wise contacts? [View all program contact details]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).""",
+    "hindi": f"""मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
+आप हमसे {CONTACT_INFO['email']} पर संपर्क कर सकते हैं या {CONTACT_INFO['phone']} पर कॉल कर सकते हैं
+
+क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL})।
+""",
+    "tamil": f"""மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
+நீங்கள் எங்களை {CONTACT_INFO['email']} இல் தொடர்பு கொள்ளலாம் அல்லது {CONTACT_INFO['phone']} என்ற எண்ணில் அழைக்கலாம்
+
+நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
+""",
+    "hinglish": f"""Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
+Aap humse {CONTACT_INFO['email']} par sampark kar sakte hain ya {CONTACT_INFO['phone']} par call kar sakte hain
+
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
+""",
 }
 
 STANDARD_RAAHAT_MESSAGE = """I'm afraid I am not allowed to give you advice of any kind, but we are here. If you're looking for mental health support, our institute has a Wellness Society that provides confidential counseling services to enrolled students.
@@ -115,7 +114,10 @@ def extract_language(rewritten_query: Optional[str]) -> str:
 
 def get_cannot_answer_message(language: Optional[str]) -> str:
     lang = (language or "english").lower()
-    return CANNOT_ANSWER_MESSAGES.get(lang, CANNOT_ANSWER_MESSAGES["english"])
+    message = CANNOT_ANSWER_MESSAGES.get(lang, CANNOT_ANSWER_MESSAGES["english"])
+    branch_base_url = appconfig.github_branch_base_url().rstrip("/") + "/"
+    contact_details_url = f"{branch_base_url}docs/program-contact-details.md"
+    return message.replace(DEFAULT_PROGRAM_CONTACT_DETAILS_URL, contact_details_url)
 
 
 def is_cannot_answer_response(text: Optional[str]) -> bool:

@@ -1,4 +1,6 @@
 """Unit tests for pure business logic (mirrors the non-stale worker.test.js cases)."""
+from unittest import mock
+
 from django.test import SimpleTestCase
 
 from chatbot import business
@@ -54,6 +56,20 @@ class LanguageTests(SimpleTestCase):
         self.assertEqual(business.get_cannot_answer_message("hindi"), business.CANNOT_ANSWER_MESSAGES["hindi"])
         self.assertEqual(business.get_cannot_answer_message("ta"), business.CANNOT_ANSWER_MESSAGES["english"])
         self.assertEqual(business.get_cannot_answer_message(None), business.CANNOT_ANSWER_MESSAGES["english"])
+
+    @mock.patch.dict(
+        "os.environ",
+        {"GITHUB_BRANCH_BASE_URL": "https://example.test/project/blob/review"},
+        clear=False,
+    )
+    def test_cannot_answer_message_uses_configured_contact_document(self):
+        message = business.get_cannot_answer_message("english")
+
+        self.assertIn(
+            "https://example.test/project/blob/review/docs/program-contact-details.md",
+            message,
+        )
+        self.assertNotIn(business.DEFAULT_PROGRAM_CONTACT_DETAILS_URL, message)
 
     def test_contact_info(self):
         self.assertEqual(business.CONTACT_INFO["email"], "support@study.iitm.ac.in")

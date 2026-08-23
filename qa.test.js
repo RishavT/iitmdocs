@@ -47,6 +47,19 @@ describe("Welcome Message", () => {
   });
 });
 
+describe("Program contact details", () => {
+  it("loads the GitHub branch URL from runtime config", () => {
+    expect(qaJs).toContain('fetch("./github-config")');
+    expect(qaJs).toContain("runtimeConfig.githubBranchBaseUrl");
+  });
+
+  it("opens the contact document in the in-page viewer", () => {
+    expect(qaJs).toContain("docs/program-contact-details.md");
+    expect(qaJs).toContain('class="ref-doc-link"');
+    expect(qaJs).toContain('data-name="program-contact-details"');
+  });
+});
+
 describe("Consent Overlay", () => {
   let dom;
   let document;

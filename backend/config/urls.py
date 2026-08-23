@@ -6,6 +6,7 @@ Public contract (must match the old Worker + FAQ API byte-for-byte):
   POST /search        -> JSON  (FAQ semantic search; was the FastAPI service)
   GET  /faq/<int:id>  -> JSON  (direct FAQ lookup)
   GET  /health        -> {"ok": true}
+  GET  /github-config -> browser-safe reference document configuration
 Everything else (GET /, /qa.html, /qa.js, ...) is served from static/ by WhiteNoise.
 """
 from django.urls import path
@@ -19,5 +20,6 @@ urlpatterns = [
     path("search", views.SearchView.as_view(), name="search"),
     path("faq/<int:faq_id>", views.FaqDetailView.as_view(), name="faq-detail"),
     path("health", views.HealthView.as_view(), name="health"),
+    path("github-config", views.GithubConfigView.as_view(), name="github-config"),
     path("qa", RedirectView.as_view(url="/qa.html", query_string=True), name="qa"),
 ]

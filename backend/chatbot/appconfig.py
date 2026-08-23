@@ -63,3 +63,12 @@ def embedding_dimension() -> int:
         return int(os.getenv("EMBEDDING_DIMENSION", "1024"))
     except ValueError as exc:
         raise RuntimeError("EMBEDDING_DIMENSION must be an integer") from exc
+
+
+# --- Reference document links ---
+def github_branch_base_url() -> str:
+    """Return the branch URL used for browser-viewable reference documents."""
+    return os.getenv(
+        "GITHUB_BRANCH_BASE_URL",
+        "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/",
+    )

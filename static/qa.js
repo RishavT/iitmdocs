@@ -118,11 +118,35 @@ function updateInputValidation() {
 questionInput.addEventListener("input", updateInputValidation);
 const marked = new Marked();
 
+const DEFAULT_GITHUB_BRANCH_BASE_URL =
+  "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/";
+let githubBranchBaseUrl = DEFAULT_GITHUB_BRANCH_BASE_URL;
+
+try {
+  const configResponse = await fetch("./github-config");
+  if (configResponse.ok) {
+    const runtimeConfig = await configResponse.json();
+    if (typeof runtimeConfig.githubBranchBaseUrl === "string") {
+      githubBranchBaseUrl = runtimeConfig.githubBranchBaseUrl;
+    }
+  } else {
+    console.warn("Runtime config response was not successful; using default URL.");
+  }
+} catch (error) {
+  console.error("Could not load runtime configuration; using default URL:", error);
+}
+
+githubBranchBaseUrl = githubBranchBaseUrl.replace(/\/?$/, "/");
+const PROGRAM_CONTACT_DETAILS_URL = `${githubBranchBaseUrl}docs/program-contact-details.md`;
+
 // Configure marked to open links in new window
 marked.use({
   renderer: {
     link(href, title, text) {
       const titleAttr = title ? ` title="${title}"` : "";
+      if (href === PROGRAM_CONTACT_DETAILS_URL) {
+        return `<a href="${href}"${titleAttr} class="ref-doc-link" data-name="program-contact-details">${text}</a>`;
+      }
       return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
     }
   }

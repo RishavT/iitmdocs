@@ -264,7 +264,7 @@ OPENAI_API_KEY=sk-...
 | `LOCAL_WEAVIATE_URL` | Local | `http://weaviate:8080` | Local Weaviate URL |
 | `GCE_WEAVIATE_URL` | GCE | - | GCE VM Weaviate URL |
 | `GCE_OLLAMA_URL` | GCE | - | GCE VM Ollama URL |
-| `GITHUB_REPO_URL` | All | `https://github.com/study-iitm/iitmdocs` | Doc links base URL |
+| `GITHUB_BRANCH_BASE_URL` | All | `https://github.com/study-iitm/iitmdocs/blob/main/` | Base URL for files on the selected GitHub branch |
 
 ### PG FAQ Seed Contract
 
