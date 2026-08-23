@@ -9,7 +9,7 @@ import re
 
 from ..business import find_synonym_match, remove_stop_words, sanitize_query
 from ..prompts import build_rewrite_system_prompt
-from .llm import chat_completion
+from .llm import chat_completion, token_usage
 
 _LANG_TAG_RE = re.compile(r"\[LANG:\w+\]", re.IGNORECASE)
 
@@ -20,13 +20,13 @@ def rewrite_query_with_source(query):
 
     if not query and original_query and str(original_query).strip():
         # Had content but sanitization removed everything -> likely injection.
-        return {"query": None, "source": "rejected"}
+        return {"query": None, "source": "rejected", "tokens": None}
     if not query:
-        return {"query": "", "source": "original"}
+        return {"query": "", "source": "original", "tokens": None}
 
     synonym_match = find_synonym_match(query)
     if synonym_match:
-        return {"query": f"{query} {synonym_match}", "source": "synonym"}
+        return {"query": f"{query} {synonym_match}", "source": "synonym", "tokens": None}
 
     query_for_llm = remove_stop_words(query)
     system_prompt = build_rewrite_system_prompt()
@@ -43,7 +43,7 @@ def rewrite_query_with_source(query):
             timeout=60,
         )
         if not resp.ok:
-            return {"query": query, "source": "original"}
+            return {"query": query, "source": "original", "tokens": None}
 
         result = resp.json()
         try:
@@ -56,6 +56,6 @@ def rewrite_query_with_source(query):
         lang_tag = lang_match.group(0) if lang_match else "[LANG:english]"
         keywords_only = _LANG_TAG_RE.sub("", llm_rewrite).strip()
         augmented_query = f"{query} {keywords_only} {lang_tag}"
-        return {"query": augmented_query, "source": "llm"}
+        return {"query": augmented_query, "source": "llm", "tokens": token_usage(result)}
     except Exception:
-        return {"query": query, "source": "original"}
+        return {"query": query, "source": "original", "tokens": None}

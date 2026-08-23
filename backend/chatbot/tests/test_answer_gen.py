@@ -21,12 +21,19 @@ def _chat(content):
     return {"choices": [{"message": {"content": content}}]}
 
 
+def _chat_with_usage(content, input_tokens, output_tokens):
+    return {
+        **_chat(content),
+        "usage": {"prompt_tokens": input_tokens, "completion_tokens": output_tokens},
+    }
+
+
 class GenerateAnswerTests(SimpleTestCase):
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_valid_answer_passes(self, m_chat):
         m_chat.side_effect = [
-            _FakeResp(payload=_chat("The fee is 32000")),
-            _FakeResp(payload=_chat('{"approved":"YES","incorrect":[]}')),
+            _FakeResp(payload=_chat_with_usage("The fee is 32000", 10, 3)),
+            _FakeResp(payload=_chat_with_usage('{"approved":"YES","incorrect":[]}', 8, 2)),
         ]
         result = answer_mod.generate_answer(
             "q", [{"filename": "f.md", "content": "c", "relevance": 0.9}], [], [], "english"
@@ -35,6 +42,16 @@ class GenerateAnswerTests(SimpleTestCase):
         self.assertFalse(result["rejected"])
         self.assertTrue(result["fact_check_passed"])
         self.assertIsNone(result["rejection_reason"])
+        self.assertEqual(result["original_answer"], "The fee is 32000")
+        self.assertEqual(
+            result["tokens"],
+            {
+                "answer_generation_input": 10,
+                "answer_generation_output": 3,
+                "fact_check_input": 8,
+                "fact_check_output": 2,
+            },
+        )
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_failed_factcheck_falls_back_with_suggestions(self, m_chat):
@@ -56,6 +73,25 @@ class GenerateAnswerTests(SimpleTestCase):
         m_chat.return_value = _FakeResp(ok=False, status=500)
         with self.assertRaises(RuntimeError):
             answer_mod.generate_answer("q", [], [], [], "english")
+
+    @mock.patch("chatbot.services.answer.chat_completion")
+    def test_factcheck_retry_tokens_are_added(self, m_chat):
+        m_chat.side_effect = [
+            _FakeResp(payload=_chat_with_usage("Answer", 10, 2)),
+            _FakeResp(payload=_chat_with_usage('{"approved":"NO","incorrect":["x"]}', 4, 1)),
+            _FakeResp(payload=_chat_with_usage('{"approved":"YES","incorrect":[]}', 3, 1)),
+        ]
+
+        result = answer_mod.generate_answer(
+            "q",
+            [{"filename": "f.md", "content": "c", "relevance": 0.9}],
+            [],
+            [{"role": "user", "content": "Earlier question"}],
+            "english",
+        )
+
+        self.assertEqual(result["tokens"]["fact_check_input"], 7)
+        self.assertEqual(result["tokens"]["fact_check_output"], 2)
 
 
 class RelevanceCoercionTests(SimpleTestCase):
@@ -90,24 +126,32 @@ class CheckResponseTests(SimpleTestCase):
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_approved_yes(self, m_chat):
         m_chat.return_value = _FakeResp(payload=_chat('{"approved":"YES","incorrect":[]}'))
-        self.assertTrue(answer_mod.check_response("resp", "ctx", []))
+        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_rejected_no(self, m_chat):
         m_chat.return_value = _FakeResp(payload=_chat('{"approved":"NO","incorrect":["x"]}'))
-        self.assertFalse(answer_mod.check_response("resp", "ctx", []))
+        self.assertFalse(answer_mod.check_response("resp", "ctx", [])["approved"])
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_fails_open_on_api_error(self, m_chat):
         m_chat.return_value = _FakeResp(ok=False, status=500)
-        self.assertTrue(answer_mod.check_response("resp", "ctx", []))
+        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_fails_open_on_exception(self, m_chat):
         m_chat.side_effect = RuntimeError("network")
-        self.assertTrue(answer_mod.check_response("resp", "ctx", []))
+        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_malformed_json_strict_yes_fallback(self, m_chat):
         m_chat.return_value = _FakeResp(payload=_chat("YES"))
-        self.assertTrue(answer_mod.check_response("resp", "ctx", []))
+        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
+
+    @mock.patch("chatbot.services.answer.chat_completion")
+    def test_returns_factcheck_tokens(self, m_chat):
+        m_chat.return_value = _FakeResp(
+            payload=_chat_with_usage('{"approved":"YES","incorrect":[]}', 6, 1)
+        )
+        result = answer_mod.check_response("resp", "ctx", [])
+        self.assertEqual(result["tokens"], {"input": 6, "output": 1})

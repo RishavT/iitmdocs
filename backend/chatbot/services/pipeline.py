@@ -84,12 +84,24 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         "query_source": "original",
         "rejection_reason": None,
         "documents": [],
+        "db_faqs": [],
         "response": None,
         "fact_check_passed": None,
         "contains_raahat": False,
         "history_length": len(history) if isinstance(history, list) else 0,
         "latency_ms": None,
         "error": None,
+        "original_answer": None,
+        "tokens": {
+            "query_rewrite_input": 0,
+            "query_rewrite_output": 0,
+            "answer_generation_input": 0,
+            "answer_generation_output": 0,
+            "fact_check_input": 0,
+            "fact_check_output": 0,
+            "total_input_tokens": 0,
+            "total_output_tokens": 0,
+        },
     }
 
     try:
@@ -98,6 +110,9 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         query_source = rewrite["source"]
         log_ctx["rewritten_query"] = search_query
         log_ctx["query_source"] = query_source
+        rewrite_tokens = rewrite.get("tokens") or {}
+        log_ctx["tokens"]["query_rewrite_input"] = rewrite_tokens.get("input", 0)
+        log_ctx["tokens"]["query_rewrite_output"] = rewrite_tokens.get("output", 0)
 
         # Rejected query (suspected prompt injection).
         if query_source == "rejected":
@@ -105,7 +120,16 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             log_ctx["detected_language"] = "english"
             log_ctx["fact_check_passed"] = False
             reject_message = get_cannot_answer_message("english")
-            db_faqs = faq.search_soft(question, 5)
+            db_faqs = faq.search_result(question, 5).get("items") or []
+            log_ctx["db_faqs"] = [
+                {
+                    "id": item.get("id"),
+                    "cosine_similarity": item.get("cosine_similarity"),
+                    "question": item.get("question"),
+                    "answer": item.get("answer"),
+                }
+                for item in db_faqs
+            ]
             reject_message += format_db_faq_suggestions(db_faqs, "english")
             log_ctx["response"] = reject_message
             yield sse_content(reject_message, rejected=True)
@@ -125,7 +149,13 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             {"filename": d.get("filename"), "relevance": d.get("relevance")} for d in (documents or [])
         ]
         log_ctx["db_faqs"] = [
-            {"id": f.get("id"), "cosine_similarity": f.get("cosine_similarity")} for f in (db_faqs or [])
+            {
+                "id": item.get("id"),
+                "cosine_similarity": item.get("cosine_similarity"),
+                "question": item.get("question"),
+                "answer": item.get("answer"),
+            }
+            for item in db_faqs
         ]
 
         search_issues = search_context_issues(document_result, faq_result)
@@ -151,6 +181,25 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         log_ctx["response"] = gen["final_answer"]
         log_ctx["fact_check_passed"] = gen["fact_check_passed"]
         log_ctx["contains_raahat"] = gen["contains_raahat"]
+        log_ctx["original_answer"] = gen.get("original_answer")
+        generated_tokens = gen.get("tokens") or {}
+        for key in (
+            "answer_generation_input",
+            "answer_generation_output",
+            "fact_check_input",
+            "fact_check_output",
+        ):
+            log_ctx["tokens"][key] = generated_tokens.get(key, 0)
+        log_ctx["tokens"]["total_input_tokens"] = (
+            log_ctx["tokens"]["query_rewrite_input"]
+            + log_ctx["tokens"]["answer_generation_input"]
+            + log_ctx["tokens"]["fact_check_input"]
+        )
+        log_ctx["tokens"]["total_output_tokens"] = (
+            log_ctx["tokens"]["query_rewrite_output"]
+            + log_ctx["tokens"]["answer_generation_output"]
+            + log_ctx["tokens"]["fact_check_output"]
+        )
         if gen["rejection_reason"] is not None:
             log_ctx["rejection_reason"] = gen["rejection_reason"]
 
