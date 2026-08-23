@@ -17,7 +17,7 @@ from ..business import (
 )
 from . import faq
 from .answer import generate_answer
-from .logs import log_error, structured_log
+from .logs import log_duration, log_error, structured_log
 from .rewrite import rewrite_query_with_source
 from .sse import sse_content, sse_document_records, sse_error
 from .weaviate import search_weaviate
@@ -170,6 +170,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             log_ctx["error"] = "; ".join(search_issues) or "no_search_results"
             log_ctx["latency_ms"] = _elapsed_ms(start_time)
             yield sse_content(message, rejected=True)
+            log_duration("total_query", _elapsed_ms(start_time))
             structured_log("CRITICAL", "conversation_turn", **log_ctx)
             return
 
@@ -205,6 +206,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
 
         yield sse_content(gen["final_answer"], rejected=gen["rejected"])
         log_ctx["latency_ms"] = _elapsed_ms(start_time)
+        log_duration("total_query", _elapsed_ms(start_time))
         severity = "CRITICAL" if search_issues else "ERROR" if log_ctx["error"] else "INFO"
         structured_log(severity, "conversation_turn", **log_ctx)
 
@@ -248,7 +250,9 @@ def direct_faq_events(faq_id, question, session_id, message_id, username):
 
     cannot_answer = get_cannot_answer_message("english")
     try:
+        lookup_start_time = time.monotonic()
         row = faq.get_faq(faq_id)
+        log_duration("pg_faq_direct_lookup", _elapsed_ms(lookup_start_time))
         if row is None:
             log_ctx["error"] = "PG FAQ lookup failed: 404"
             log_ctx["response"] = cannot_answer

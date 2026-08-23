@@ -7,11 +7,13 @@ vector to hybrid). GraphQL string built identically to the Worker (same escaping
 from __future__ import annotations
 
 import json
+import time
 
 import requests
 
 from .. import appconfig
 from .embeddings import get_ollama_embedding
+from .logs import log_duration
 
 
 def _sanitize_graphql(query: str) -> str:
@@ -95,12 +97,14 @@ def search_weaviate(query: str, limit: int):
         )
 
     try:
+        start_time = time.monotonic()
         resp = requests.post(
             f"{weaviate_url}/v1/graphql",
             json={"query": graphql_query},
             headers={"Content-Type": "application/json"},
             timeout=60,
         )
+        log_duration("weaviate_graphql_search", int((time.monotonic() - start_time) * 1000))
         response_text = resp.text
         if not resp.ok:
             return {"items": [], "error": f"weaviate_api_error:{resp.status_code}"}

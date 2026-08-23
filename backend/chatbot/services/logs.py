@@ -97,6 +97,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
 import sys
 import traceback
 
@@ -118,6 +119,26 @@ def structured_log(severity: str, message: str, **data) -> None:
     # Compact separators to match the Worker's JSON.stringify output byte-for-byte.
     sys.stdout.write(json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n")
     sys.stdout.flush()
+
+
+def log_duration(operation, duration_ms):
+    """Log one operation's elapsed milliseconds when duration logs are enabled.
+
+    ASSUMPTION: duration logs stay on unless ``ENABLE_DURATION_LOGS`` is exactly
+    ``false``, matching the Worker behavior on main.
+
+    Example: ``log_duration("pg_faq_search", 125)`` emits one DEBUG event.
+    """
+    if os.getenv("ENABLE_DURATION_LOGS") == "false":
+        return
+
+    structured_log(
+        "DEBUG",
+        "duration",
+        operation=operation,
+        duration_ms=duration_ms,
+        labels={"type": "duration"},
+    )
 
 
 def log_error(message: str, error, **context) -> None:

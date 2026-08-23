@@ -6,10 +6,12 @@ Sanitize -> reject if injection emptied it -> synonym fast-path -> LLM rewrite
 from __future__ import annotations
 
 import re
+import time
 
 from ..business import find_synonym_match, remove_stop_words, sanitize_query
 from ..prompts import build_rewrite_system_prompt
 from .llm import chat_completion, token_usage
+from .logs import log_duration
 
 _LANG_TAG_RE = re.compile(r"\[LANG:\w+\]", re.IGNORECASE)
 
@@ -24,14 +26,20 @@ def rewrite_query_with_source(query):
     if not query:
         return {"query": "", "source": "original", "tokens": None}
 
+    synonym_start_time = time.monotonic()
     synonym_match = find_synonym_match(query)
     if synonym_match:
+        log_duration(
+            "query_rewrite_synonym",
+            int((time.monotonic() - synonym_start_time) * 1000),
+        )
         return {"query": f"{query} {synonym_match}", "source": "synonym", "tokens": None}
 
     query_for_llm = remove_stop_words(query)
     system_prompt = build_rewrite_system_prompt()
 
     try:
+        rewrite_start_time = time.monotonic()
         resp = chat_completion(
             [
                 {"role": "system", "content": system_prompt},
@@ -41,6 +49,10 @@ def rewrite_query_with_source(query):
             temperature=0,
             max_tokens=100,
             timeout=60,
+        )
+        log_duration(
+            "query_rewrite_chat_api",
+            int((time.monotonic() - rewrite_start_time) * 1000),
         )
         if not resp.ok:
             return {"query": query, "source": "original", "tokens": None}

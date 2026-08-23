@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import time
 
 from .. import appconfig
 from ..business import (
@@ -23,6 +24,7 @@ from ..prompts import (
     build_factcheck_user_prompt,
 )
 from .llm import chat_completion, token_usage
+from .logs import log_duration
 
 RELEVANCE_THRESHOLD = 0.05
 MAX_MESSAGE_LENGTH = 10000
@@ -78,6 +80,7 @@ def check_response(response: str, context: str, history=None):
     history = history or []
     user_prompt = build_factcheck_user_prompt(context, history, response)
     try:
+        start_time = time.monotonic()
         resp = chat_completion(
             [
                 {"role": "system", "content": FACTCHECK_SYSTEM_PROMPT},
@@ -89,6 +92,7 @@ def check_response(response: str, context: str, history=None):
             response_format={"type": "json_object"},
             timeout=60,
         )
+        log_duration("fact_check_chat_api", int((time.monotonic() - start_time) * 1000))
         if not resp.ok:
             return {"approved": True, "tokens": None}
 
@@ -138,7 +142,9 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         {"role": "user", "content": question},
     ]
 
+    start_time = time.monotonic()
     resp = chat_completion(messages, model=appconfig.chat_model(), temperature=0.1, timeout=120)
+    log_duration("answer_chat_api", int((time.monotonic() - start_time) * 1000))
     if not resp.ok:
         raise RuntimeError(f"Chat API error: {resp.status_code} {resp.reason}")
 

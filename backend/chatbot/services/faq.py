@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 import urllib.error
 import urllib.request
 
 from .. import appconfig
+from .logs import log_duration
 
 OLLAMA_TIMEOUT_SECONDS = 60
 
@@ -156,7 +158,10 @@ def search_result(q: str, k: int):
     Example: ``{"items": [], "error": "pg_faq_embedding_error"}``.
     """
     try:
-        return {"items": search(q, k), "error": None}
+        start_time = time.monotonic()
+        items = search(q, k)
+        log_duration("pg_faq_search", int((time.monotonic() - start_time) * 1000))
+        return {"items": items, "error": None}
     except FaqEmbeddingError:
         return {"items": [], "error": "pg_faq_embedding_error"}
     except FaqDatabaseError:
