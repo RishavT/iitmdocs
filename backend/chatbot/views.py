@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import appconfig
 from .business import enable_history
 from .services import faq, pipeline
 from .services.logs import structured_log
@@ -216,3 +217,17 @@ class HealthView(APIView):
 
     def get(self, request):
         return Response({"ok": True})
+
+
+class GithubConfigView(APIView):
+    """Expose the browser's branch base URL without exposing sensitive config.
+
+    Flow: the QA page requests this endpoint at startup and uses the returned URL
+    for the program-contact reference link.
+
+    Example: ``GET /github-config`` returns
+    ``{"githubBranchBaseUrl": "https://github.com/.../blob/main/"}``.
+    """
+
+    def get(self, request):
+        return Response({"githubBranchBaseUrl": appconfig.github_branch_base_url()})

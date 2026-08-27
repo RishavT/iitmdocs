@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 import urllib.error
 import urllib.request
 
 from .. import appconfig
+from .logs import log_duration
 
 OLLAMA_TIMEOUT_SECONDS = 60
 
@@ -144,3 +146,25 @@ def search_soft(q: str, k: int):
         return search(q, k)
     except Exception:  # noqa: BLE001
         return []
+
+
+def search_result(q: str, k: int):
+    """Return FAQ matches and preserve the reason when search fails.
+
+    The answer pipeline calls this after query rewriting. It lets the pipeline
+    continue when Weaviate still has usable context while retaining a concise
+    failure cause for the conversation log.
+
+    Example: ``{"items": [], "error": "pg_faq_embedding_error"}``.
+    """
+    try:
+        start_time = time.monotonic()
+        items = search(q, k)
+        log_duration("pg_faq_search", int((time.monotonic() - start_time) * 1000))
+        return {"items": items, "error": None}
+    except FaqEmbeddingError:
+        return {"items": [], "error": "pg_faq_embedding_error"}
+    except FaqDatabaseError:
+        return {"items": [], "error": "pg_faq_database_error"}
+    except Exception:  # noqa: BLE001
+        return {"items": [], "error": "pg_faq_search_error"}

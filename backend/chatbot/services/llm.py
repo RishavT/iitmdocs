@@ -6,6 +6,25 @@ import requests
 from .. import appconfig
 
 
+def token_usage(payload):
+    """Return normalized input/output counts from one chat response.
+
+    Called after rewrite, answer, and fact-check responses are decoded. Providers
+    that omit ``usage`` return ``None`` so callers can distinguish unavailable
+    accounting from a reported zero-token value.
+
+    Example: ``{"usage": {"prompt_tokens": 4}}`` returns
+    ``{"input": 4, "output": 0}``.
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("usage"), dict):
+        return None
+    usage = payload["usage"]
+    return {
+        "input": usage.get("prompt_tokens") or 0,
+        "output": usage.get("completion_tokens") or 0,
+    }
+
+
 def chat_completion(messages, *, model, temperature, max_tokens=None, response_format=None, timeout=60):
     """POST to the chat endpoint (stream:false). Returns the requests.Response.
 

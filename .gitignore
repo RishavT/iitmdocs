@@ -65,9 +65,10 @@ debug/
 ollama_data/
 tmp/
 weaviate_data/
-docs/
+docs/*
 !docs/chatbot-101.md
 !docs/chatbot-technicals.md
+!docs/program-contact-details.md
 
 # Any source pdf folders
 src_pdf/

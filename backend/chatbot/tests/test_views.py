@@ -52,3 +52,18 @@ class HealthViewTests(SimpleTestCase):
         r = Client().get("/health")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), {"ok": True})
+
+
+class GithubConfigViewTests(SimpleTestCase):
+    def test_returns_default_branch_url(self):
+        r = Client().get("/github-config")
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(
+            r.json(),
+            {
+                "githubBranchBaseUrl": (
+                    "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/"
+                )
+            },
+        )

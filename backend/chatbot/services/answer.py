@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import time
 
 from .. import appconfig
 from ..business import (
@@ -22,7 +23,8 @@ from ..prompts import (
     build_answer_system_prompt,
     build_factcheck_user_prompt,
 )
-from .llm import chat_completion
+from .llm import chat_completion, token_usage
+from .logs import log_duration
 
 RELEVANCE_THRESHOLD = 0.05
 MAX_MESSAGE_LENGTH = 10000
@@ -69,11 +71,16 @@ def _validate_history(history):
     return validated
 
 
-def check_response(response: str, context: str, history=None) -> bool:
-    """Fact-check a response against context. Fails OPEN (returns True) on any error."""
+def check_response(response: str, context: str, history=None):
+    """Fact-check a response and return approval plus optional token counts.
+
+    The fact-check still fails open: service or parsing errors approve the
+    response, matching the existing public behavior.
+    """
     history = history or []
     user_prompt = build_factcheck_user_prompt(context, history, response)
     try:
+        start_time = time.monotonic()
         resp = chat_completion(
             [
                 {"role": "system", "content": FACTCHECK_SYSTEM_PROMPT},
@@ -85,10 +92,12 @@ def check_response(response: str, context: str, history=None) -> bool:
             response_format={"type": "json_object"},
             timeout=60,
         )
+        log_duration("fact_check_chat_api", int((time.monotonic() - start_time) * 1000))
         if not resp.ok:
-            return True  # On API error, approve to avoid blocking valid responses.
+            return {"approved": True, "tokens": None}
 
         result = resp.json()
+        tokens = token_usage(result)
         try:
             raw_answer = result["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError):
@@ -98,11 +107,17 @@ def check_response(response: str, context: str, history=None) -> bool:
         try:
             fact_check_result = json.loads(raw_answer)
             approved = fact_check_result.get("approved")
-            return isinstance(approved, str) and approved.upper() == "YES"
+            return {
+                "approved": isinstance(approved, str) and approved.upper() == "YES",
+                "tokens": tokens,
+            }
         except Exception:
-            return isinstance(raw_answer, str) and raw_answer.upper() == "YES"
+            return {
+                "approved": isinstance(raw_answer, str) and raw_answer.upper() == "YES",
+                "tokens": tokens,
+            }
     except Exception:
-        return True
+        return {"approved": True, "tokens": None}
 
 
 def generate_answer(question, documents, db_faqs, history, language: str = "english") -> dict:
@@ -127,11 +142,14 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         {"role": "user", "content": question},
     ]
 
+    start_time = time.monotonic()
     resp = chat_completion(messages, model=appconfig.chat_model(), temperature=0.1, timeout=120)
+    log_duration("answer_chat_api", int((time.monotonic() - start_time) * 1000))
     if not resp.ok:
         raise RuntimeError(f"Chat API error: {resp.status_code} {resp.reason}")
 
     result = resp.json()
+    answer_tokens = token_usage(result)
     try:
         answer_text = result["choices"][0]["message"]["content"] or ""
     except (KeyError, IndexError, TypeError):
@@ -145,13 +163,29 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
     fact_check_passed = None
     rejected_for_history = False
     rejection_reason = None
+    tokens = {
+        "answer_generation_input": (answer_tokens or {}).get("input", 0),
+        "answer_generation_output": (answer_tokens or {}).get("output", 0),
+        "fact_check_input": 0,
+        "fact_check_output": 0,
+    }
+
+    def add_fact_check_tokens(fact_check_result):
+        """Add one fact-check call's usage, including retry calls."""
+        usage = fact_check_result.get("tokens") or {}
+        tokens["fact_check_input"] += usage.get("input", 0)
+        tokens["fact_check_output"] += usage.get("output", 0)
 
     if has_raahat: # If the answer contains RAAHAT content
         other_statement_count = count_statements(other_chunk) # count of non-RAAHAT statements in the generated answer
         if other_statement_count > 2:
-            is_other_valid = check_response(other_chunk, context, validated_history)
+            fact_check_result = check_response(other_chunk, context, validated_history)
+            add_fact_check_tokens(fact_check_result)
+            is_other_valid = fact_check_result["approved"]
             if not is_other_valid and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
-                is_other_valid = check_response(other_chunk, context, [])
+                fact_check_result = check_response(other_chunk, context, [])
+                add_fact_check_tokens(fact_check_result)
+                is_other_valid = fact_check_result["approved"]
             fact_check_passed = is_other_valid
 
             if is_other_valid: # If the other chunk is valid, we can include it in the final answer along with the standard RAAHAT message.
@@ -166,9 +200,13 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
             fact_check_passed = True
 
     else: # If the answer does not contain RAAHAT content
-        is_correct = check_response(answer_text, context, validated_history)
+        fact_check_result = check_response(answer_text, context, validated_history)
+        add_fact_check_tokens(fact_check_result)
+        is_correct = fact_check_result["approved"]
         if not is_correct and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
-            is_correct = check_response(answer_text, context, [])
+            fact_check_result = check_response(answer_text, context, [])
+            add_fact_check_tokens(fact_check_result)
+            is_correct = fact_check_result["approved"]
         fact_check_passed = is_correct
 
         if is_correct:
@@ -190,4 +228,6 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         "fact_check_passed": fact_check_passed,
         "contains_raahat": has_raahat,
         "rejection_reason": rejection_reason,
+        "original_answer": answer_text,
+        "tokens": tokens,
     }
