@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",  # required by whitenoise storage helpers
     "corsheaders",
     "rest_framework",
-    "chatbot",
+    "chatbot.apps.ChatbotConfig",
 ]
 
 # CorsMiddleware must sit above anything that can generate a response (WhiteNoise,

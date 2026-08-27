@@ -1,7 +1,9 @@
-"""Runtime configuration accessors — read the SAME env vars the Worker/FAQ-API used.
+"""Configuration flow for the Django chatbot backend.
 
-Read at call time (not import) so unit tests and partial deployments don't fail at
-import when a var is unset, mirroring the Worker reading from `env` per request.
+Django starts -> ``ChatbotConfig.ready`` calls
+``validate_required_configuration`` -> required FAQ settings are checked before
+the application accepts requests. Accessor functions still read at call time so
+tests can safely exercise individual settings.
 """
 from __future__ import annotations
 
@@ -63,6 +65,25 @@ def embedding_dimension() -> int:
         return int(os.getenv("EMBEDDING_DIMENSION", "1024"))
     except ValueError as exc:
         raise RuntimeError("EMBEDDING_DIMENSION must be an integer") from exc
+
+
+def validate_required_configuration() -> None:
+    """Fail startup when required FAQ configuration is missing or invalid.
+
+    PostgreSQL connection details and the embedding dimension are required by
+    both ``/search`` and the FAQ part of ``/answer``. Building the database URL
+    validates the required PG variables and ``PGPORT`` without opening a network
+    connection.
+
+    Example: a missing ``PGHOST`` raises ``RuntimeError`` during Django startup.
+    """
+    from pg.faq_api.orm import database_url_from_env
+
+    try:
+        database_url_from_env()
+        embedding_dimension()
+    except (RuntimeError, TypeError, ValueError) as exc:
+        raise RuntimeError(f"Invalid FAQ configuration: {exc}") from exc
 
 
 # --- Reference document links ---

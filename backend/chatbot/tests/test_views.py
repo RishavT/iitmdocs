@@ -1,5 +1,6 @@
 """View tests via the Django test client (no network/DB for these paths)."""
 import json
+from unittest import mock
 
 from django.test import Client, SimpleTestCase
 
@@ -48,10 +49,22 @@ class AnswerViewValidationTests(SimpleTestCase):
 
 
 class HealthViewTests(SimpleTestCase):
-    def test_health(self):
+    @mock.patch("chatbot.views.appconfig.validate_required_configuration")
+    def test_invalid_configuration_is_not_ready(self, validate_configuration):
+        validate_configuration.side_effect = RuntimeError("contains internal details")
+
         r = Client().get("/health")
+
+        self.assertEqual(r.status_code, 503)
+        self.assertEqual(r.json(), {"ok": False, "error": "Invalid service configuration"})
+
+    @mock.patch("chatbot.views.appconfig.validate_required_configuration")
+    def test_health(self, validate_configuration):
+        r = Client().get("/health")
+
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), {"ok": True})
+        validate_configuration.assert_called_once_with()
 
 
 class GithubConfigViewTests(SimpleTestCase):

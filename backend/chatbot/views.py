@@ -208,14 +208,22 @@ class FaqDetailView(APIView):
 
 
 class HealthView(APIView):
-    """Confirm that the Django HTTP application is responding.
+    """Confirm that Django and its required FAQ configuration are ready.
 
-    Flow: receive `GET /health` and return `{"ok": true}`. This is a
-    lightweight liveness check for deployment or monitoring systems; it does
-    not verify that Weaviate, Ollama, or PostgreSQL are healthy.
+    Flow: receive ``GET /health``, validate the same configuration checked at
+    startup, return ``{"ok": true}`` when valid, or return a sanitized 503
+    response when invalid. This check does not make network calls to Weaviate,
+    Ollama, or PostgreSQL.
     """
 
     def get(self, request):
+        try:
+            appconfig.validate_required_configuration()
+        except RuntimeError:
+            return Response(
+                {"ok": False, "error": "Invalid service configuration"},
+                status=503,
+            )
         return Response({"ok": True})
 
 
