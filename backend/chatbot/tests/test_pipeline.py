@@ -6,6 +6,7 @@ from unittest import mock
 from django.test import SimpleTestCase
 
 from chatbot.services import pipeline
+from chatbot.views import _sse_response
 
 
 def _payloads(chunks):
@@ -66,12 +67,91 @@ class AnswerEventsTests(SimpleTestCase):
         self.assertEqual(kwargs["query_source"], "llm")
         self.assertEqual(kwargs["response"], "The fee is 32000")
         self.assertEqual(kwargs["original_answer"], "The fee is 32000")
+        self.assertEqual(kwargs["stream_status"], "completed")
         self.assertEqual(
             kwargs["db_faqs"],
             [{"id": 3, "cosine_similarity": 0.9, "question": "Fee?", "answer": "32000"}],
         )
         self.assertEqual(kwargs["tokens"]["total_input_tokens"], 22)
         self.assertEqual(kwargs["tokens"]["total_output_tokens"], 6)
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_wsgi_disconnect_after_documents_logs_once(
+        self,
+        m_rewrite,
+        m_weaviate,
+        m_faq,
+        m_gen,
+        m_log,
+    ):
+        m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
+        m_weaviate.return_value = {
+            "items": [{"filename": "fees.md", "content": "c", "relevance": 0.8}],
+            "error": None,
+        }
+        m_faq.search_result.return_value = {
+            "items": [{"id": 3, "question": "Fee?", "answer": "32000"}],
+            "error": None,
+        }
+
+        events = pipeline.answer_events("what is the fee", 2, [], "s", "m", None)
+        response = _sse_response(events)
+        first_chunk = next(iter(response.streaming_content))
+        response.close()
+
+        self.assertIn(b'"name":"document"', first_chunk)
+        m_gen.assert_not_called()
+        m_log.assert_called_once()
+        self.assertEqual(m_log.call_args.args[:2], ("INFO", "conversation_turn"))
+        self.assertEqual(m_log.call_args.kwargs["stream_status"], "disconnected")
+        self.assertEqual(m_log.call_args.kwargs["error"], "client_disconnected")
+        self.assertIsInstance(m_log.call_args.kwargs["latency_ms"], int)
+
+    @mock.patch("chatbot.services.pipeline.structured_log")
+    @mock.patch("chatbot.services.pipeline.generate_answer")
+    @mock.patch("chatbot.services.pipeline.faq")
+    @mock.patch("chatbot.services.pipeline.search_weaviate")
+    @mock.patch("chatbot.services.pipeline.rewrite_query_with_source")
+    def test_disconnect_after_answer_logs_once(
+        self,
+        m_rewrite,
+        m_weaviate,
+        m_faq,
+        m_gen,
+        m_log,
+    ):
+        m_rewrite.return_value = {"query": "fees [LANG:english]", "source": "synonym"}
+        m_weaviate.return_value = {
+            "items": [{"filename": "fees.md", "content": "c", "relevance": 0.8}],
+            "error": None,
+        }
+        m_faq.search_result.return_value = {
+            "items": [{"id": 3, "question": "Fee?", "answer": "32000"}],
+            "error": None,
+        }
+        m_gen.return_value = {
+            "final_answer": "The fee is 32000",
+            "rejected": False,
+            "fact_check_passed": True,
+            "contains_raahat": False,
+            "rejection_reason": None,
+        }
+
+        events = pipeline.answer_events("what is the fee", 2, [], "s", "m", None)
+        next(events)
+        answer_chunk = next(events)
+        events.close()
+
+        self.assertIn("The fee is 32000", answer_chunk)
+        m_log.assert_called_once()
+        self.assertEqual(m_log.call_args.kwargs["response"], "The fee is 32000")
+        self.assertEqual(m_log.call_args.kwargs["stream_status"], "disconnected")
+        self.assertEqual(m_log.call_args.kwargs["error"], "client_disconnected")
+        self.assertIsInstance(m_log.call_args.kwargs["latency_ms"], int)
 
     @mock.patch("chatbot.services.pipeline.structured_log")
     @mock.patch("chatbot.services.pipeline.generate_answer")
@@ -239,6 +319,9 @@ class AnswerEventsTests(SimpleTestCase):
         self.assertIn('"error"', text)
         self.assertIn("weaviate down", text)
         self.assertNotIn("[DONE]", text)
+        m_log.assert_called_once()
+        self.assertEqual(m_log.call_args.kwargs["stream_status"], "failed")
+        self.assertEqual(m_log.call_args.kwargs["error"], "weaviate down")
 
 
 class DirectFaqEventsTests(SimpleTestCase):

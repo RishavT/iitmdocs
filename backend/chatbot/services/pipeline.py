@@ -1,7 +1,9 @@
 """Request pipeline — port of worker.js answer() + handleDirectFAQIdLookup.
 
-Each function is a generator that yields SSE strings and emits the exact
-`conversation_turn` structured log the BigQuery sink expects.
+Flow: prepare the conversation log -> process and yield SSE records -> finalize
+the log after completion, failure, or client disconnect. The finalization path
+ensures the BigQuery sink receives exactly one ``conversation_turn`` event for
+every generator that starts processing.
 """
 from __future__ import annotations
 
@@ -91,6 +93,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         "history_length": len(history) if isinstance(history, list) else 0,
         "latency_ms": None,
         "error": None,
+        "stream_status": "processing",
         "original_answer": None,
         "tokens": {
             "query_rewrite_input": 0,
@@ -103,6 +106,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             "total_output_tokens": 0,
         },
     }
+    log_severity = "INFO"
 
     try:
         rewrite = rewrite_query_with_source(question)
@@ -133,8 +137,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             reject_message += format_db_faq_suggestions(db_faqs, "english")
             log_ctx["response"] = reject_message
             yield sse_content(reject_message, rejected=True)
-            log_ctx["latency_ms"] = _elapsed_ms(start_time)
-            structured_log("INFO", "conversation_turn", **log_ctx)
+            log_ctx["stream_status"] = "completed"
             return
 
         detected_language = extract_language(search_query)
@@ -162,16 +165,16 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         if search_issues:
             log_ctx["search_result_causes"] = search_issues
             log_ctx["error"] = "; ".join(search_issues)
+            log_severity = "CRITICAL"
 
         if not documents and not db_faqs:
             message = get_cannot_answer_message(detected_language)
             log_ctx["rejection_reason"] = "no_search_results"
             log_ctx["response"] = message
             log_ctx["error"] = "; ".join(search_issues) or "no_search_results"
-            log_ctx["latency_ms"] = _elapsed_ms(start_time)
             yield sse_content(message, rejected=True)
+            log_ctx["stream_status"] = "completed"
             log_duration("total_query", _elapsed_ms(start_time))
-            structured_log("CRITICAL", "conversation_turn", **log_ctx)
             return
 
         # Stream document records first.
@@ -205,14 +208,12 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             log_ctx["rejection_reason"] = gen["rejection_reason"]
 
         yield sse_content(gen["final_answer"], rejected=gen["rejected"])
-        log_ctx["latency_ms"] = _elapsed_ms(start_time)
+        log_ctx["stream_status"] = "completed"
         log_duration("total_query", _elapsed_ms(start_time))
-        severity = "CRITICAL" if search_issues else "ERROR" if log_ctx["error"] else "INFO"
-        structured_log(severity, "conversation_turn", **log_ctx)
 
     except Exception as error:  # noqa: BLE001
-        log_ctx["latency_ms"] = _elapsed_ms(start_time)
         log_ctx["error"] = str(error)
+        log_severity = "INFO"
         log_error(
             "conversation_error",
             error,
@@ -220,8 +221,18 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             conversation_id=conversation_id,
             question=question,
         )
-        structured_log("INFO", "conversation_turn", **log_ctx)
         yield sse_error(str(error) or "An error occurred while processing your request")
+        log_ctx["stream_status"] = "failed"
+    finally:
+        if log_ctx["stream_status"] == "processing":
+            log_ctx["stream_status"] = "disconnected"
+            if log_ctx["error"]:
+                log_ctx["error"] += "; client_disconnected"
+            else:
+                log_ctx["error"] = "client_disconnected"
+
+        log_ctx["latency_ms"] = _elapsed_ms(start_time)
+        structured_log(log_severity, "conversation_turn", **log_ctx)
 
 
 def direct_faq_events(faq_id, question, session_id, message_id, username):
