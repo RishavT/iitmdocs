@@ -1783,7 +1783,7 @@ What is allowed:
 - Paraphrasing of any information from the context documents
 - Combining information from one or two context documents
 - contact info from the following "ALLOWED_CONTACT_LIST" as below:
-- Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in
+- Emails: support@study.iitm.ac.in, iic@study.iitm.ac.in, ge@study.iitm.ac.in, students-grievance@study.iitm.ac.in, wellness.society@study.iitm.ac.in, support-mg@study.iitm.ac.in, support-es@study.iitm.ac.in, support-ae@study.iitm.ac.in
 - Phones: 7850999966, +91 63857 89630, 9444020900, 8608076093, +91-9711397993
 - Any club/society email ending in @study.iitm.ac.in (e.g., chess.club@study.iitm.ac.in)
 - Any numbers which are numerically equal to the numbers you find in context documents - even if they are not exact string matches - for example, 3L is the same as 3 lakhs is the same as 3,00,000 is the same as 300000 is the same as 300k.
