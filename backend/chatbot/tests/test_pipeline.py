@@ -41,6 +41,15 @@ class AnswerEventsTests(SimpleTestCase):
             "contains_raahat": False,
             "rejection_reason": None,
             "original_answer": "The fee is 32000",
+            "fact_checks": [
+                {
+                    "scope": "answer",
+                    "history_used": False,
+                    "approved": True,
+                    "incorrect": [],
+                    "outcome": "json",
+                }
+            ],
             "tokens": {
                 "answer_generation_input": 10,
                 "answer_generation_output": 3,
@@ -67,6 +76,7 @@ class AnswerEventsTests(SimpleTestCase):
         self.assertEqual(kwargs["query_source"], "llm")
         self.assertEqual(kwargs["response"], "The fee is 32000")
         self.assertEqual(kwargs["original_answer"], "The fee is 32000")
+        self.assertEqual(kwargs["fact_checks"][0]["outcome"], "json")
         self.assertEqual(kwargs["stream_status"], "completed")
         self.assertEqual(
             kwargs["db_faqs"],

@@ -89,6 +89,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         "db_faqs": [],
         "response": None,
         "fact_check_passed": None,
+        "fact_checks": [],
         "contains_raahat": False,
         "history_length": len(history) if isinstance(history, list) else 0,
         "latency_ms": None,
@@ -184,6 +185,7 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         gen = generate_answer(question, documents, db_faqs, history, detected_language)
         log_ctx["response"] = gen["final_answer"]
         log_ctx["fact_check_passed"] = gen["fact_check_passed"]
+        log_ctx["fact_checks"] = gen.get("fact_checks") or []
         log_ctx["contains_raahat"] = gen["contains_raahat"]
         log_ctx["original_answer"] = gen.get("original_answer")
         generated_tokens = gen.get("tokens") or {}

@@ -1,4 +1,5 @@
 """generate_answer / check_response tests (chat_completion mocked)."""
+import json
 from unittest import mock
 
 from django.test import SimpleTestCase
@@ -52,6 +53,18 @@ class GenerateAnswerTests(SimpleTestCase):
                 "fact_check_output": 2,
             },
         )
+        self.assertEqual(
+            result["fact_checks"],
+            [
+                {
+                    "scope": "answer",
+                    "history_used": False,
+                    "approved": True,
+                    "incorrect": [],
+                    "outcome": "json",
+                }
+            ],
+        )
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_failed_factcheck_falls_back_with_suggestions(self, m_chat):
@@ -67,6 +80,7 @@ class GenerateAnswerTests(SimpleTestCase):
         self.assertTrue(result["rejected"])
         self.assertFalse(result["fact_check_passed"])
         self.assertEqual(result["rejection_reason"], "fact_check_failed")
+        self.assertEqual(result["fact_checks"][0]["incorrect"], ["made up"])
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_chat_api_error_raises(self, m_chat):
@@ -92,6 +106,10 @@ class GenerateAnswerTests(SimpleTestCase):
 
         self.assertEqual(result["tokens"]["fact_check_input"], 7)
         self.assertEqual(result["tokens"]["fact_check_output"], 2)
+        self.assertEqual(
+            [(item["history_used"], item["approved"]) for item in result["fact_checks"]],
+            [(True, False), (False, True)],
+        )
 
 
 class RelevanceCoercionTests(SimpleTestCase):
@@ -131,22 +149,43 @@ class CheckResponseTests(SimpleTestCase):
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_rejected_no(self, m_chat):
         m_chat.return_value = _FakeResp(payload=_chat('{"approved":"NO","incorrect":["x"]}'))
-        self.assertFalse(answer_mod.check_response("resp", "ctx", [])["approved"])
+        result = answer_mod.check_response("resp", "ctx", [])
+        self.assertFalse(result["approved"])
+        self.assertEqual(result["incorrect"], ["x"])
+        self.assertEqual(result["outcome"], "json")
+
+    @mock.patch("chatbot.services.answer.chat_completion")
+    def test_incorrect_reasons_are_bounded_for_logs(self, m_chat):
+        reasons = ["  " + (str(index) * 600) for index in range(1, 8)]
+        m_chat.return_value = _FakeResp(
+            payload=_chat('{"approved":"NO","incorrect":' + json.dumps(reasons) + "}")
+        )
+
+        result = answer_mod.check_response("resp", "ctx", [])
+
+        self.assertEqual(len(result["incorrect"]), 5)
+        self.assertTrue(all(len(reason) == 500 for reason in result["incorrect"]))
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_fails_open_on_api_error(self, m_chat):
         m_chat.return_value = _FakeResp(ok=False, status=500)
-        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
+        result = answer_mod.check_response("resp", "ctx", [])
+        self.assertTrue(result["approved"])
+        self.assertEqual(result["outcome"], "http_fail_open")
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_fails_open_on_exception(self, m_chat):
         m_chat.side_effect = RuntimeError("network")
-        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
+        result = answer_mod.check_response("resp", "ctx", [])
+        self.assertTrue(result["approved"])
+        self.assertEqual(result["outcome"], "exception_fail_open")
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_malformed_json_strict_yes_fallback(self, m_chat):
         m_chat.return_value = _FakeResp(payload=_chat("YES"))
-        self.assertTrue(answer_mod.check_response("resp", "ctx", [])["approved"])
+        result = answer_mod.check_response("resp", "ctx", [])
+        self.assertTrue(result["approved"])
+        self.assertEqual(result["outcome"], "strict_text")
 
     @mock.patch("chatbot.services.answer.chat_completion")
     def test_returns_factcheck_tokens(self, m_chat):

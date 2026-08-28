@@ -29,6 +29,8 @@ from .logs import log_duration
 RELEVANCE_THRESHOLD = 0.05
 MAX_MESSAGE_LENGTH = 10000
 MAX_HISTORY_MESSAGES = 10
+MAX_FACT_CHECK_REASONS = 5
+MAX_FACT_CHECK_REASON_LENGTH = 500
 
 RAAHAT_INFO = """<document filename="RAAHAT_Support.md">
 RAAHAT is the Mental Health & Wellness Society for IIT Madras BS students.
@@ -71,6 +73,32 @@ def _validate_history(history):
     return validated
 
 
+def _bounded_incorrect_reasons(value):
+    """Return safe, bounded fact-check reasons for structured logs.
+
+    Called after a JSON fact-check response is parsed. Non-string items are
+    ignored and long strings are shortened so model output cannot create an
+    unbounded log record.
+
+    Example: ``_bounded_incorrect_reasons([" unsupported "])`` returns
+    ``["unsupported"]``.
+    """
+    if not isinstance(value, list):
+        return []
+
+    reasons = []
+    for item in value:
+        if not isinstance(item, str):
+            continue
+        reason = item.strip()
+        if not reason:
+            continue
+        reasons.append(reason[:MAX_FACT_CHECK_REASON_LENGTH])
+        if len(reasons) == MAX_FACT_CHECK_REASONS:
+            break
+    return reasons
+
+
 def check_response(response: str, context: str, history=None):
     """Fact-check a response and return approval plus optional token counts.
 
@@ -94,7 +122,12 @@ def check_response(response: str, context: str, history=None):
         )
         log_duration("fact_check_chat_api", int((time.monotonic() - start_time) * 1000))
         if not resp.ok:
-            return {"approved": True, "tokens": None}
+            return {
+                "approved": True,
+                "incorrect": [],
+                "outcome": "http_fail_open",
+                "tokens": None,
+            }
 
         result = resp.json()
         tokens = token_usage(result)
@@ -109,15 +142,24 @@ def check_response(response: str, context: str, history=None):
             approved = fact_check_result.get("approved")
             return {
                 "approved": isinstance(approved, str) and approved.upper() == "YES",
+                "incorrect": _bounded_incorrect_reasons(fact_check_result.get("incorrect")),
+                "outcome": "json",
                 "tokens": tokens,
             }
         except Exception:
             return {
                 "approved": isinstance(raw_answer, str) and raw_answer.upper() == "YES",
+                "incorrect": [],
+                "outcome": "strict_text",
                 "tokens": tokens,
             }
     except Exception:
-        return {"approved": True, "tokens": None}
+        return {
+            "approved": True,
+            "incorrect": [],
+            "outcome": "exception_fail_open",
+            "tokens": None,
+        }
 
 
 def generate_answer(question, documents, db_faqs, history, language: str = "english") -> dict:
@@ -169,6 +211,7 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         "fact_check_input": 0,
         "fact_check_output": 0,
     }
+    fact_checks = []
 
     def add_fact_check_tokens(fact_check_result):
         """Add one fact-check call's usage, including retry calls."""
@@ -176,15 +219,29 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         tokens["fact_check_input"] += usage.get("input", 0)
         tokens["fact_check_output"] += usage.get("output", 0)
 
+    def record_fact_check(scope, used_history, fact_check_result):
+        """Keep one bounded summary for each fact-check attempt."""
+        fact_checks.append(
+            {
+                "scope": scope,
+                "history_used": used_history,
+                "approved": fact_check_result["approved"],
+                "incorrect": fact_check_result.get("incorrect") or [],
+                "outcome": fact_check_result.get("outcome") or "unknown",
+            }
+        )
+
     if has_raahat: # If the answer contains RAAHAT content
         other_statement_count = count_statements(other_chunk) # count of non-RAAHAT statements in the generated answer
         if other_statement_count > 2:
             fact_check_result = check_response(other_chunk, context, validated_history)
             add_fact_check_tokens(fact_check_result)
+            record_fact_check("raahat_other", bool(validated_history), fact_check_result)
             is_other_valid = fact_check_result["approved"]
             if not is_other_valid and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
                 fact_check_result = check_response(other_chunk, context, [])
                 add_fact_check_tokens(fact_check_result)
+                record_fact_check("raahat_other", False, fact_check_result)
                 is_other_valid = fact_check_result["approved"]
             fact_check_passed = is_other_valid
 
@@ -202,10 +259,12 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
     else: # If the answer does not contain RAAHAT content
         fact_check_result = check_response(answer_text, context, validated_history)
         add_fact_check_tokens(fact_check_result)
+        record_fact_check("answer", bool(validated_history), fact_check_result)
         is_correct = fact_check_result["approved"]
         if not is_correct and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
             fact_check_result = check_response(answer_text, context, [])
             add_fact_check_tokens(fact_check_result)
+            record_fact_check("answer", False, fact_check_result)
             is_correct = fact_check_result["approved"]
         fact_check_passed = is_correct
 
@@ -230,4 +289,5 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
         "rejection_reason": rejection_reason,
         "original_answer": answer_text,
         "tokens": tokens,
+        "fact_checks": fact_checks,
     }
