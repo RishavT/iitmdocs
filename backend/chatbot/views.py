@@ -21,6 +21,10 @@ from .services import faq, pipeline
 from .services.logs import structured_log
 
 
+def _bad_request(message: str) -> HttpResponse:
+    return HttpResponse(message, status=400, content_type="text/plain; charset=utf-8")
+
+
 def _sse_response(generator) -> StreamingHttpResponse:
     """Return a streaming HTTP response for chatbot Server-Sent Events.
 
@@ -42,17 +46,50 @@ def _json_body(request) -> dict:
     return data if isinstance(data, dict) else {}
 
 
+def _valid_question(question) -> bool:
+    return isinstance(question, str) and bool(question.strip())
+
+
+def _parse_faq_id(faq_id):
+    """Return a positive FAQ id integer or None when the request did not send one.
+
+    Example: ``_parse_faq_id("42")`` returns ``42``. ``_parse_faq_id("bad")``
+    raises ``ValueError`` so the HTTP layer can reject the request before SSE
+    processing starts.
+    """
+    if faq_id is None:
+        return None
+
+    if isinstance(faq_id, bool):
+        raise ValueError("faq_id must be numeric")
+
+    if isinstance(faq_id, int):
+        parsed = faq_id
+    elif isinstance(faq_id, str) and faq_id.isdigit():
+        parsed = int(faq_id)
+    else:
+        raise ValueError("faq_id must be numeric")
+
+    if parsed < 1:
+        raise ValueError("faq_id must be positive")
+
+    return parsed
+
+
 @method_decorator(csrf_exempt, name="dispatch")
 class AnswerView(View):
     """Handle the main chatbot question endpoint.
 
-    Flow: read the JSON body, validate `q` and `ndocs`, choose either a
-    direct FAQ lookup or the normal answer pipeline, and return a
+    Flow: read the JSON body, validate `q`, `faq_id`, and `ndocs`, choose
+    either a direct FAQ lookup or the normal answer pipeline, and return a
     `text/event-stream` response. The pipeline performs rewriting, retrieval,
     answer generation, and fact-checking while this view stays focused on HTTP.
 
     Example: `POST /answer` with `{"q": "How are grades calculated?"}`
     returns events that the browser can display as the answer is produced.
+
+    ASSUMPTION: conversation history is currently disabled by default. While it
+    is disabled, malformed `history` input is ignored instead of rejected.
     """
 
     def post(self, request):
@@ -64,13 +101,18 @@ class AnswerView(View):
         faq_id = body.get("faq_id")
         raw_history = body.get("history", [])
 
-        if not question:
-            return HttpResponse('Missing "q" parameter', status=400, content_type="text/plain; charset=utf-8")
+        if not _valid_question(question):
+            return _bad_request('Invalid "q" parameter. Must be a non-empty string')
 
         # Direct FAQ lookup by id — skip the whole pipeline.
-        if faq_id:
+        try:
+            parsed_faq_id = _parse_faq_id(faq_id)
+        except ValueError:
+            return _bad_request('Invalid "faq_id" parameter. Must be a positive integer')
+
+        if parsed_faq_id is not None:
             return _sse_response(
-                pipeline.direct_faq_events(faq_id, question, session_id, message_id, username)
+                pipeline.direct_faq_events(parsed_faq_id, question, session_id, message_id, username)
             )
 
         # Validate ndocs (1..20, default 2).
@@ -81,11 +123,7 @@ class AnswerView(View):
         except (TypeError, ValueError):
             valid = False
         if not valid:
-            return HttpResponse(
-                'Invalid "ndocs" parameter. Must be between 1 and 20',
-                status=400,
-                content_type="text/plain; charset=utf-8",
-            )
+            return _bad_request('Invalid "ndocs" parameter. Must be between 1 and 20')
 
         history = raw_history if enable_history() else []
         return _sse_response(
@@ -208,14 +246,22 @@ class FaqDetailView(APIView):
 
 
 class HealthView(APIView):
-    """Confirm that the Django HTTP application is responding.
+    """Confirm that Django and its required FAQ configuration are ready.
 
-    Flow: receive `GET /health` and return `{"ok": true}`. This is a
-    lightweight liveness check for deployment or monitoring systems; it does
-    not verify that Weaviate, Ollama, or PostgreSQL are healthy.
+    Flow: receive ``GET /health``, validate the same configuration checked at
+    startup, return ``{"ok": true}`` when valid, or return a sanitized 503
+    response when invalid. This check does not make network calls to Weaviate,
+    Ollama, or PostgreSQL.
     """
 
     def get(self, request):
+        try:
+            appconfig.validate_required_configuration()
+        except RuntimeError:
+            return Response(
+                {"ok": False, "error": "Invalid service configuration"},
+                status=503,
+            )
         return Response({"ok": True})
 
 
