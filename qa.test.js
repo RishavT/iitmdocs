@@ -47,6 +47,16 @@ describe("Welcome Message", () => {
   });
 });
 
+describe("FAQ suggestion submission", () => {
+  it("allows short questions when a direct FAQ id is provided", () => {
+    expect(qaJs).toContain("if (!q || (!faqId && countWords(q) < MIN_WORD_COUNT)) return;");
+  });
+
+  it("keeps the five-word minimum for normal questions", () => {
+    expect(qaJs).toContain("!faqId && countWords(q) < MIN_WORD_COUNT");
+  });
+});
+
 describe("Program contact details", () => {
   it("loads the GitHub branch URL from runtime config", () => {
     expect(qaJs).toContain('fetch("./github-config")');
