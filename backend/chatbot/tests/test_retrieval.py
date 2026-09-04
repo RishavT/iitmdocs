@@ -234,6 +234,46 @@ class EmbeddingValidationTests(SimpleTestCase):
 class WeaviateResultTests(SimpleTestCase):
     @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
+    async def test_local_graphql_has_balanced_braces(self, _mode, _url):
+        """The compact async query must remain valid GraphQL."""
+        class Client:
+            async def post(self, *_args, **kwargs):
+                self.query = kwargs["json"]["query"]
+                return _Response(payload={"data": {"Get": {"Document": []}}})
+
+        client = Client()
+        await weaviate.search_weaviate_async(client, "fees", 2)
+
+        self.assertEqual(client.query.count("{"), client.query.count("}"))
+
+    @mock.patch(
+        "chatbot.services.weaviate.get_ollama_embedding_async",
+        new_callable=mock.AsyncMock,
+        return_value=[0.1, 0.2],
+    )
+    @mock.patch("chatbot.services.weaviate.appconfig.gce_ollama_url", return_value="http://ollama")
+    @mock.patch("chatbot.services.weaviate.appconfig.gce_weaviate_url", return_value="http://weaviate")
+    @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="gce")
+    async def test_gce_graphql_has_balanced_braces(
+        self,
+        _mode,
+        _weaviate_url,
+        _ollama_url,
+        _embedding,
+    ):
+        """Adding a supplied vector must not unbalance the GraphQL query."""
+        class Client:
+            async def post(self, *_args, **kwargs):
+                self.query = kwargs["json"]["query"]
+                return _Response(payload={"data": {"Get": {"Document": []}}})
+
+        client = Client()
+        await weaviate.search_weaviate_async(client, "fees", 2)
+
+        self.assertEqual(client.query.count("{"), client.query.count("}"))
+
+    @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
+    @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
     async def test_async_search_preserves_documents_and_graphql_error(self, _mode, _url):
         """Partial GraphQL data must remain usable while its failure is logged."""
         class Client:

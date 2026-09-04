@@ -56,7 +56,10 @@ async def rewrite_query_with_source_async(client, query):
         if not response.is_success:
             return {"query": query, "source": "original", "tokens": None}
         result = response.json()
-        content = result.get("choices", [{}])[0].get("message", {}).get("content")
+        try:
+            content = result["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError):
+            content = None
         rewritten = content.strip() if isinstance(content, str) and content.strip() else query
         language = _LANG_TAG_RE.search(rewritten)
         tag = language.group(0) if language else "[LANG:english]"

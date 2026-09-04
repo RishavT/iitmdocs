@@ -158,6 +158,40 @@ class AsyncDataViewTests(IsolatedAsyncioTestCase):
         self.assertEqual(json.loads(response.content), {"results": search.return_value})
 
     @mock.patch("chatbot.views.faq.search_async", new_callable=mock.AsyncMock)
+    async def test_search_keeps_drf_json_parser_errors(self, search):
+        """Malformed JSON and unsupported media types keep their old statuses."""
+        malformed = AsyncRequestFactory().post(
+            "/search",
+            data="{",
+            content_type="application/json",
+        )
+        malformed_response = await views.SearchView.as_view()(malformed)
+
+        wrong_type = AsyncRequestFactory().post(
+            "/search",
+            data=json.dumps({"q": "fees"}),
+            content_type="text/plain",
+        )
+        wrong_type_response = await views.SearchView.as_view()(wrong_type)
+
+        self.assertEqual(malformed_response.status_code, 400)
+        self.assertEqual(
+            json.loads(malformed_response.content),
+            {
+                "detail": (
+                    "JSON parse error - Expecting property name enclosed in double "
+                    "quotes: line 1 column 2 (char 1)"
+                )
+            },
+        )
+        self.assertEqual(wrong_type_response.status_code, 415)
+        self.assertEqual(
+            json.loads(wrong_type_response.content),
+            {"detail": 'Unsupported media type "text/plain" in request.'},
+        )
+        search.assert_not_awaited()
+
+    @mock.patch("chatbot.views.faq.search_async", new_callable=mock.AsyncMock)
     @mock.patch("chatbot.views.get_async_http_client", return_value=object())
     async def test_search_keeps_embedding_and_database_error_statuses(self, _client, search):
         request = AsyncRequestFactory().post(

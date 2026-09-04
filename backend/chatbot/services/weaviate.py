@@ -49,13 +49,13 @@ async def search_weaviate_async(client, query, limit):
             "{ Get { Document("
             f'hybrid: {{ query: "{sanitized_query}" vector: {vector} alpha: 0.5 }} '
             f"limit: {limit}) "
-            "{ filename filepath content file_size _additional { score } } } } }"
+            "{ filename filepath content file_size _additional { score } } } }"
         )
     else:
         graphql = (
             "{ Get { Document("
             f'hybrid: {{ query: "{sanitized_query}" alpha: 0.5 }} limit: {limit}) '
-            "{ filename filepath content file_size _additional { score } } } } }"
+            "{ filename filepath content file_size _additional { score } } } }"
         )
     try:
         start = time.monotonic()

@@ -49,6 +49,25 @@ class RewriteMetadataTests(SimpleTestCase):
         self.assertIsNone(result["tokens"])
         completion.assert_not_called()
 
+    @mock.patch("chatbot.services.rewrite.chat_completion_async")
+    async def test_malformed_success_keeps_llm_source_and_usage(self, completion):
+        """A 200 reply without choices still represents a completed LLM rewrite."""
+        completion.return_value = _Response(
+            {
+                "choices": [],
+                "usage": {"prompt_tokens": 7, "completion_tokens": 0},
+            }
+        )
+
+        result = await rewrite.rewrite_query_with_source_async(
+            object(),
+            "Could tuition be explained",
+        )
+
+        self.assertEqual(result["source"], "llm")
+        self.assertEqual(result["tokens"], {"input": 7, "output": 0})
+        self.assertTrue(result["query"].endswith("[LANG:english]"))
+
 
 class AsyncChatCompletionTests(SimpleTestCase):
     def test_async_chat_completion_sends_the_current_openai_payload(self):
