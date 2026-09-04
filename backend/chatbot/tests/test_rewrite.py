@@ -73,3 +73,24 @@ class AsyncChatCompletionTests(SimpleTestCase):
         self.assertEqual(client.kwargs["json"]["stream"], False)
         self.assertEqual(client.kwargs["json"]["max_tokens"], 100)
         self.assertEqual(client.kwargs["timeout"], 60)
+
+    def test_async_rewrite_returns_llm_query_and_usage(self):
+        """The async path must preserve the query format consumed by retrieval."""
+        class Response:
+            ok = True
+
+            def json(self):
+                return {
+                    "choices": [{"message": {"content": "fees payment [LANG:english]"}}],
+                    "usage": {"prompt_tokens": 7, "completion_tokens": 2},
+                }
+
+        class Client:
+            async def post(self, *args, **kwargs):
+                return Response()
+
+        result = asyncio.run(rewrite.rewrite_query_with_source_async(Client(), "Could tuition be explained"))
+
+        self.assertEqual(result["source"], "llm")
+        self.assertEqual(result["tokens"], {"input": 7, "output": 2})
+        self.assertTrue(result["query"].endswith("[LANG:english]"))
