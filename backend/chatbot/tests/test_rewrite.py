@@ -13,7 +13,7 @@ from chatbot.services import llm
 
 
 class _Response:
-    ok = True
+    is_success = True
 
     def __init__(self, payload):
         self.payload = payload
@@ -23,8 +23,8 @@ class _Response:
 
 
 class RewriteMetadataTests(SimpleTestCase):
-    @mock.patch("chatbot.services.rewrite.chat_completion")
-    def test_llm_rewrite_returns_usage(self, completion):
+    @mock.patch("chatbot.services.rewrite.chat_completion_async")
+    async def test_llm_rewrite_returns_usage(self, completion):
         completion.return_value = _Response(
             {
                 "choices": [{"message": {"content": "fees payment [LANG:english]"}}],
@@ -32,14 +32,18 @@ class RewriteMetadataTests(SimpleTestCase):
             }
         )
 
-        result = rewrite.rewrite_query_with_source("Could tuition be explained")
+        result = await rewrite.rewrite_query_with_source_async(
+            object(), "Could tuition be explained"
+        )
 
         self.assertEqual(result["source"], "llm")
         self.assertEqual(result["tokens"], {"input": 7, "output": 2})
 
-    @mock.patch("chatbot.services.rewrite.chat_completion")
-    def test_synonym_rewrite_has_no_provider_usage(self, completion):
-        result = rewrite.rewrite_query_with_source("What is the grading policy?")
+    @mock.patch("chatbot.services.rewrite.chat_completion_async")
+    async def test_synonym_rewrite_has_no_provider_usage(self, completion):
+        result = await rewrite.rewrite_query_with_source_async(
+            object(), "What is the grading policy?"
+        )
 
         self.assertEqual(result["source"], "synonym")
         self.assertIsNone(result["tokens"])
@@ -77,7 +81,7 @@ class AsyncChatCompletionTests(SimpleTestCase):
     def test_async_rewrite_returns_llm_query_and_usage(self):
         """The async path must preserve the query format consumed by retrieval."""
         class Response:
-            ok = True
+            is_success = True
 
             def json(self):
                 return {

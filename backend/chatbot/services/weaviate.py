@@ -6,13 +6,10 @@ vector to hybrid). GraphQL string built identically to the Worker (same escaping
 """
 from __future__ import annotations
 
-import json
 import time
 
-import requests
-
 from .. import appconfig
-from .embeddings import get_ollama_embedding
+from .embeddings import get_ollama_embedding_async
 from .logs import log_duration
 
 
@@ -25,98 +22,58 @@ def _sanitize_graphql(query: str) -> str:
         .replace("\t", " ")
     )
 
-
-def search_weaviate(query: str, limit: int):
-    """Search for documents without preventing FAQ-only answers on failure.
-
-    Called by the answer pipeline after query rewriting. The return envelope
-    always contains ``items`` and ``error`` so the pipeline can stop only when
-    neither retrieval source produced usable context.
-
-    Example: ``{"items": [{"filename": "fees.md"}], "error": None}``.
-    """
-    deployment_mode = appconfig.deployment_mode()
-    if deployment_mode not in ("local", "gce"):
-        return {
-            "items": [],
-            "error": f"weaviate_config_error:unsupported_DEPLOYMENT_MODE_{deployment_mode}",
-        }
-
-    if deployment_mode == "local":
-        weaviate_url = appconfig.local_weaviate_url()
-    else:
-        weaviate_url = appconfig.gce_weaviate_url()
-        if not weaviate_url:
-            return {"items": [], "error": "weaviate_config_error:missing_GCE_WEAVIATE_URL"}
-
+async def search_weaviate_async(client, query, limit):
+    """Search Weaviate asynchronously and return ``items`` plus ``error``."""
+    mode = appconfig.deployment_mode()
+    if mode not in ("local", "gce"):
+        return {"items": [], "error": f"weaviate_config_error:unsupported_DEPLOYMENT_MODE_{mode}"}
+    url = appconfig.local_weaviate_url() if mode == "local" else appconfig.gce_weaviate_url()
+    if not url:
+        return {"items": [], "error": "weaviate_config_error:missing_GCE_WEAVIATE_URL"}
     sanitized_query = _sanitize_graphql(query)
-
-    if deployment_mode == "gce":
+    if mode == "gce":
         ollama_url = appconfig.gce_ollama_url()
-        embedding_model = appconfig.ollama_model()
         if not ollama_url:
             return {"items": [], "error": "weaviate_config_error:missing_GCE_OLLAMA_URL"}
         try:
-            query_vector = get_ollama_embedding(query, ollama_url, embedding_model)
+            values = await get_ollama_embedding_async(
+                client,
+                query,
+                ollama_url,
+                appconfig.ollama_model(),
+            )
         except Exception as exc:  # noqa: BLE001
             return {"items": [], "error": f"weaviate_embedding_error:{exc}"}
-        vector_str = "[" + ",".join(str(v) for v in query_vector) + "]"
-        graphql_query = (
-            "{\n"
-            "      Get {\n"
-            "        Document(\n"
-            "          hybrid: {\n"
-            f'            query: "{sanitized_query}"\n'
-            f"            vector: {vector_str}\n"
-            "            alpha: 0.5\n"
-            "          }\n"
-            f"          limit: {limit}\n"
-            "        ) {\n"
-            "          filename filepath content file_size\n"
-            "          _additional { score }\n"
-            "        }\n"
-            "      }\n"
-            "    }"
+        vector = "[" + ",".join(str(value) for value in values) + "]"
+        graphql = (
+            "{ Get { Document("
+            f'hybrid: {{ query: "{sanitized_query}" vector: {vector} alpha: 0.5 }} '
+            f"limit: {limit}) "
+            "{ filename filepath content file_size _additional { score } } } } }"
         )
     else:
-        graphql_query = (
-            "{\n"
-            "      Get {\n"
-            "        Document(\n"
-            "          hybrid: {\n"
-            f'            query: "{sanitized_query}"\n'
-            "            alpha: 0.5\n"
-            "          }\n"
-            f"          limit: {limit}\n"
-            "        ) {\n"
-            "          filename filepath content file_size\n"
-            "          _additional { score }\n"
-            "        }\n"
-            "      }\n"
-            "    }"
+        graphql = (
+            "{ Get { Document("
+            f'hybrid: {{ query: "{sanitized_query}" alpha: 0.5 }} limit: {limit}) '
+            "{ filename filepath content file_size _additional { score } } } } }"
         )
-
     try:
-        start_time = time.monotonic()
-        resp = requests.post(
-            f"{weaviate_url}/v1/graphql",
-            json={"query": graphql_query},
+        start = time.monotonic()
+        response = await client.post(
+            f"{url}/v1/graphql",
+            json={"query": graphql},
             headers={"Content-Type": "application/json"},
             timeout=60,
         )
-        log_duration("weaviate_graphql_search", int((time.monotonic() - start_time) * 1000))
-        response_text = resp.text
-        if not resp.ok:
-            return {"items": [], "error": f"weaviate_api_error:{resp.status_code}"}
-
+        log_duration("weaviate_graphql_search", int((time.monotonic() - start) * 1000))
+        if not response.is_success:
+            return {"items": [], "error": f"weaviate_api_error:{response.status_code}"}
         try:
-            data = json.loads(response_text)
+            data = response.json()
         except Exception as exc:  # noqa: BLE001
             return {"items": [], "error": f"weaviate_response_malformed:{exc}"}
-
         if not isinstance(data, dict):
             return {"items": [], "error": "weaviate_response_malformed:not_an_object"}
-
         documents = (((data.get("data") or {}).get("Get") or {}).get("Document")) or []
         graphql_error = None
         if "errors" in data:

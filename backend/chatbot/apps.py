@@ -1,7 +1,7 @@
 """Django app startup flow.
 
 Django loads the chatbot app -> ``ready`` validates required FAQ settings ->
-Gunicorn serves requests only when that configuration is usable.
+Uvicorn serves requests only when that configuration is usable.
 """
 from django.apps import AppConfig
 

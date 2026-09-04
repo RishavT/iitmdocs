@@ -1,8 +1,7 @@
 """HTTP views.
 
-/answer  — plain Django View: raw SSE stream (DRF content-negotiation would reject
-           text/event-stream), CSRF-free like the Worker.
-/feedback, /search, /faq/<id>, /health — DRF APIViews (token-free JSON APIs).
+/answer, /search, /faq/<id> — native async Django views for data-heavy work.
+/feedback, /health, /github-config — existing synchronous DRF JSON views.
 """
 from __future__ import annotations
 
@@ -18,6 +17,7 @@ from rest_framework.views import APIView
 from . import appconfig
 from .business import enable_history
 from .services import faq, pipeline
+from .services.http_client import get_async_http_client
 from .services.logs import structured_log
 
 
@@ -92,7 +92,7 @@ class AnswerView(View):
     is disabled, malformed `history` input is ignored instead of rejected.
     """
 
-    def post(self, request):
+    async def post(self, request):
         body = _json_body(request)
         question = body.get("q")
         session_id = body.get("session_id")
@@ -112,7 +112,13 @@ class AnswerView(View):
 
         if parsed_faq_id is not None:
             return _sse_response(
-                pipeline.direct_faq_events(parsed_faq_id, question, session_id, message_id, username)
+                pipeline.direct_faq_events_async(
+                    parsed_faq_id,
+                    question,
+                    session_id,
+                    message_id,
+                    username,
+                )
             )
 
         # Validate ndocs (1..20, default 2).
@@ -127,7 +133,15 @@ class AnswerView(View):
 
         history = raw_history if enable_history() else []
         return _sse_response(
-            pipeline.answer_events(question, num_docs, history, session_id, message_id, username)
+            pipeline.answer_events_async(
+                get_async_http_client(),
+                question,
+                num_docs,
+                history,
+                session_id,
+                message_id,
+                username,
+            )
         )
 
 
@@ -187,7 +201,8 @@ class FeedbackView(APIView):
             return Response({"error": "Failed to process feedback"}, status=500)
 
 
-class SearchView(APIView):
+@method_decorator(csrf_exempt, name="dispatch")
+class SearchView(View):
     """Search the FAQ database for questions similar to a user query.
 
     Flow: read `q` and `k`, validate their values, call the FAQ search
@@ -200,31 +215,31 @@ class SearchView(APIView):
     to five FAQ results.
     """
 
-    def post(self, request):
-        body = request.data if isinstance(request.data, dict) else {}
+    async def post(self, request):
+        body = _json_body(request)
         q = body.get("q")
         k = body.get("k", 5)
 
         if not isinstance(q, str) or len(q) < 1:
-            return Response({"detail": "q must be a non-empty string"}, status=422)
+            return JsonResponse({"detail": "q must be a non-empty string"}, status=422)
         try:
             k = int(k)
         except (TypeError, ValueError):
-            return Response({"detail": "k must be an integer"}, status=422)
+            return JsonResponse({"detail": "k must be an integer"}, status=422)
         if k < 1 or k > 20:
-            return Response({"detail": "k must be between 1 and 20"}, status=422)
+            return JsonResponse({"detail": "k must be between 1 and 20"}, status=422)
 
         try:
-            results = faq.search(q, k)
+            results = await faq.search_async(get_async_http_client(), q, k)
         except faq.FaqEmbeddingError:
-            return Response({"detail": "Embedding service failed"}, status=502)
+            return JsonResponse({"detail": "Embedding service failed"}, status=502)
         except faq.FaqDatabaseError:
-            return Response({"detail": "Internal error"}, status=500)
+            return JsonResponse({"detail": "Internal error"}, status=500)
 
-        return Response({"results": results}, status=200)
+        return JsonResponse({"results": results}, status=200)
 
 
-class FaqDetailView(APIView):
+class FaqDetailView(View):
     """Return one FAQ by its database id.
 
     Flow: receive `faq_id` from the URL, ask the FAQ service for the matching
@@ -235,14 +250,14 @@ class FaqDetailView(APIView):
     Example: `GET /faq/42` returns the FAQ with id `42` if it exists.
     """
 
-    def get(self, request, faq_id):
+    async def get(self, request, faq_id):
         try:
-            row = faq.get_faq(faq_id)
+            row = await faq.get_faq_async(faq_id)
         except faq.FaqDatabaseError:
-            return Response({"detail": "Internal error"}, status=500)
+            return JsonResponse({"detail": "Internal error"}, status=500)
         if not row:
-            return Response({"detail": "FAQ not found"}, status=404)
-        return Response(row, status=200)
+            return JsonResponse({"detail": "FAQ not found"}, status=404)
+        return JsonResponse(row, status=200)
 
 
 class HealthView(APIView):
