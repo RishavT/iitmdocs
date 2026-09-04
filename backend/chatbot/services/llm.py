@@ -1,6 +1,7 @@
 """Chat-completions primitive (OpenAI-compatible) shared by rewrite/answer/fact-check."""
 from __future__ import annotations
 
+import httpx
 import requests
 
 from .. import appconfig
@@ -40,6 +41,28 @@ def chat_completion(messages, *, model, temperature, max_tokens=None, response_f
     if response_format is not None:
         body["response_format"] = response_format
     return requests.post(
+        endpoint,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
+        json=body,
+        timeout=timeout,
+    )
+
+
+async def chat_completion_async(client, messages, *, model, temperature, max_tokens=None, response_format=None, timeout=60):
+    """Send one non-streaming chat request without blocking the event loop.
+
+    The caller owns the long-lived ``httpx.AsyncClient``. This helper keeps the
+    payload identical to ``chat_completion`` while allowing an ASGI request to
+    serve other users during the network wait.
+    """
+    endpoint = appconfig.chat_endpoint()
+    api_key = appconfig.chat_api_key()
+    body = {"model": model, "messages": messages, "temperature": temperature, "stream": False}
+    if max_tokens is not None:
+        body["max_tokens"] = max_tokens
+    if response_format is not None:
+        body["response_format"] = response_format
+    return await client.post(
         endpoint,
         headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
         json=body,

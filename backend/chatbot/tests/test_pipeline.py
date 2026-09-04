@@ -1,12 +1,43 @@
 """Pipeline SSE-order + logging tests (services mocked — no network/DB)."""
 import json
 import threading
+import asyncio
 from unittest import mock
 
 from django.test import SimpleTestCase
 
 from chatbot.services import pipeline
 from chatbot.views import _sse_response
+
+
+class AsyncRetrievalTests(SimpleTestCase):
+    def test_async_retrieval_starts_document_and_faq_search_together(self):
+        """The answer path must not wait for one retrieval source before the other."""
+        started = []
+        release = asyncio.Event()
+
+        async def document_search(query, count):
+            started.append(("documents", query, count))
+            await release.wait()
+            return {"items": [{"filename": "fees.md"}], "error": None}
+
+        async def faq_search(query, count):
+            started.append(("faq", query, count))
+            await release.wait()
+            return {"items": [{"id": 1}], "error": None}
+
+        async def run_test():
+            task = asyncio.create_task(pipeline.retrieve_context_async("fees", 2, document_search, faq_search))
+            while len(started) < 2:
+                await asyncio.sleep(0)
+            self.assertEqual(started, [("documents", "fees", 2), ("faq", "fees", 5)])
+            release.set()
+            return await task
+
+        documents, faqs = asyncio.run(run_test())
+
+        self.assertEqual(documents["items"][0]["filename"], "fees.md")
+        self.assertEqual(faqs["items"][0]["id"], 1)
 
 
 def _payloads(chunks):

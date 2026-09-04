@@ -8,6 +8,7 @@ every generator that starts processing.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import asyncio
 import re
 import time
 
@@ -69,6 +70,21 @@ def retrieve_context(query, num_docs):
         document_future = executor.submit(search_weaviate, query, num_docs)
         faq_future = executor.submit(faq.search_result, query, 5)
         return document_future.result(), faq_future.result()
+
+
+async def retrieve_context_async(query, num_docs, document_search, faq_search):
+    """Run the two independent retrieval operations without request threads.
+
+    ``document_search`` and ``faq_search`` are async callables. Passing them in
+    keeps this small concurrency helper independent from the service modules.
+
+    Example: two searches for ``"fees"`` start together and return their
+    document and FAQ results in that order.
+    """
+    return await asyncio.gather(
+        document_search(query, num_docs),
+        faq_search(query, 5),
+    )
 
 
 def answer_events(question, num_docs, history, session_id, message_id, username):

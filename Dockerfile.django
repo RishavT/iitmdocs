@@ -28,11 +28,8 @@ RUN mkdir -p /app/backend/staticfiles
 
 EXPOSE 8787
 
-# gthread workers so simulated-streaming SSE generators don't block; 120s for long LLM calls.
-CMD ["gunicorn", "config.wsgi:application", \
-     "--chdir", "/app/backend", \
-     "--bind", "0.0.0.0:8787", \
-     "--worker-class", "gthread", \
-     "--workers", "2", \
-     "--threads", "8", \
-     "--timeout", "120"]
+# ASGI lets async views wait for remote services without holding Gunicorn threads.
+CMD ["uvicorn", "config.asgi:application", \
+     "--host", "0.0.0.0", \
+     "--port", "8787", \
+     "--workers", "1"]
