@@ -19,7 +19,7 @@ from ..business import (
 )
 from . import faq
 from .answer import generate_answer_async
-from .logs import log_duration, log_error, structured_log
+from .logs import duration_context, measure_duration, log_duration, log_error, structured_log
 from .rewrite import rewrite_query_with_source_async
 from .sse import sse_content, sse_document_records, sse_error
 from .weaviate import search_weaviate_async
@@ -62,10 +62,11 @@ async def retrieve_context_async(query, num_docs, document_search, faq_search):
     Example: two searches for ``"fees"`` start together and return their
     document and FAQ results in that order.
     """
-    return await asyncio.gather(
-        document_search(query, num_docs),
-        faq_search(query, 5),
-    )
+    with measure_duration("retrieval_total"):
+        return await asyncio.gather(
+            document_search(query, num_docs),
+            faq_search(query, 5),
+        )
 
 async def answer_events_async(client, question, num_docs, history, session_id, message_id, username):
     """Run the complete answer flow with cancellable async service waits."""
@@ -105,7 +106,8 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
     log_severity = "INFO"
 
     try:
-        rewrite = await rewrite_query_with_source_async(client, question)
+        with duration_context(conversation_id):
+            rewrite = await rewrite_query_with_source_async(client, question)
         search_query = rewrite["query"]
         query_source = rewrite["source"]
         log_ctx["rewritten_query"] = search_query
@@ -119,7 +121,8 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
             log_ctx["detected_language"] = "english"
             log_ctx["fact_check_passed"] = False
             reject_message = get_cannot_answer_message("english")
-            faq_result = await faq.search_result_async(client, question, 5)
+            with duration_context(conversation_id):
+                faq_result = await faq.search_result_async(client, question, 5)
             db_faqs = faq_result.get("items") or []
             log_ctx["db_faqs"] = [
                 {
@@ -146,12 +149,13 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
         async def faq_search(query, count):
             return await faq.search_result_async(client, query, count)
 
-        document_result, faq_result = await retrieve_context_async(
-            clean_query,
-            num_docs,
-            document_search,
-            faq_search,
-        )
+        with duration_context(conversation_id):
+            document_result, faq_result = await retrieve_context_async(
+                clean_query,
+                num_docs,
+                document_search,
+                faq_search,
+            )
         documents = document_result.get("items") or []
         db_faqs = faq_result.get("items") or []
         log_ctx["documents"] = [
@@ -187,14 +191,15 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
         if documents:
             yield sse_document_records(documents)
 
-        generated = await generate_answer_async(
-            client,
-            question,
-            documents,
-            db_faqs,
-            history,
-            detected_language,
-        )
+        with duration_context(conversation_id):
+            generated = await generate_answer_async(
+                client,
+                question,
+                documents,
+                db_faqs,
+                history,
+                detected_language,
+            )
         log_ctx["response"] = generated["final_answer"]
         log_ctx["fact_check_passed"] = generated["fact_check_passed"]
         log_ctx["fact_checks"] = generated.get("fact_checks") or []
@@ -275,9 +280,8 @@ async def direct_faq_events_async(faq_id, question, session_id, message_id, user
     }
     cannot_answer = get_cannot_answer_message("english")
     try:
-        lookup_start_time = time.monotonic()
-        row = await faq.get_faq_async(faq_id)
-        log_duration("pg_faq_direct_lookup", _elapsed_ms(lookup_start_time))
+        with duration_context(conversation_id), measure_duration("pg_faq_direct_lookup"):
+            row = await faq.get_faq_async(faq_id)
         if row is None:
             log_ctx["error"] = "PG FAQ lookup failed: 404"
             log_ctx["response"] = cannot_answer

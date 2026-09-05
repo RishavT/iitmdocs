@@ -37,7 +37,6 @@ async def rewrite_query_with_source_async(client, query):
         )
         return {"query": f"{query} {synonym_match}", "source": "synonym", "tokens": None}
     try:
-        rewrite_start_time = time.monotonic()
         response = await chat_completion_async(
             client,
             [
@@ -48,10 +47,7 @@ async def rewrite_query_with_source_async(client, query):
             temperature=0,
             max_tokens=100,
             timeout=60,
-        )
-        log_duration(
-            "query_rewrite_chat_api",
-            int((time.monotonic() - rewrite_start_time) * 1000),
+            operation="query_rewrite_chat_api",
         )
         if not response.is_success:
             return {"query": query, "source": "original", "tokens": None}

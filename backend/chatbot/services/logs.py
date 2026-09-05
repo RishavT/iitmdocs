@@ -96,10 +96,52 @@ means “record an error related to answer generation.”
 from __future__ import annotations
 
 import datetime
+import asyncio
+from contextlib import contextmanager
+from contextvars import ContextVar
 import json
 import os
 import sys
+import time
 import traceback
+
+
+# Async tasks inherit this value; each request restores its previous context.
+_conversation_id = ContextVar("duration_conversation_id", default=None)
+
+
+@contextmanager
+def duration_context(conversation_id):
+    """Associate service waits with a conversation, then restore prior context.
+
+    Use around awaits, never across an SSE yield: a generator may be closed
+    from another task. Example: ``with duration_context("synthetic-id"): ...``.
+    """
+    token = _conversation_id.set(conversation_id)
+    try:
+        yield
+    finally:
+        _conversation_id.reset(token)
+
+
+@contextmanager
+def measure_duration(operation, **metadata):
+    """Time one operation even if it fails; yield a dict for safe metadata.
+
+    Example: ``with measure_duration("pg_faq_search"): await search()``.
+    Exceptions and cancellation propagate unchanged to the existing callers.
+    """
+    start = time.monotonic()
+    try:
+        yield metadata
+    except asyncio.CancelledError:
+        metadata["outcome"] = "cancelled"
+        raise
+    except Exception:
+        metadata["outcome"] = "exception"
+        raise
+    finally:
+        log_duration(operation, int((time.monotonic() - start) * 1000), **metadata)
 
 
 def _now_iso() -> str:
@@ -121,7 +163,7 @@ def structured_log(severity: str, message: str, **data) -> None:
     sys.stdout.flush()
 
 
-def log_duration(operation, duration_ms):
+def log_duration(operation, duration_ms, **metadata):
     """Log one operation's elapsed milliseconds when duration logs are enabled.
 
     ASSUMPTION: duration logs stay on unless ``ENABLE_DURATION_LOGS`` is exactly
@@ -132,11 +174,16 @@ def log_duration(operation, duration_ms):
     if os.getenv("ENABLE_DURATION_LOGS") == "false":
         return
 
+    conversation_id = _conversation_id.get()
+    if conversation_id is not None:
+        metadata["conversation_id"] = conversation_id
+
     structured_log(
         "DEBUG",
         "duration",
         operation=operation,
         duration_ms=duration_ms,
+        **metadata,
         labels={"type": "duration"},
     )
 

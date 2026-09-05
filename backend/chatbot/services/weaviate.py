@@ -6,11 +6,10 @@ vector to hybrid). GraphQL string built identically to the Worker (same escaping
 """
 from __future__ import annotations
 
-import time
 
 from .. import appconfig
 from .embeddings import get_ollama_embedding_async
-from .logs import log_duration
+from .logs import measure_duration
 
 
 def _sanitize_graphql(query: str) -> str:
@@ -58,14 +57,13 @@ async def search_weaviate_async(client, query, limit):
             "{ filename filepath content file_size _additional { score } } } }"
         )
     try:
-        start = time.monotonic()
-        response = await client.post(
-            f"{url}/v1/graphql",
-            json={"query": graphql},
-            headers={"Content-Type": "application/json"},
-            timeout=60,
-        )
-        log_duration("weaviate_graphql_search", int((time.monotonic() - start) * 1000))
+        with measure_duration("weaviate_graphql_search"):
+            response = await client.post(
+                f"{url}/v1/graphql",
+                json={"query": graphql},
+                headers={"Content-Type": "application/json"},
+                timeout=60,
+            )
         if not response.is_success:
             return {"items": [], "error": f"weaviate_api_error:{response.status_code}"}
         try:

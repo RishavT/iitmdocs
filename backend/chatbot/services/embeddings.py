@@ -2,21 +2,19 @@
 from __future__ import annotations
 
 import math
-import time
 
-from .logs import log_duration
+from .logs import measure_duration
 
 
 async def get_ollama_embedding_async(client, text, ollama_url, model="bge-m3"):
     """Get and validate an Ollama embedding without blocking the event loop."""
-    start_time = time.monotonic()
-    response = await client.post(
-        f"{ollama_url}/api/embeddings",
-        json={"model": model, "prompt": text},
-        headers={"Content-Type": "application/json"},
-        timeout=60,
-    )
-    log_duration("ollama_embedding", int((time.monotonic() - start_time) * 1000))
+    with measure_duration("ollama_embedding"):
+        response = await client.post(
+            f"{ollama_url}/api/embeddings",
+            json={"model": model, "prompt": text},
+            headers={"Content-Type": "application/json"},
+            timeout=60,
+        )
     if not response.is_success:
         raise RuntimeError(f"Ollama embedding failed: {response.status_code}")
     embedding = response.json().get("embedding")

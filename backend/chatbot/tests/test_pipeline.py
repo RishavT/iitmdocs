@@ -5,10 +5,24 @@ from unittest import mock
 
 from django.test import SimpleTestCase
 
-from chatbot.services import pipeline
+from chatbot.services import pipeline, logs
 
 
 class AsyncRetrievalTests(SimpleTestCase):
+    @mock.patch.dict("os.environ", {"ENABLE_DURATION_LOGS": "true"})
+    @mock.patch("chatbot.services.logs.structured_log")
+    async def test_retrieval_duration_inherits_request_context(self, emit):
+        async def search(query, count):
+            logs.log_duration("source", 1)
+            return {"items": []}
+
+        with logs.duration_context("synthetic-conversation"):
+            await pipeline.retrieve_context_async("synthetic", 2, search, search)
+        self.assertEqual(len(emit.call_args_list), 3)
+        self.assertEqual(emit.call_args.kwargs["operation"], "retrieval_total")
+        for call in emit.call_args_list:
+            self.assertEqual(call.kwargs["conversation_id"], "synthetic-conversation")
+
     def test_async_retrieval_starts_document_and_faq_search_together(self):
         """The answer path must not wait for one retrieval source before the other."""
         started = []

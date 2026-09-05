@@ -6,13 +6,12 @@ synchronous bootstrap and FastAPI paths in ``pg/faq_api`` remain unchanged.
 """
 from __future__ import annotations
 
-import time
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from .. import appconfig
-from .logs import log_duration
+from .logs import measure_duration
 
 OLLAMA_TIMEOUT_SECONDS = 60
 
@@ -109,9 +108,8 @@ async def search_async(client, q, k):
 async def search_result_async(client, q, k):
     """Return async FAQ matches plus the existing pipeline error category."""
     try:
-        start_time = time.monotonic()
-        items = await search_async(client, q, k)
-        log_duration("pg_faq_search", int((time.monotonic() - start_time) * 1000))
+        with measure_duration("pg_faq_search"):
+            items = await search_async(client, q, k)
         return {"items": items, "error": None}
     except FaqEmbeddingError:
         return {"items": [], "error": "pg_faq_embedding_error"}

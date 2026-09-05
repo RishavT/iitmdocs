@@ -1,7 +1,19 @@
 """Chat-completions primitive (OpenAI-compatible) shared by rewrite/answer/fact-check."""
 from __future__ import annotations
 
+import uuid
+import httpx
+
 from .. import appconfig
+from .logs import measure_duration
+
+
+RESPONSE_HEADERS = (
+    "x-request-id", "openai-processing-ms",
+    "x-ratelimit-limit-requests", "x-ratelimit-limit-tokens",
+    "x-ratelimit-remaining-requests", "x-ratelimit-remaining-tokens",
+    "x-ratelimit-reset-requests", "x-ratelimit-reset-tokens",
+)
 
 
 def token_usage(payload):
@@ -23,7 +35,7 @@ def token_usage(payload):
     }
 
 
-async def chat_completion_async(client, messages, *, model, temperature, max_tokens=None, response_format=None, timeout=60):
+async def chat_completion_async(client, messages, *, model, temperature, max_tokens=None, response_format=None, timeout=60, operation="chat_api"):
     """Send one non-streaming chat request without blocking the event loop.
 
     The caller owns the long-lived ``httpx.AsyncClient``. This helper keeps the
@@ -37,9 +49,35 @@ async def chat_completion_async(client, messages, *, model, temperature, max_tok
         body["max_tokens"] = max_tokens
     if response_format is not None:
         body["response_format"] = response_format
-    return await client.post(
-        endpoint,
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-        json=body,
-        timeout=timeout,
-    )
+    client_request_id = str(uuid.uuid4())
+    with measure_duration(operation, client_request_id=client_request_id) as diagnostic:
+        try:
+            response = await client.post(
+                endpoint,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_key}",
+                    "X-Client-Request-Id": client_request_id,
+                },
+                json=body,
+                timeout=timeout,
+            )
+        except Exception as error:
+            categories = {
+                httpx.ConnectTimeout: "connect_timeout",
+                httpx.PoolTimeout: "pool_timeout",
+                httpx.WriteTimeout: "write_timeout",
+                httpx.ReadTimeout: "read_timeout",
+            }
+            diagnostic["exception_category"] = categories.get(type(error), "other")
+            raise
+        # A strict allowlist avoids capturing credentials or response bodies.
+        if isinstance(response, httpx.Response):
+            diagnostic["outcome"] = "success" if response.is_success else "http_error"
+            diagnostic["http_status"] = response.status_code
+            diagnostic["http_version"] = response.http_version
+            diagnostic["response_headers"] = {
+                name: response.headers[name][:256]
+                for name in RESPONSE_HEADERS if name in response.headers
+            }
+        return response

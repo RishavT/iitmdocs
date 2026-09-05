@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import datetime
 import json
-import time
 
 from .. import appconfig
 from ..business import (
@@ -24,7 +23,6 @@ from ..prompts import (
     build_factcheck_user_prompt,
 )
 from .llm import chat_completion_async, token_usage
-from .logs import log_duration
 
 RELEVANCE_THRESHOLD = 0.05
 MAX_MESSAGE_LENGTH = 10000
@@ -103,7 +101,6 @@ async def check_response_async(client, response, context, history=None):
     history = history or []
     user_prompt = build_factcheck_user_prompt(context, history, response)
     try:
-        start_time = time.monotonic()
         resp = await chat_completion_async(
             client,
             [
@@ -115,8 +112,8 @@ async def check_response_async(client, response, context, history=None):
             max_tokens=500,
             response_format={"type": "json_object"},
             timeout=60,
+            operation="fact_check_chat_api",
         )
-        log_duration("fact_check_chat_api", int((time.monotonic() - start_time) * 1000))
         if not resp.is_success:
             return {
                 "approved": True,
@@ -185,15 +182,14 @@ async def generate_answer_async(
         {"role": "user", "content": question},
     ]
 
-    start_time = time.monotonic()
     resp = await chat_completion_async(
         client,
         messages,
         model=appconfig.chat_model(),
         temperature=0.1,
         timeout=120,
+        operation="answer_chat_api",
     )
-    log_duration("answer_chat_api", int((time.monotonic() - start_time) * 1000))
     if not resp.is_success:
         reason = getattr(resp, "reason_phrase", None) or getattr(resp, "reason", "")
         raise RuntimeError(f"Chat API error: {resp.status_code} {reason}")
