@@ -9,6 +9,14 @@ from chatbot.services import llm, logs
 
 
 class TransportDiagnosticsTests(SimpleTestCase):
+    async def test_explicit_timeouts_preserve_normal_and_answer_limits(self):
+        for seconds in (60, 120):
+            client = mock.AsyncMock()
+            await llm.chat_completion_async(client, [], model="test", temperature=0, timeout=seconds)
+            timeout = client.post.call_args.kwargs["timeout"]
+            self.assertIsInstance(timeout, httpx.Timeout)
+            self.assertEqual(timeout.as_dict(), dict(connect=seconds, pool=seconds, write=seconds, read=seconds))
+
     @mock.patch.dict("os.environ", {"ENABLE_DURATION_LOGS": "true"})
     @mock.patch("chatbot.services.logs.structured_log")
     async def test_real_local_http_response_metadata(self, emit):

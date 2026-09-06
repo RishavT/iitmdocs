@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 from . import appconfig
 from .business import enable_history
 from .services import faq, pipeline
-from .services.http_client import get_async_http_client
+from .services.http_client import get_async_http_client, get_openai_http_client
 from .services.logs import structured_log
 
 
@@ -163,6 +163,7 @@ class AnswerView(View):
         return _sse_response(
             pipeline.answer_events_async(
                 get_async_http_client(),
+                get_openai_http_client(),
                 question,
                 num_docs,
                 history,

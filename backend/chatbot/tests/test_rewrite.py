@@ -95,7 +95,7 @@ class AsyncChatCompletionTests(SimpleTestCase):
         self.assertIs(result, response)
         self.assertEqual(client.kwargs["json"]["stream"], False)
         self.assertEqual(client.kwargs["json"]["max_tokens"], 100)
-        self.assertEqual(client.kwargs["timeout"], 60)
+        self.assertEqual(client.kwargs["timeout"].as_dict(), dict(connect=60, pool=60, write=60, read=60))
 
     def test_async_rewrite_returns_llm_query_and_usage(self):
         """The async path must preserve the query format consumed by retrieval."""

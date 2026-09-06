@@ -50,6 +50,9 @@ async def chat_completion_async(client, messages, *, model, temperature, max_tok
     if response_format is not None:
         body["response_format"] = response_format
     client_request_id = str(uuid.uuid4())
+    request_timeout = httpx.Timeout(
+        connect=timeout, pool=timeout, write=timeout, read=timeout,
+    )
     with measure_duration(operation, client_request_id=client_request_id) as diagnostic:
         try:
             response = await client.post(
@@ -60,7 +63,7 @@ async def chat_completion_async(client, messages, *, model, temperature, max_tok
                     "X-Client-Request-Id": client_request_id,
                 },
                 json=body,
-                timeout=timeout,
+                timeout=request_timeout,
             )
         except Exception as error:
             categories = {

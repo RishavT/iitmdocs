@@ -68,7 +68,7 @@ async def retrieve_context_async(query, num_docs, document_search, faq_search):
             faq_search(query, 5),
         )
 
-async def answer_events_async(client, question, num_docs, history, session_id, message_id, username):
+async def answer_events_async(service_client, openai_client, question, num_docs, history, session_id, message_id, username):
     """Run the complete answer flow with cancellable async service waits."""
     start_time = time.monotonic()
     conversation_id = generate_uuid()
@@ -107,7 +107,7 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
 
     try:
         with duration_context(conversation_id):
-            rewrite = await rewrite_query_with_source_async(client, question)
+            rewrite = await rewrite_query_with_source_async(openai_client, question)
         search_query = rewrite["query"]
         query_source = rewrite["source"]
         log_ctx["rewritten_query"] = search_query
@@ -122,7 +122,7 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
             log_ctx["fact_check_passed"] = False
             reject_message = get_cannot_answer_message("english")
             with duration_context(conversation_id):
-                faq_result = await faq.search_result_async(client, question, 5)
+                faq_result = await faq.search_result_async(service_client, question, 5)
             db_faqs = faq_result.get("items") or []
             log_ctx["db_faqs"] = [
                 {
@@ -144,10 +144,10 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
         log_ctx["detected_language"] = detected_language
 
         async def document_search(query, count):
-            return await search_weaviate_async(client, query, count)
+            return await search_weaviate_async(service_client, query, count)
 
         async def faq_search(query, count):
-            return await faq.search_result_async(client, query, count)
+            return await faq.search_result_async(service_client, query, count)
 
         with duration_context(conversation_id):
             document_result, faq_result = await retrieve_context_async(
@@ -193,7 +193,7 @@ async def answer_events_async(client, question, num_docs, history, session_id, m
 
         with duration_context(conversation_id):
             generated = await generate_answer_async(
-                client,
+                openai_client,
                 question,
                 documents,
                 db_faqs,

@@ -75,6 +75,7 @@ class AsgiBoundaryTests(IsolatedAsyncioTestCase):
         }
         with (
             mock.patch("chatbot.views.get_async_http_client", return_value=object()),
+            mock.patch("chatbot.views.get_openai_http_client", return_value=mock.sentinel.openai_client, create=True),
             mock.patch(
                 "chatbot.views.pipeline.answer_events_async",
                 return_value=answer_events(),
