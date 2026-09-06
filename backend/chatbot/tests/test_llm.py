@@ -39,7 +39,6 @@ class TransportDiagnosticsTests(SimpleTestCase):
                 response = await self.call_chat(client)
         self.assertEqual(response.status_code, 429)
         self.assertEqual(emit.call_args.kwargs["outcome"], "http_error")
-        self.assertEqual(emit.call_args.kwargs["http_version"], "HTTP/1.1")
 
     async def call_chat(self, client):
         return await llm.chat_completion_async(
@@ -63,7 +62,6 @@ class TransportDiagnosticsTests(SimpleTestCase):
         self.assertEqual(event["http_status"], 200)
         self.assertEqual(event["response_headers"]["x-request-id"], "synthetic-id")
         self.assertNotIn("authorization", event["response_headers"])
-        self.assertEqual(client.post.call_args.kwargs["headers"]["X-Client-Request-Id"], event["client_request_id"])
         self.assertEqual(emit.call_count, 1)
 
     @mock.patch.dict("os.environ", {"ENABLE_DURATION_LOGS": "true"})

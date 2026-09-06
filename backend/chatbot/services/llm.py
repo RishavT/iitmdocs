@@ -1,7 +1,6 @@
 """Chat-completions primitive (OpenAI-compatible) shared by rewrite/answer/fact-check."""
 from __future__ import annotations
 
-import uuid
 import httpx
 
 from .. import appconfig
@@ -49,18 +48,16 @@ async def chat_completion_async(client, messages, *, model, temperature, max_tok
         body["max_tokens"] = max_tokens
     if response_format is not None:
         body["response_format"] = response_format
-    client_request_id = str(uuid.uuid4())
     request_timeout = httpx.Timeout(
         connect=timeout, pool=timeout, write=timeout, read=timeout,
     )
-    with measure_duration(operation, client_request_id=client_request_id) as diagnostic:
+    with measure_duration(operation) as diagnostic:
         try:
             response = await client.post(
                 endpoint,
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {api_key}",
-                    "X-Client-Request-Id": client_request_id,
                 },
                 json=body,
                 timeout=request_timeout,
@@ -78,7 +75,6 @@ async def chat_completion_async(client, messages, *, model, temperature, max_tok
         if isinstance(response, httpx.Response):
             diagnostic["outcome"] = "success" if response.is_success else "http_error"
             diagnostic["http_status"] = response.status_code
-            diagnostic["http_version"] = response.http_version
             diagnostic["response_headers"] = {
                 name: response.headers[name][:256]
                 for name in RESPONSE_HEADERS if name in response.headers
