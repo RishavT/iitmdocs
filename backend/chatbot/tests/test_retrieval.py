@@ -4,8 +4,11 @@ Flow: configure one local or GCE request, call the service helper, and assert
 that usable items and concise failure causes reach the answer pipeline without
 contacting real Weaviate, Ollama, or Postgres services.
 """
+import asyncio
+from types import SimpleNamespace
 from unittest import mock
 
+import httpx
 from django.test import SimpleTestCase
 
 from chatbot.services import embeddings, faq, pipeline, weaviate
@@ -13,13 +16,26 @@ from chatbot.services import embeddings, faq, pipeline, weaviate
 
 class _Response:
     def __init__(self, *, ok=True, status=200, text="{}", payload=None):
-        self.ok = ok
+        self.is_success = ok
         self.status_code = status
         self.text = text
         self._payload = payload or {}
 
     def json(self):
         return self._payload
+
+
+class _AsyncClient:
+    def __init__(self, response):
+        self.response = response
+
+    async def post(self, *_args, **_kwargs):
+        return self.response
+
+
+class _MalformedResponse(_Response):
+    def json(self):
+        raise ValueError("not JSON")
 
 
 class SearchContextIssueTests(SimpleTestCase):
@@ -53,137 +69,293 @@ class SearchContextIssueTests(SimpleTestCase):
 
 
 class FaqResultTests(SimpleTestCase):
-    @mock.patch("chatbot.services.faq.search")
-    def test_returns_successful_search_results(self, search):
+    @mock.patch("chatbot.services.faq.search_async", new_callable=mock.AsyncMock)
+    async def test_returns_successful_search_results(self, search):
         items = [{"id": 1, "question": "What are the fees?"}]
         search.return_value = items
 
         self.assertEqual(
-            faq.search_result("fees", 5),
+            await faq.search_result_async(object(), "fees", 5),
             {"items": items, "error": None},
         )
 
-    @mock.patch("chatbot.services.faq.search")
-    def test_preserves_embedding_failure(self, search):
+    @mock.patch("chatbot.services.faq.search_async", new_callable=mock.AsyncMock)
+    async def test_preserves_embedding_failure(self, search):
         search.side_effect = faq.FaqEmbeddingError("failed")
         self.assertEqual(
-            faq.search_result("fees", 5),
+            await faq.search_result_async(object(), "fees", 5),
             {"items": [], "error": "pg_faq_embedding_error"},
         )
 
-    @mock.patch("chatbot.services.faq.search")
-    def test_preserves_database_failure(self, search):
+    @mock.patch("chatbot.services.faq.search_async", new_callable=mock.AsyncMock)
+    async def test_preserves_database_failure(self, search):
         search.side_effect = faq.FaqDatabaseError("failed")
 
         self.assertEqual(
-            faq.search_result("fees", 5),
+            await faq.search_result_async(object(), "fees", 5),
             {"items": [], "error": "pg_faq_database_error"},
         )
 
-    @mock.patch("chatbot.services.faq.search")
-    def test_reports_unexpected_search_failure(self, search):
+    @mock.patch("chatbot.services.faq.search_async", new_callable=mock.AsyncMock)
+    async def test_reports_unexpected_search_failure(self, search):
         search.side_effect = RuntimeError("unexpected")
 
         self.assertEqual(
-            faq.search_result("fees", 5),
+            await faq.search_result_async(object(), "fees", 5),
             {"items": [], "error": "pg_faq_search_error"},
         )
 
+    async def test_async_search_returns_rows_and_closes_its_session(self):
+        """A missing context-manager exit would leak one DB session per search."""
+        session_closed = False
+
+        class Result:
+            def all(self):
+                row = SimpleNamespace(id=7, question="What are the fees?", answer="Rs 32000")
+                return [(row, 0.91)]
+
+        class Session:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_args):
+                nonlocal session_closed
+                session_closed = True
+
+            async def execute(self, _statement):
+                return Result()
+
+        with (
+            mock.patch(
+                "chatbot.services.faq.request_embedding_async",
+                new=mock.AsyncMock(return_value=[0.1] * 1024),
+            ),
+            mock.patch("chatbot.services.faq._get_async_session_factory", return_value=Session),
+        ):
+            results = await faq.search_async(object(), "fees", 5)
+
+        self.assertEqual(
+            results,
+            [
+                {
+                    "id": 7,
+                    "question": "What are the fees?",
+                    "answer": "Rs 32000",
+                    "cosine_similarity": 0.91,
+                }
+            ],
+        )
+        self.assertTrue(session_closed)
+
+    async def test_async_search_preserves_embedding_and_database_error_categories(self):
+        """The two upstream failures must keep their different HTTP mappings."""
+        with mock.patch(
+            "chatbot.services.faq.request_embedding_async",
+            new=mock.AsyncMock(side_effect=RuntimeError("ollama unavailable")),
+        ):
+            with self.assertRaises(faq.FaqEmbeddingError):
+                await faq.search_async(object(), "fees", 5)
+
+        class BrokenSession:
+            async def __aenter__(self):
+                raise RuntimeError("postgres unavailable")
+
+            async def __aexit__(self, *_args):
+                return None
+
+        with (
+            mock.patch(
+                "chatbot.services.faq.request_embedding_async",
+                new=mock.AsyncMock(return_value=[0.1] * 1024),
+            ),
+            mock.patch("chatbot.services.faq._get_async_session_factory", return_value=BrokenSession),
+        ):
+            with self.assertRaises(faq.FaqDatabaseError):
+                await faq.search_async(object(), "fees", 5)
+
 
 class EmbeddingValidationTests(SimpleTestCase):
-    @mock.patch("chatbot.services.embeddings.requests.post")
-    def test_rejects_empty_embedding(self, post):
-        post.return_value = _Response(payload={"embedding": []})
+    async def test_async_embedding_accepts_a_real_httpx_response(self):
+        """Using Requests' `.ok` attribute would fail with the real HTTPX client."""
+        def respond(request):
+            return httpx.Response(200, json={"embedding": [1, 2.5]}, request=request)
 
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            result = await embeddings.get_ollama_embedding_async(
+                client,
+                "fees",
+                "http://ollama",
+            )
+
+        self.assertEqual(result, [1.0, 2.5])
+
+    def test_async_embedding_returns_numeric_values(self):
+        """The async endpoint must keep the same validated embedding contract."""
+        class Response:
+            is_success = True
+            status_code = 200
+
+            def json(self):
+                return {"embedding": [1, "2.5"]}
+
+        class Client:
+            async def post(self, *args, **kwargs):
+                return Response()
+
+        result = asyncio.run(embeddings.get_ollama_embedding_async(Client(), "fees", "http://ollama"))
+
+        self.assertEqual(result, [1.0, 2.5])
+
+    async def test_rejects_empty_embedding(self):
         with self.assertRaisesRegex(RuntimeError, "non-empty array"):
-            embeddings.get_ollama_embedding("fees", "http://ollama")
+            await embeddings.get_ollama_embedding_async(
+                _AsyncClient(_Response(payload={"embedding": []})),
+                "fees",
+                "http://ollama",
+            )
 
-    @mock.patch("chatbot.services.embeddings.requests.post")
-    def test_rejects_non_array_embedding(self, post):
-        post.return_value = _Response(payload={"embedding": "not an array"})
-
+    async def test_rejects_non_array_embedding(self):
         with self.assertRaisesRegex(RuntimeError, "non-empty array"):
-            embeddings.get_ollama_embedding("fees", "http://ollama")
+            await embeddings.get_ollama_embedding_async(
+                _AsyncClient(_Response(payload={"embedding": "not an array"})),
+                "fees",
+                "http://ollama",
+            )
 
-    @mock.patch("chatbot.services.embeddings.requests.post")
-    def test_rejects_non_finite_embedding(self, post):
-        post.return_value = _Response(payload={"embedding": [1, float("nan")]})
+    async def test_rejects_non_finite_embedding(self):
         with self.assertRaisesRegex(RuntimeError, "non-finite"):
-            embeddings.get_ollama_embedding("fees", "http://ollama")
+            await embeddings.get_ollama_embedding_async(
+                _AsyncClient(_Response(payload={"embedding": [1, float("nan")]})),
+                "fees",
+                "http://ollama",
+            )
 
 
 class WeaviateResultTests(SimpleTestCase):
     @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
-    @mock.patch("chatbot.services.weaviate.requests.post")
-    def test_preserves_documents_from_partial_graphql_response(self, post, _mode, _url):
-        post.return_value = _Response(
-            text=(
-                '{"data":{"Get":{"Document":[{"filename":"fees.md",'
-                '"_additional":{"score":"0.8"}}]}},'
-                '"errors":[{"message":"optional field failed"}]}'
-            )
-        )
+    async def test_local_graphql_has_balanced_braces(self, _mode, _url):
+        """The compact async query must remain valid GraphQL."""
+        class Client:
+            async def post(self, *_args, **kwargs):
+                self.query = kwargs["json"]["query"]
+                return _Response(payload={"data": {"Get": {"Document": []}}})
 
-        result = weaviate.search_weaviate("fees", 2)
+        client = Client()
+        await weaviate.search_weaviate_async(client, "fees", 2)
+
+        self.assertEqual(client.query.count("{"), client.query.count("}"))
+
+    @mock.patch(
+        "chatbot.services.weaviate.get_ollama_embedding_async",
+        new_callable=mock.AsyncMock,
+        return_value=[0.1, 0.2],
+    )
+    @mock.patch("chatbot.services.weaviate.appconfig.gce_ollama_url", return_value="http://ollama")
+    @mock.patch("chatbot.services.weaviate.appconfig.gce_weaviate_url", return_value="http://weaviate")
+    @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="gce")
+    async def test_gce_graphql_has_balanced_braces(
+        self,
+        _mode,
+        _weaviate_url,
+        _ollama_url,
+        _embedding,
+    ):
+        """Adding a supplied vector must not unbalance the GraphQL query."""
+        class Client:
+            async def post(self, *_args, **kwargs):
+                self.query = kwargs["json"]["query"]
+                return _Response(payload={"data": {"Get": {"Document": []}}})
+
+        client = Client()
+        await weaviate.search_weaviate_async(client, "fees", 2)
+
+        self.assertEqual(client.query.count("{"), client.query.count("}"))
+
+    @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
+    @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
+    async def test_async_search_preserves_documents_and_graphql_error(self, _mode, _url):
+        """Partial GraphQL data must remain usable while its failure is logged."""
+        class Client:
+            async def post(self, *_args, **_kwargs):
+                return _Response(
+                    payload={
+                        "data": {
+                            "Get": {
+                                "Document": [
+                                    {"filename": "fees.md", "_additional": {"score": "0.8"}}
+                                ]
+                            }
+                        },
+                        "errors": [{"message": "optional field failed"}],
+                    }
+                )
+
+        result = await weaviate.search_weaviate_async(Client(), "fees", 2)
 
         self.assertEqual(result["items"][0]["filename"], "fees.md")
         self.assertEqual(result["error"], "weaviate_graphql_error:optional field failed")
 
     @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
-    @mock.patch("chatbot.services.weaviate.requests.post")
-    def test_reports_malformed_graphql_errors_field(self, post, _mode, _url):
-        post.return_value = _Response(text='{"errors":"upstream unavailable"}')
-
+    async def test_reports_malformed_graphql_errors_field(self, _mode, _url):
         self.assertEqual(
-            weaviate.search_weaviate("fees", 2),
+            await weaviate.search_weaviate_async(
+                _AsyncClient(_Response(payload={"errors": "upstream unavailable"})),
+                "fees",
+                2,
+            ),
             {"items": [], "error": "weaviate_response_malformed:errors_not_array"},
         )
 
     @mock.patch("chatbot.services.weaviate.appconfig.local_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="local")
-    @mock.patch("chatbot.services.weaviate.requests.post")
-    def test_reports_http_and_malformed_responses(self, post, _mode, _url):
-        post.return_value = _Response(ok=False, status=503, text="unavailable")
+    async def test_reports_http_and_malformed_responses(self, _mode, _url):
         self.assertEqual(
-            weaviate.search_weaviate("fees", 2),
+            await weaviate.search_weaviate_async(
+                _AsyncClient(_Response(ok=False, status=503)),
+                "fees",
+                2,
+            ),
             {"items": [], "error": "weaviate_api_error:503"},
         )
 
-        post.return_value = _Response(text="not json")
-        result = weaviate.search_weaviate("fees", 2)
+        result = await weaviate.search_weaviate_async(
+            _AsyncClient(_MalformedResponse()),
+            "fees",
+            2,
+        )
         self.assertEqual(result["items"], [])
         self.assertTrue(result["error"].startswith("weaviate_response_malformed:"))
 
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="invalid")
-    def test_reports_unsupported_mode_without_fetching(self, _mode):
-        result = weaviate.search_weaviate("fees", 2)
+    async def test_reports_unsupported_mode_without_fetching(self, _mode):
+        result = await weaviate.search_weaviate_async(object(), "fees", 2)
         self.assertEqual(result["items"], [])
         self.assertEqual(result["error"], "weaviate_config_error:unsupported_DEPLOYMENT_MODE_invalid")
 
     @mock.patch("chatbot.services.weaviate.appconfig.gce_weaviate_url", return_value=None)
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="gce")
-    def test_reports_missing_gce_weaviate_url(self, _mode, _url):
+    async def test_reports_missing_gce_weaviate_url(self, _mode, _url):
         self.assertEqual(
-            weaviate.search_weaviate("fees", 2),
+            await weaviate.search_weaviate_async(object(), "fees", 2),
             {"items": [], "error": "weaviate_config_error:missing_GCE_WEAVIATE_URL"},
         )
 
     @mock.patch("chatbot.services.weaviate.appconfig.gce_ollama_url", return_value=None)
     @mock.patch("chatbot.services.weaviate.appconfig.gce_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="gce")
-    def test_reports_missing_gce_ollama_url(self, _mode, _weaviate_url, _ollama_url):
+    async def test_reports_missing_gce_ollama_url(self, _mode, _weaviate_url, _ollama_url):
         self.assertEqual(
-            weaviate.search_weaviate("fees", 2),
+            await weaviate.search_weaviate_async(object(), "fees", 2),
             {"items": [], "error": "weaviate_config_error:missing_GCE_OLLAMA_URL"},
         )
 
-    @mock.patch("chatbot.services.weaviate.get_ollama_embedding")
+    @mock.patch("chatbot.services.weaviate.get_ollama_embedding_async", new_callable=mock.AsyncMock)
     @mock.patch("chatbot.services.weaviate.appconfig.gce_ollama_url", return_value="http://ollama")
     @mock.patch("chatbot.services.weaviate.appconfig.gce_weaviate_url", return_value="http://weaviate")
     @mock.patch("chatbot.services.weaviate.appconfig.deployment_mode", return_value="gce")
-    def test_reports_gce_embedding_failure(
+    async def test_reports_gce_embedding_failure(
         self,
         _mode,
         _weaviate_url,
@@ -193,6 +365,6 @@ class WeaviateResultTests(SimpleTestCase):
         get_embedding.side_effect = RuntimeError("Ollama unavailable")
 
         self.assertEqual(
-            weaviate.search_weaviate("fees", 2),
+            await weaviate.search_weaviate_async(object(), "fees", 2),
             {"items": [], "error": "weaviate_embedding_error:Ollama unavailable"},
         )

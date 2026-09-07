@@ -42,21 +42,16 @@ DEBUG = _bool_env("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
 INSTALLED_APPS = [
-    "django.contrib.staticfiles",  # required by whitenoise storage helpers
     "corsheaders",
     "rest_framework",
     "chatbot.apps.ChatbotConfig",
 ]
 
-# CorsMiddleware must sit above anything that can generate a response (WhiteNoise,
-# CommonMiddleware) so cross-origin embeds of the widget get CORS headers on every
-# response — including static assets and the SSE stream. No CSRF/session/auth
-# middleware: this is a token-free public API exactly like the Worker was.
+# Every middleware below declares both sync and async support. Static files are
+# served outside Django by the ASGI entrypoint so dynamic requests never cross a
+# synchronous middleware bridge.
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.middleware.common.CommonMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -77,13 +72,8 @@ TEMPLATES = [
 # all FAQ reads go through the reused SQLAlchemy layer, not the Django ORM.
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
 
-# ---- Static / frontend hosting (unchanged static/ dir served at the site root) ----
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-# WhiteNoise serves the existing widget files (index.html, qa.html, qa.js, ...) at "/".
-WHITENOISE_ROOT = str(REPO_ROOT / "static")
-WHITENOISE_INDEX_FILE = True
-WHITENOISE_AUTOREFRESH = DEBUG
+# The ASGI entrypoint preloads the small existing static/ directory and serves
+# its files at the site root without putting a sync middleware around APIs.
 
 # ---- CORS: permissive, matching the Worker's `Access-Control-Allow-Origin: *` ----
 CORS_ALLOW_ALL_ORIGINS = True

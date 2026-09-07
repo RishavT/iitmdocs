@@ -22,17 +22,10 @@ COPY static /app/static
 ENV PYTHONPATH=/app/backend:/app
 ENV DJANGO_SETTINGS_MODULE=config.settings
 
-# STATIC_ROOT is unused at runtime (the frontend is served from static/ via WHITENOISE_ROOT),
-# but WhiteNoise warns if the dir is missing — create it to keep startup logs clean.
-RUN mkdir -p /app/backend/staticfiles
-
 EXPOSE 8787
 
-# gthread workers so simulated-streaming SSE generators don't block; 120s for long LLM calls.
-CMD ["gunicorn", "config.wsgi:application", \
-     "--chdir", "/app/backend", \
-     "--bind", "0.0.0.0:8787", \
-     "--worker-class", "gthread", \
-     "--workers", "2", \
-     "--threads", "8", \
-     "--timeout", "120"]
+# One ASGI process lets async views share outbound connection pools and wait
+# without holding request threads.
+CMD ["uvicorn", "config.asgi:application", \
+     "--host", "0.0.0.0", \
+     "--port", "8787"]

@@ -1,13 +1,12 @@
-"""Answer generation + fact-check — port of worker.js generateAnswer / checkResponse.
+"""Async answer generation and fact-checking.
 
-generate_answer returns a plain dict (final text + flags); the pipeline turns it into
-SSE. This keeps the fact-check / RAAHAT / cannot-answer logic identical to the Worker.
+Flow: build context -> request an answer -> split RAAHAT content -> fact-check
+the answer -> return a plain result dict for the SSE pipeline.
 """
 from __future__ import annotations
 
 import datetime
 import json
-import time
 
 from .. import appconfig
 from ..business import (
@@ -23,8 +22,7 @@ from ..prompts import (
     build_answer_system_prompt,
     build_factcheck_user_prompt,
 )
-from .llm import chat_completion, token_usage
-from .logs import log_duration
+from .llm import chat_completion_async, token_usage
 
 RELEVANCE_THRESHOLD = 0.05
 MAX_MESSAGE_LENGTH = 10000
@@ -98,18 +96,13 @@ def _bounded_incorrect_reasons(value):
             break
     return reasons
 
-
-def check_response(response: str, context: str, history=None):
-    """Fact-check a response and return approval plus optional token counts.
-
-    The fact-check still fails open: service or parsing errors approve the
-    response, matching the existing public behavior.
-    """
+async def check_response_async(client, response, context, history=None):
+    """Fact-check one answer through the shared async HTTP client."""
     history = history or []
     user_prompt = build_factcheck_user_prompt(context, history, response)
     try:
-        start_time = time.monotonic()
-        resp = chat_completion(
+        resp = await chat_completion_async(
+            client,
             [
                 {"role": "system", "content": FACTCHECK_SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt},
@@ -119,9 +112,9 @@ def check_response(response: str, context: str, history=None):
             max_tokens=500,
             response_format={"type": "json_object"},
             timeout=60,
+            operation="fact_check_chat_api",
         )
-        log_duration("fact_check_chat_api", int((time.monotonic() - start_time) * 1000))
-        if not resp.ok:
+        if not resp.is_success:
             return {
                 "approved": True,
                 "incorrect": [],
@@ -146,14 +139,14 @@ def check_response(response: str, context: str, history=None):
                 "outcome": "json",
                 "tokens": tokens,
             }
-        except Exception:
+        except Exception:  # noqa: BLE001
             return {
                 "approved": isinstance(raw_answer, str) and raw_answer.upper() == "YES",
                 "incorrect": [],
                 "outcome": "strict_text",
                 "tokens": tokens,
             }
-    except Exception:
+    except Exception:  # noqa: BLE001
         return {
             "approved": True,
             "incorrect": [],
@@ -162,33 +155,44 @@ def check_response(response: str, context: str, history=None):
         }
 
 
-def generate_answer(question, documents, db_faqs, history, language: str = "english") -> dict:
-    """Returns {final_answer, rejected, fact_check_passed, contains_raahat, rejection_reason}."""
+async def generate_answer_async(
+    client,
+    question,
+    documents,
+    db_faqs,
+    history,
+    language="english",
+):
+    """Generate and fact-check an answer without blocking an ASGI request."""
     relevant_docs = [d for d in (documents or []) if _relevance(d) > RELEVANCE_THRESHOLD]
-
     doc_context = "\n\n".join(
-        f'<document filename="{d["filename"]}">{d["content"]}</document>' for d in relevant_docs
+        f'<document filename="{d["filename"]}">{d["content"]}</document>'
+        for d in relevant_docs
     )
     faq_context = "\n\n".join(
-        f'<faq id="{f["id"]}">\nQ: {f["question"]}\nA: {f["answer"]}\n</faq>' for f in (db_faqs or [])
+        f'<faq id="{item["id"]}">\nQ: {item["question"]}\nA: {item["answer"]}\n</faq>'
+        for item in (db_faqs or [])
     )
     context = "\n\n".join(part for part in [doc_context, faq_context, RAAHAT_INFO] if part)
-
-    system_prompt = build_answer_system_prompt(language, _current_date())
     validated_history = _validate_history(history)
-
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": build_answer_system_prompt(language, _current_date())},
         {"role": "assistant", "content": context},
         *validated_history,
         {"role": "user", "content": question},
     ]
 
-    start_time = time.monotonic()
-    resp = chat_completion(messages, model=appconfig.chat_model(), temperature=0.1, timeout=120)
-    log_duration("answer_chat_api", int((time.monotonic() - start_time) * 1000))
-    if not resp.ok:
-        raise RuntimeError(f"Chat API error: {resp.status_code} {resp.reason}")
+    resp = await chat_completion_async(
+        client,
+        messages,
+        model=appconfig.chat_model(),
+        temperature=0.1,
+        timeout=120,
+        operation="answer_chat_api",
+    )
+    if not resp.is_success:
+        reason = getattr(resp, "reason_phrase", None) or getattr(resp, "reason", "")
+        raise RuntimeError(f"Chat API error: {resp.status_code} {reason}")
 
     result = resp.json()
     answer_tokens = token_usage(result)
@@ -200,7 +204,6 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
     split = split_raahat_content(answer_text)
     has_raahat = split["has_raahat"]
     other_chunk = split["other_chunk"]
-
     final_answer = None
     fact_check_passed = None
     rejected_for_history = False
@@ -213,14 +216,10 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
     }
     fact_checks = []
 
-    def add_fact_check_tokens(fact_check_result):
-        """Add one fact-check call's usage, including retry calls."""
+    def record_fact_check(scope, used_history, fact_check_result):
         usage = fact_check_result.get("tokens") or {}
         tokens["fact_check_input"] += usage.get("input", 0)
         tokens["fact_check_output"] += usage.get("output", 0)
-
-    def record_fact_check(scope, used_history, fact_check_result):
-        """Keep one bounded summary for each fact-check attempt."""
         fact_checks.append(
             {
                 "scope": scope,
@@ -231,41 +230,31 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
             }
         )
 
-    if has_raahat: # If the answer contains RAAHAT content
-        other_statement_count = count_statements(other_chunk) # count of non-RAAHAT statements in the generated answer
-        if other_statement_count > 2:
-            fact_check_result = check_response(other_chunk, context, validated_history)
-            add_fact_check_tokens(fact_check_result)
-            record_fact_check("raahat_other", bool(validated_history), fact_check_result)
-            is_other_valid = fact_check_result["approved"]
-            if not is_other_valid and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
-                fact_check_result = check_response(other_chunk, context, [])
-                add_fact_check_tokens(fact_check_result)
-                record_fact_check("raahat_other", False, fact_check_result)
-                is_other_valid = fact_check_result["approved"]
+    if has_raahat:
+        if count_statements(other_chunk) > 2:
+            fact_check = await check_response_async(client, other_chunk, context, validated_history)
+            record_fact_check("raahat_other", bool(validated_history), fact_check)
+            is_other_valid = fact_check["approved"]
+            if not is_other_valid and validated_history:
+                fact_check = await check_response_async(client, other_chunk, context, [])
+                record_fact_check("raahat_other", False, fact_check)
+                is_other_valid = fact_check["approved"]
             fact_check_passed = is_other_valid
-
-            if is_other_valid: # If the other chunk is valid, we can include it in the final answer along with the standard RAAHAT message.
+            if is_other_valid:
                 final_answer = other_chunk + "\n\n---\n\n" + STANDARD_RAAHAT_MESSAGE
-
-            else: # If the other chunk is not valid, we still want to provide the RAAHAT message, but we don't want to include the invalid content.
+            else:
                 final_answer = STANDARD_RAAHAT_MESSAGE
-                # TODO: Set rejection_reason to "fact_check_failed" here.
-
-        else: # If there are two or fewer non-RAAHAT statements, skip fact-checking and return only the standard RAAHAT message.
+        else:
             final_answer = STANDARD_RAAHAT_MESSAGE
             fact_check_passed = True
-
-    else: # If the answer does not contain RAAHAT content
-        fact_check_result = check_response(answer_text, context, validated_history)
-        add_fact_check_tokens(fact_check_result)
-        record_fact_check("answer", bool(validated_history), fact_check_result)
-        is_correct = fact_check_result["approved"]
-        if not is_correct and len(validated_history) > 0: # If fact-checking fails when conversation history is included, try again without history
-            fact_check_result = check_response(answer_text, context, [])
-            add_fact_check_tokens(fact_check_result)
-            record_fact_check("answer", False, fact_check_result)
-            is_correct = fact_check_result["approved"]
+    else:
+        fact_check = await check_response_async(client, answer_text, context, validated_history)
+        record_fact_check("answer", bool(validated_history), fact_check)
+        is_correct = fact_check["approved"]
+        if not is_correct and validated_history:
+            fact_check = await check_response_async(client, answer_text, context, [])
+            record_fact_check("answer", False, fact_check)
+            is_correct = fact_check["approved"]
         fact_check_passed = is_correct
 
         if is_correct:
@@ -280,10 +269,9 @@ def generate_answer(question, documents, db_faqs, history, language: str = "engl
             rejected_for_history = True
             rejection_reason = "fact_check_failed"
 
-    rejected = rejected_for_history or (not fact_check_passed)
     return {
         "final_answer": final_answer,
-        "rejected": rejected,
+        "rejected": rejected_for_history or (not fact_check_passed),
         "fact_check_passed": fact_check_passed,
         "contains_raahat": has_raahat,
         "rejection_reason": rejection_reason,

@@ -7,7 +7,7 @@ Public contract (must match the old Worker + FAQ API byte-for-byte):
   GET  /faq/<int:id>  -> JSON  (direct FAQ lookup)
   GET  /health        -> {"ok": true}
   GET  /github-config -> browser-safe reference document configuration
-Everything else (GET /, /qa.html, /qa.js, ...) is served from static/ by WhiteNoise.
+Everything else (GET /, /qa.html, /qa.js, ...) is served by the ASGI static layer.
 """
 from django.urls import path
 from django.views.generic import RedirectView

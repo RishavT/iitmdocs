@@ -7,7 +7,7 @@ every generator that starts processing.
 """
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 import re
 import time
 
@@ -18,11 +18,11 @@ from ..business import (
     get_cannot_answer_message,
 )
 from . import faq
-from .answer import generate_answer
-from .logs import log_duration, log_error, structured_log
-from .rewrite import rewrite_query_with_source
+from .answer import generate_answer_async
+from .logs import duration_context, measure_duration, log_duration, log_error, structured_log
+from .rewrite import rewrite_query_with_source_async
 from .sse import sse_content, sse_document_records, sse_error
-from .weaviate import search_weaviate
+from .weaviate import search_weaviate_async
 
 _LANG_TAG_RE = re.compile(r"\[LANG:\w+\]", re.IGNORECASE)
 
@@ -53,29 +53,25 @@ def search_context_issues(document_result, faq_result):
 
     return reasons
 
+async def retrieve_context_async(query, num_docs, document_search, faq_search):
+    """Run the two independent retrieval operations without request threads.
 
-def retrieve_context(query, num_docs):
-    """Run independent document and FAQ searches at the same time.
+    ``document_search`` and ``faq_search`` are async callables. Passing them in
+    keeps this small concurrency helper independent from the service modules.
 
-    Called once per accepted question. Both results are collected before any
-    references or answer text are emitted, so public SSE ordering is unchanged.
-
-    Example: ``retrieve_context("fee structure", 2)`` returns two result
-    envelopes: first Weaviate, then FAQ search.
+    Example: two searches for ``"fees"`` start together and return their
+    document and FAQ results in that order.
     """
-    # ASSUMPTION: each FAQ search creates its own database session, so it is safe
-    # to run beside the independent Weaviate HTTP request.
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        document_future = executor.submit(search_weaviate, query, num_docs)
-        faq_future = executor.submit(faq.search_result, query, 5)
-        return document_future.result(), faq_future.result()
+    with measure_duration("retrieval_total"):
+        return await asyncio.gather(
+            document_search(query, num_docs),
+            faq_search(query, 5),
+        )
 
-
-def answer_events(question, num_docs, history, session_id, message_id, username):
-    """Main /answer pipeline (non-faq_id path)."""
+async def answer_events_async(service_client, openai_client, question, num_docs, history, session_id, message_id, username):
+    """Run the complete answer flow with cancellable async service waits."""
     start_time = time.monotonic()
     conversation_id = generate_uuid()
-
     log_ctx = {
         "session_id": session_id or "anonymous",
         "conversation_id": conversation_id,
@@ -110,7 +106,8 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
     log_severity = "INFO"
 
     try:
-        rewrite = rewrite_query_with_source(question)
+        with duration_context(conversation_id):
+            rewrite = await rewrite_query_with_source_async(openai_client, question)
         search_query = rewrite["query"]
         query_source = rewrite["source"]
         log_ctx["rewritten_query"] = search_query
@@ -119,13 +116,14 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         log_ctx["tokens"]["query_rewrite_input"] = rewrite_tokens.get("input", 0)
         log_ctx["tokens"]["query_rewrite_output"] = rewrite_tokens.get("output", 0)
 
-        # Rejected query (suspected prompt injection).
         if query_source == "rejected":
             log_ctx["rejection_reason"] = "prompt_injection"
             log_ctx["detected_language"] = "english"
             log_ctx["fact_check_passed"] = False
             reject_message = get_cannot_answer_message("english")
-            db_faqs = faq.search_result(question, 5).get("items") or []
+            with duration_context(conversation_id):
+                faq_result = await faq.search_result_async(service_client, question, 5)
+            db_faqs = faq_result.get("items") or []
             log_ctx["db_faqs"] = [
                 {
                     "id": item.get("id"),
@@ -145,12 +143,24 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
         clean_query = _LANG_TAG_RE.sub("", search_query).strip()
         log_ctx["detected_language"] = detected_language
 
-        document_result, faq_result = retrieve_context(clean_query, num_docs)
+        async def document_search(query, count):
+            return await search_weaviate_async(service_client, query, count)
+
+        async def faq_search(query, count):
+            return await faq.search_result_async(service_client, query, count)
+
+        with duration_context(conversation_id):
+            document_result, faq_result = await retrieve_context_async(
+                clean_query,
+                num_docs,
+                document_search,
+                faq_search,
+            )
         documents = document_result.get("items") or []
         db_faqs = faq_result.get("items") or []
-
         log_ctx["documents"] = [
-            {"filename": d.get("filename"), "relevance": d.get("relevance")} for d in (documents or [])
+            {"filename": item.get("filename"), "relevance": item.get("relevance")}
+            for item in documents
         ]
         log_ctx["db_faqs"] = [
             {
@@ -178,17 +188,24 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             log_duration("total_query", _elapsed_ms(start_time))
             return
 
-        # Stream document records first.
         if documents:
             yield sse_document_records(documents)
 
-        gen = generate_answer(question, documents, db_faqs, history, detected_language)
-        log_ctx["response"] = gen["final_answer"]
-        log_ctx["fact_check_passed"] = gen["fact_check_passed"]
-        log_ctx["fact_checks"] = gen.get("fact_checks") or []
-        log_ctx["contains_raahat"] = gen["contains_raahat"]
-        log_ctx["original_answer"] = gen.get("original_answer")
-        generated_tokens = gen.get("tokens") or {}
+        with duration_context(conversation_id):
+            generated = await generate_answer_async(
+                openai_client,
+                question,
+                documents,
+                db_faqs,
+                history,
+                detected_language,
+            )
+        log_ctx["response"] = generated["final_answer"]
+        log_ctx["fact_check_passed"] = generated["fact_check_passed"]
+        log_ctx["fact_checks"] = generated.get("fact_checks") or []
+        log_ctx["contains_raahat"] = generated["contains_raahat"]
+        log_ctx["original_answer"] = generated.get("original_answer")
+        generated_tokens = generated.get("tokens") or {}
         for key in (
             "answer_generation_input",
             "answer_generation_output",
@@ -206,13 +223,17 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
             + log_ctx["tokens"]["answer_generation_output"]
             + log_ctx["tokens"]["fact_check_output"]
         )
-        if gen["rejection_reason"] is not None:
-            log_ctx["rejection_reason"] = gen["rejection_reason"]
+        if generated["rejection_reason"] is not None:
+            log_ctx["rejection_reason"] = generated["rejection_reason"]
 
-        yield sse_content(gen["final_answer"], rejected=gen["rejected"])
+        yield sse_content(generated["final_answer"], rejected=generated["rejected"])
         log_ctx["stream_status"] = "completed"
         log_duration("total_query", _elapsed_ms(start_time))
 
+    except asyncio.CancelledError:
+        log_ctx["stream_status"] = "disconnected"
+        log_ctx["error"] = "client_disconnected"
+        raise
     except Exception as error:  # noqa: BLE001
         log_ctx["error"] = str(error)
         log_severity = "INFO"
@@ -232,16 +253,13 @@ def answer_events(question, num_docs, history, session_id, message_id, username)
                 log_ctx["error"] += "; client_disconnected"
             else:
                 log_ctx["error"] = "client_disconnected"
-
         log_ctx["latency_ms"] = _elapsed_ms(start_time)
         structured_log(log_severity, "conversation_turn", **log_ctx)
 
-
-def direct_faq_events(faq_id, question, session_id, message_id, username):
-    """faq_id short-circuit — direct FAQ lookup (port of handleDirectFAQIdLookup)."""
+async def direct_faq_events_async(faq_id, question, session_id, message_id, username):
+    """Run the direct-FAQ shortcut with the existing SSE and log contract."""
     start_time = time.monotonic()
     conversation_id = generate_uuid()
-
     log_ctx = {
         "session_id": session_id or "anonymous",
         "conversation_id": conversation_id,
@@ -260,12 +278,10 @@ def direct_faq_events(faq_id, question, session_id, message_id, username):
         "error": None,
         "detected_language": "english",
     }
-
     cannot_answer = get_cannot_answer_message("english")
     try:
-        lookup_start_time = time.monotonic()
-        row = faq.get_faq(faq_id)
-        log_duration("pg_faq_direct_lookup", _elapsed_ms(lookup_start_time))
+        with duration_context(conversation_id), measure_duration("pg_faq_direct_lookup"):
+            row = await faq.get_faq_async(faq_id)
         if row is None:
             log_ctx["error"] = "PG FAQ lookup failed: 404"
             log_ctx["response"] = cannot_answer
@@ -279,6 +295,11 @@ def direct_faq_events(faq_id, question, session_id, message_id, username):
         log_ctx["latency_ms"] = _elapsed_ms(start_time)
         structured_log("INFO", "conversation_turn", **log_ctx)
         yield sse_content(formatted)
+    except asyncio.CancelledError:
+        log_ctx["error"] = "client_disconnected"
+        log_ctx["latency_ms"] = _elapsed_ms(start_time)
+        structured_log("INFO", "conversation_turn", **log_ctx)
+        raise
     except Exception as error:  # noqa: BLE001
         log_ctx["error"] = str(error)
         log_ctx["response"] = cannot_answer
