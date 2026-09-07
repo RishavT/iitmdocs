@@ -37,7 +37,10 @@ def _bool_env(name: str, default: bool) -> bool:
     return raw.strip().lower() in ("1", "true", "yes", "on")
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key-change-in-prod")
+# SECRET_KEY intentionally unset: this service signs nothing (no sessions, auth,
+# CSRF middleware or django.core.signing), and Django only reads it on use.
+# If sessions/auth/CSRF/signing are ever added, restore it with a stable value
+# from Secret Manager: SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = _bool_env("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
 

@@ -345,11 +345,6 @@ steps:
       - '-c'
       - |
         IP=$$(cat /workspace/gce_internal_ip.txt)
-        # Django SECRET_KEY: this service has no sessions, auth, CSRF middleware or
-        # signed cookies, so nothing is signed with it and it can be rotated freely.
-        # Generating it per-deploy keeps it out of git and out of build substitutions.
-        # If signed state is ever added, move this to Secret Manager instead.
-        DJANGO_SECRET_KEY=$$(head -c 64 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 64)
         echo "Deploying Django backend Cloud Run service with VPC connector..."
         gcloud run deploy iitm-chatbot-worker \
           --image gcr.io/$PROJECT_ID/iitm-chatbot-django:$COMMIT_SHA \
@@ -360,7 +355,7 @@ steps:
           --port 8787 \
           --vpc-connector iitm-vpc-connector \
           --vpc-egress private-ranges-only \
-          --set-env-vars "DEPLOYMENT_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OLLAMA_URL=http://$$IP:11434,OLLAMA_MODEL=bge-m3,EMBEDDING_DIMENSION=1024,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},GITHUB_BRANCH_BASE_URL=${_GITHUB_BRANCH_BASE_URL},DJANGO_SECRET_KEY=$$DJANGO_SECRET_KEY"
+          --set-env-vars "DEPLOYMENT_MODE=gce,GCE_WEAVIATE_URL=http://$$IP:8080,GCE_OLLAMA_URL=http://$$IP:11434,OLLAMA_URL=http://$$IP:11434,OLLAMA_MODEL=bge-m3,EMBEDDING_DIMENSION=1024,OPENAI_API_KEY=${_OPENAI_API_KEY},CHAT_API_ENDPOINT=${_CHAT_API_ENDPOINT},CHAT_MODEL=${_CHAT_MODEL},PGPORT=${_PGPORT},PGUSER=${_PGUSER},PGPASSWORD=${_PGPASSWORD},PGHOST=${_PGHOST},PGDATABASE=${_PGDATABASE},GITHUB_BRANCH_BASE_URL=${_GITHUB_BRANCH_BASE_URL}"
 
 # Store images in Google Container Registry
 # Note: embed images are conditionally built; the Django backend image is always built.
