@@ -74,6 +74,6 @@ docs/*
 src_pdf/
 failed_queries.csv
 failed_queries.json
-AGENTS.md
-claude.md
-CLAUDE.md
+AGENTS*
+CLAUDE*
+claude*
