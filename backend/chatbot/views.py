@@ -232,6 +232,10 @@ class FeedbackView(APIView):
             if feedback_type not in self.VALID_FEEDBACK_TYPES:
                 return Response({"error": "Invalid feedback type"}, status=400)
 
+            program_id = _read_program_id(body.get("program_id"))
+            if program_id is None:
+                return Response({"error": "Invalid program_id"}, status=400)
+
             feedback_category = body.get("feedback_category")
             if feedback_category and feedback_category not in self.VALID_CATEGORIES:
                 return Response({"error": "Invalid feedback category"}, status=400)
@@ -247,6 +251,7 @@ class FeedbackView(APIView):
                 "user_feedback",
                 session_id=session_id,
                 message_id=message_id,
+                program_id=program_id,
                 question=question or None,
                 response=response_text or None,
                 feedback_type=feedback_type,
