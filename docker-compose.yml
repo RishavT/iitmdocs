@@ -59,6 +59,7 @@ services:
     volumes:
       - ./src:/app/src:ro
       - ./embed.py:/app/embed.py:ro
+      - ./programs.py:/app/programs.py:ro
       - ./pg:/app/pg:ro
     profiles:
       - embed
