@@ -1,0 +1,72 @@
+---
+title: score_validity
+description: Validity rules for qualifier exam scores, including three-term validity, invalidation from the fourth term, Class 12 student validity, reattempt restrictions during validity, and 2026 exam-date examples.
+covers:
+  - Qualifier score valid for 3 terms
+  - Invalidity from 4th term onward
+  - Class 12 student validity rule
+  - Reattempt restriction during score validity
+  - Term examples for 2026 qualifier exam dates
+sample_queries:
+  - How long is the qualifier score valid?
+  - When does the qualifier score become invalid?
+  - What is qualifier score validity for students still studying Class 12?
+  - Can qualified learners retake the Qualifier Examination during score validity?
+  - For which terms can I use a Jul 19th 2026 qualifier exam score?
+---
+
+# Content
+
+## General score validity
+
+The qualifier exam score can be used to apply for 3 terms after the qualifier exam date.
+
+The qualifier score will become invalid for the 4th term onwards after the qualifier exam date.
+
+If the qualifier score becomes invalid, the student will have to go through the entire qualifier process again and re-take the qualifier exam.
+
+For students who have not yet passed class 12th (and are currently studying for class 12th), the validity is 3 terms after passing their class 12th exam, OR 6 terms after the qualifier exam date - whichever is earlier.
+
+The qualifier score will remain valid for the current term and the subsequent two terms, after which the learner will be eligible to apply again.
+
+## Reattempt restriction during validity
+
+Once a learner has successfully qualified, they will not be permitted to reattempt the Qualifier Examination during the validity period of their score.
+
+## Registration during validity
+
+They may also register in the next two terms, as long as the qualifier score remains valid.
+
+Students who wish to register for the Foundation Level in subsequent terms after passing the Qualifier term are requested to verify the validity of their Qualifier score in the Admission Letter, which is available on the Student Dashboard, and proceed with the Foundation Level registration accordingly.
+
+## 2026 qualifier score validity examples
+
+Qualifier exam dated Mar 15th 2026 - Can use this score to apply for the Jan2026, May2026, Sep2026 terms.
+
+Qualifier exam dated April 12th 2026 - Can use this score to apply for the May2026, Sep2026, Jan2027 terms.
+
+Qualifier exam dated May 10th, 2026 - Can use this score to apply for the May2026, Sep2026, Jan2027 terms.
+
+Qualifier exam dated Jul 19th 2026 - Can use this score to apply for the Sep2026, Jan2027, May2027 terms
+
+Qualifier exam dated Aug 16th 2026 - Can use this score to apply for the Jan2027, May2027, Sep2027 terms
+
+Qualifier exam dated Sep 13th, 2026 - Can use this score to apply for the Jan2027, May2027, Sep2027 terms
+
+---
+
+Tags:
+- score validity
+- qualifier score validity
+- valid for 3 terms
+- current term and subsequent two terms
+- fourth term invalid
+- Class 12 validity
+- Admission Letter
+- Student Dashboard
+- Jan2026
+- May2026
+- Sep2026
+- Jan2027
+- May2027
+- Sep2027
