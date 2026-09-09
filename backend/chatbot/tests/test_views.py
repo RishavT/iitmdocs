@@ -56,6 +56,29 @@ class AnswerViewValidationTests(IsolatedAsyncioTestCase):
         self.assertEqual(r.status_code, 400)
         self.assertIn("q", r.content.decode())
 
+    async def test_unknown_program_id_is_rejected(self):
+        r = await self._post({"q": "What are the fees?", "program_id": "xx"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("program_id", r.content.decode())
+
+    async def test_common_is_rejected_as_a_program_id(self):
+        """`common` is storage-only; accepting it would expose the shared FAQ pool."""
+        r = await self._post({"q": "What are the fees?", "program_id": "common"})
+        self.assertEqual(r.status_code, 400)
+
+    @mock.patch("chatbot.views.get_openai_http_client", return_value=mock.sentinel.openai_client)
+    @mock.patch("chatbot.views.get_async_http_client", return_value=mock.sentinel.http_client)
+    @mock.patch("chatbot.views.pipeline.answer_events_async")
+    async def test_program_id_is_normalized_and_passed_through(self, answer_events, _http, _openai):
+        async def events():
+            yield "data: [DONE]\n\n"
+
+        answer_events.return_value = events()
+        r = await self._post({"q": "What are the fees?", "program_id": " ES "})
+
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(answer_events.call_args.args[-1], "es")
+
     async def test_nonnumeric_faq_id_is_rejected(self):
         r = await self._post({"q": "FAQ", "faq_id": "bad"})
         self.assertEqual(r.status_code, 400)
@@ -71,7 +94,7 @@ class AnswerViewValidationTests(IsolatedAsyncioTestCase):
         r = await self._post({"q": "FAQ", "faq_id": "123"})
 
         self.assertEqual(r.status_code, 200)
-        direct_faq_events.assert_called_once_with(123, "FAQ", None, None, None)
+        direct_faq_events.assert_called_once_with(123, "FAQ", None, None, None, "ds")
 
     async def test_invalid_ndocs(self):
         r = await self._post({"q": "hi", "ndocs": 99})
@@ -110,6 +133,7 @@ class AnswerViewValidationTests(IsolatedAsyncioTestCase):
             None,
             None,
             None,
+            "ds",
         )
 
 
@@ -277,6 +301,8 @@ class GithubConfigViewTests(SimpleTestCase):
             {
                 "githubBranchBaseUrl": (
                     "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/"
-                )
+                ),
+                "programs": ["ds", "es", "mg", "ae"],
+                "defaultProgramId": "ds",
             },
         )

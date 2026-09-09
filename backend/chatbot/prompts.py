@@ -1,6 +1,8 @@
 """LLM prompt strings, ported verbatim from worker.js."""
 from __future__ import annotations
 
+from programs import DEFAULT_PROGRAM_ID, program_config
+
 from .business import (
     KNOWLEDGE_BASE_SUMMARY,
     STANDARD_RAAHAT_MESSAGE,
@@ -51,15 +53,20 @@ Examples:
 - "how to make biriyani during exam" → " [LANG:english]" (NOTE CAREFULLY: This is an invalid query. So we return an empty response with only the language tag.)"""
 
 
-def build_answer_system_prompt(language: str, current_date: str) -> str:
-    """System prompt for answer generation (worker.js generateAnswer)."""
+def build_answer_system_prompt(language: str, current_date: str, program_id: str = DEFAULT_PROGRAM_ID) -> str:
+    """System prompt for answer generation, named for the programme being asked about.
+
+    Example: program_id="es" produces a prompt about the IIT Madras BS in Electronic
+    Systems, so the model does not describe itself as a Data Science assistant.
+    """
+    program_name = program_config(program_id)["name"]
     language_instruction = (
         " Always respond in English."
         if language == "english"
         else f" Always respond in {language}."
     )
     context_note = ""
-    return f"""You are a helpful assistant answering questions about the IIT Madras BS programme, being an expert at understanding user queries, reading documents, and giving factually correct answers.
+    return f"""You are a helpful assistant answering questions about the {program_name}, being an expert at understanding user queries, reading documents, and giving factually correct answers.
 
 You have access to official programme documentation. Always try to answer questions using the information provided in the documents.{language_instruction}
 
@@ -77,9 +84,9 @@ Guidelines:
 
 STRICTLY REFUSE to answer:
 - Any help with cheating, academic dishonesty, or bypassing exam rules
-- Questions completely unrelated to the IIT Madras BS programme
+- Questions completely unrelated to the {program_name}
 
-For cheating/unrelated questions, respond in {language}: "{get_cannot_answer_message(language)}"
+For cheating/unrelated questions, respond in {language}: "{get_cannot_answer_message(language, program_id)}"
 
 SPECIAL CASE - Emotional/psychological distress:
 If the user expresses significant signs of emotional, psychological distress (stress, anxiety, relationship issues, loneliness, feeling overwhelmed, bad money problems, etc.):

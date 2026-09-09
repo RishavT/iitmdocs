@@ -18,6 +18,8 @@ from typing import Optional
 # defaults False so each message is treated as a new conversation.
 import os
 
+from programs import DEFAULT_PROGRAM_ID, program_config
+
 from . import appconfig
 
 
@@ -54,16 +56,8 @@ def is_likely_out_of_scope(question: str) -> bool:
 # ============================================================================
 SUPPORTED_LANGUAGES = ["english", "hindi", "tamil", "hinglish"]
 
-# Single source of truth for contact info.
-CONTACT_INFO = {
-    "email": "support@study.iitm.ac.in",
-    "phone": "7850999966",
-}
 
 DEFAULT_GITHUB_BRANCH_BASE_URL = "https://github.com/iitmbsc-student-projects/iitmdocs/blob/main/"
-DEFAULT_PROGRAM_CONTACT_DETAILS_URL = (
-    f"{DEFAULT_GITHUB_BRANCH_BASE_URL}docs/program-contact-details.md"
-)
 
 # Kept for parity with the Worker (django-cors-headers applies the real headers).
 CORS_HEADERS = {
@@ -72,25 +66,28 @@ CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Content-Type",
 }
 
-CANNOT_ANSWER_MESSAGES = {
-    "english": f"""I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
-  You can reach out to us at {CONTACT_INFO['email']} or call us at {CONTACT_INFO['phone']}.
+# One template per language. The programme's own support contacts and the
+# contact-details link are filled in per request by get_cannot_answer_message,
+# because each of the four bots has its own support email and phone number.
+CANNOT_ANSWER_TEMPLATES = {
+    "english": """I'm sorry, I don't have the information to answer that question right now. Please rephrase your question and try again. Please refer to the official IITM BS degree program website or contact support for more details. If this is an error - please report this response using the feedback option.
+  You can reach out to us at {email} or call us at {phone}.
 
-Need program-wise contacts? [View all program contact details]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).""",
-    "hindi": f"""मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
-आप हमसे {CONTACT_INFO['email']} पर संपर्क कर सकते हैं या {CONTACT_INFO['phone']} पर कॉल कर सकते हैं
+Need program-wise contacts? [View all program contact details]({contact_details_url}).""",
+    "hindi": """मुझे खेद है, मेरे पास अभी इस प्रश्न का उत्तर देने की जानकारी नहीं है। कृपया अपना प्रश्न दोबारा लिखें और पुनः प्रयास करें। अधिक जानकारी के लिए कृपया आधिकारिक IITM BS डिग्री प्रोग्राम वेबसाइट देखें या सहायता से संपर्क करें। यदि यह कोई त्रुटि है - तो कृपया फीडबैक विकल्प का उपयोग करके इस प्रतिक्रिया की रिपोर्ट करें।
+आप हमसे {email} पर संपर्क कर सकते हैं या {phone} पर कॉल कर सकते हैं
 
-क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL})।
+क्या आपको कार्यक्रम-वार संपर्क विवरण चाहिए? [सभी कार्यक्रम संपर्क विवरण देखें]({contact_details_url})।
 """,
-    "tamil": f"""மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
-நீங்கள் எங்களை {CONTACT_INFO['email']} இல் தொடர்பு கொள்ளலாம் அல்லது {CONTACT_INFO['phone']} என்ற எண்ணில் அழைக்கலாம்
+    "tamil": """மன்னிக்கவும், இந்த கேள்விக்கு பதிலளிக்க என்னிடம் தற்போது தகவல் இல்லை. உங்கள் கேள்வியை மீண்டும் எழுதி முயற்சிக்கவும். மேலும் விவரங்களுக்கு அதிகாரப்பூர்வ IITM BS டிகிரி புரோகிராம் இணையதளத்தைப் பார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும். இது ஒரு பிழை என்றால் - பின்னூட்ட விருப்பத்தைப் பயன்படுத்தி இந்த பதிலைப் புகாரளிக்கவும்.
+நீங்கள் எங்களை {email} இல் தொடர்பு கொள்ளலாம் அல்லது {phone} என்ற எண்ணில் அழைக்கலாம்
 
-நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
+நிரல் வாரியான தொடர்பு விவரங்கள் தேவையா? [அனைத்து நிரல் தொடர்பு விவரங்களையும் காண்க]({contact_details_url}).
 """,
-    "hinglish": f"""Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
-Aap humse {CONTACT_INFO['email']} par sampark kar sakte hain ya {CONTACT_INFO['phone']} par call kar sakte hain
+    "hinglish": """Maaf kijiye, mere paas abhi is sawaal ka jawaab dene ki jaankari nahi hai. Kripya apna sawaal dobara likhein aur phir se try karein. Zyada jaankari ke liye kripya official IITM BS degree program website dekhein ya support se sampark karein. Agar yeh koi galti hai - toh kripya feedback option use karke is response ki report karein.
+Aap humse {email} par sampark kar sakte hain ya {phone} par call kar sakte hain
 
-Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein]({DEFAULT_PROGRAM_CONTACT_DETAILS_URL}).
+Kya aapko program-wise contacts chahiye? [Saare program contact details dekhein]({contact_details_url}).
 """,
 }
 
@@ -112,12 +109,21 @@ def extract_language(rewritten_query: Optional[str]) -> str:
     return "english"
 
 
-def get_cannot_answer_message(language: Optional[str]) -> str:
+def get_cannot_answer_message(language: Optional[str], program_id: str = DEFAULT_PROGRAM_ID) -> str:
+    """Return the "I cannot answer that" text for one language and one programme.
+
+    Example: get_cannot_answer_message("english", "es") names the ES support address
+    support-es@study.iitm.ac.in, not the DS one.
+    """
     lang = (language or "english").lower()
-    message = CANNOT_ANSWER_MESSAGES.get(lang, CANNOT_ANSWER_MESSAGES["english"])
+    template = CANNOT_ANSWER_TEMPLATES.get(lang, CANNOT_ANSWER_TEMPLATES["english"])
+    config = program_config(program_id)
     branch_base_url = appconfig.github_branch_base_url().rstrip("/") + "/"
-    contact_details_url = f"{branch_base_url}docs/program-contact-details.md"
-    return message.replace(DEFAULT_PROGRAM_CONTACT_DETAILS_URL, contact_details_url)
+    return template.format(
+        email=config["support_email"],
+        phone=config["support_phone"],
+        contact_details_url=f"{branch_base_url}docs/program-contact-details.md",
+    )
 
 
 def is_cannot_answer_response(text: Optional[str]) -> bool:
@@ -130,8 +136,10 @@ def is_cannot_answer_response(text: Optional[str]) -> bool:
         return True
 
     # Check whether the response starts like any standard "cannot answer" message.
-    for message in CANNOT_ANSWER_MESSAGES.values():
-        prefix = re.sub(r"\s+", " ", message.lower()).strip()[:80]
+    # The first 80 characters come before any contact details, so the raw template
+    # is enough here and we do not need to know which programme produced the text.
+    for template in CANNOT_ANSWER_TEMPLATES.values():
+        prefix = re.sub(r"\s+", " ", template.lower()).strip()[:80]
         if prefix and prefix in normalized:
             return True
     return False

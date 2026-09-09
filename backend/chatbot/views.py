@@ -18,11 +18,18 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from programs import DEFAULT_PROGRAM_ID, REAL_PROGRAM_IDS, validate_program_id
+
 from . import appconfig
 from .business import enable_history
 from .services import faq, pipeline
 from .services.http_client import get_async_http_client, get_openai_http_client
 from .services.logs import structured_log
+
+
+_INVALID_PROGRAM_MESSAGE = (
+    'Invalid "program_id" parameter. Must be one of: ' + ", ".join(REAL_PROGRAM_IDS)
+)
 
 
 def _bad_request(message: str) -> HttpResponse:
@@ -76,6 +83,21 @@ def _search_json_body(request):
 
 def _valid_question(question) -> bool:
     return isinstance(question, str) and bool(question.strip())
+
+
+def _read_program_id(value):
+    """Return a valid program id, or None if the caller sent an unknown one.
+
+    Missing values fall back to the default programme, which keeps older embeds that
+    never sent `program_id` working. Anything else is a client mistake, so the caller
+    turns None into an error response rather than silently answering as DS.
+
+    Example: _read_program_id("ES") -> "es"; _read_program_id("xx") -> None.
+    """
+    try:
+        return validate_program_id(value)
+    except ValueError:
+        return None
 
 
 def _parse_faq_id(faq_id):
@@ -132,6 +154,10 @@ class AnswerView(View):
         if not _valid_question(question):
             return _bad_request('Invalid "q" parameter. Must be a non-empty string')
 
+        program_id = _read_program_id(body.get("program_id"))
+        if program_id is None:
+            return _bad_request(_INVALID_PROGRAM_MESSAGE)
+
         # Direct FAQ lookup by id — skip the whole pipeline.
         try:
             parsed_faq_id = _parse_faq_id(faq_id)
@@ -146,6 +172,7 @@ class AnswerView(View):
                     session_id,
                     message_id,
                     username,
+                    program_id,
                 )
             )
 
@@ -170,6 +197,7 @@ class AnswerView(View):
                 session_id,
                 message_id,
                 username,
+                program_id,
             )
         )
 
@@ -251,6 +279,10 @@ class SearchView(View):
         q = body.get("q")
         k = body.get("k", 5)
 
+        program_id = _read_program_id(body.get("program_id"))
+        if program_id is None:
+            return JsonResponse({"detail": _INVALID_PROGRAM_MESSAGE}, status=422)
+
         if not isinstance(q, str) or len(q) < 1:
             return JsonResponse({"detail": "q must be a non-empty string"}, status=422)
         try:
@@ -261,7 +293,7 @@ class SearchView(View):
             return JsonResponse({"detail": "k must be between 1 and 20"}, status=422)
 
         try:
-            results = await faq.search_async(get_async_http_client(), q, k)
+            results = await faq.search_async(get_async_http_client(), q, k, program_id)
         except faq.FaqEmbeddingError:
             return JsonResponse({"detail": "Embedding service failed"}, status=502)
         except faq.FaqDatabaseError:
@@ -278,12 +310,16 @@ class FaqDetailView(View):
     This supports direct FAQ click-through from suggestions and preserves the
     old FAQ API behavior.
 
-    Example: `GET /faq/42` returns the FAQ with id `42` if it exists.
+    Example: `GET /faq/42?program_id=es` returns FAQ 42 if it belongs to `es` or to
+    the shared `common` pool, and 404 otherwise.
     """
 
     async def get(self, request, faq_id):
+        program_id = _read_program_id(request.GET.get("program_id"))
+        if program_id is None:
+            return JsonResponse({"detail": _INVALID_PROGRAM_MESSAGE}, status=400)
         try:
-            row = await faq.get_faq_async(faq_id)
+            row = await faq.get_faq_async(faq_id, program_id)
         except faq.FaqDatabaseError:
             return JsonResponse({"detail": "Internal error"}, status=500)
         if not row:
@@ -312,14 +348,23 @@ class HealthView(APIView):
 
 
 class GithubConfigView(APIView):
-    """Expose the browser's branch base URL without exposing sensitive config.
+    """Expose browser-safe config: the branch base URL and the programme list.
 
-    Flow: the QA page requests this endpoint at startup and uses the returned URL
-    for the program-contact reference link.
+    Flow: the QA page requests this endpoint at startup. It uses the URL for the
+    program-contact reference link, and the programme list to validate the
+    `program_id` in its own URL. Serving the list from here means the four
+    programme ids are defined once, in programs.py, instead of also in JavaScript.
 
     Example: ``GET /github-config`` returns
-    ``{"githubBranchBaseUrl": "https://github.com/.../blob/main/"}``.
+    ``{"githubBranchBaseUrl": "...", "programs": ["ds", "es", "mg", "ae"],
+    "defaultProgramId": "ds"}``.
     """
 
     def get(self, request):
-        return Response({"githubBranchBaseUrl": appconfig.github_branch_base_url()})
+        return Response(
+            {
+                "githubBranchBaseUrl": appconfig.github_branch_base_url(),
+                "programs": list(REAL_PROGRAM_IDS),
+                "defaultProgramId": DEFAULT_PROGRAM_ID,
+            }
+        )
