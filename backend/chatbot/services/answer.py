@@ -267,7 +267,7 @@ async def generate_answer_async(
                 rejected_for_history = True
                 rejection_reason = "cannot_answer"
         else:
-            final_answer = get_cannot_answer_message(language)
+            final_answer = get_cannot_answer_message(language, program_id)
             final_answer += format_db_faq_suggestions(db_faqs, language)
             rejected_for_history = True
             rejection_reason = "fact_check_failed"
