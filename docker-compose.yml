@@ -14,15 +14,20 @@ services:
     networks:
       - iitm-network
 
-  pg-faq-api:
+  # Django + DRF backend — replaces the Cloudflare Worker AND the FastAPI PG FAQ API.
+  # Serves /answer (SSE), /feedback, /search, /faq/<id>, /health and the static widget.
+  django:
     build:
       context: .
-      dockerfile: Dockerfile.pgfaq
+      dockerfile: Dockerfile.django
       network: host
-    container_name: iitm-pg-faq-api
-    profiles:
-      - local
+    container_name: iitm-chatbot-django
+    env_file:
+      - .env
     environment:
+      DEPLOYMENT_MODE: local
+      LOCAL_WEAVIATE_URL: http://weaviate:8080
+      # FAQ layer (reused pg.faq_api) talks to the compose Postgres + Ollama:
       PGHOST: postgres
       PGPORT: 5432
       PGDATABASE: faqdb
@@ -32,13 +37,17 @@ services:
       OLLAMA_MODEL: bge-m3
       EMBEDDING_DIMENSION: 1024
     ports:
-      - "8001:8000"
+      - "8787:8787"
+    profiles:
+      - local
     networks:
       - iitm-network
     depends_on:
       - postgres
+      - weaviate
       - ollama
-  # Embedding service - runs once to populate Weaviate
+
+  # Embedding service - runs once to populate Weaviate (and bootstrap the FAQ table).
   embed:
     build:
       context: .
@@ -53,26 +62,6 @@ services:
       - ./pg:/app/pg:ro
     profiles:
       - embed
-    networks:
-      - iitm-network
-
-  # Cloudflare Worker dev server
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
-      network: host
-    container_name: iitm-chatbot-worker
-    env_file:
-      - .env
-    ports:
-      - "8787:8787"
-    command: ["npx", "wrangler", "dev", "--port", "8787", "--ip", "0.0.0.0"]
-    volumes:
-      - ./worker.js:/app/worker.js:ro
-      - ./wrangler.toml:/app/wrangler.toml:ro
-      - ./static:/app/static:ro
-      - ./.dev.vars:/app/.dev.vars:ro
     networks:
       - iitm-network
 

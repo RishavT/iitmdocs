@@ -47,11 +47,23 @@ describe("Welcome Message", () => {
   });
 });
 
-describe("Program Contact Details CTA", () => {
-  it("should route the program contact details link through the document viewer", () => {
-    expect(qaJs).toContain("PROGRAM_CONTACT_DETAILS_URL");
+describe("FAQ suggestion submission", () => {
+  it("allows short questions when a direct FAQ id is provided", () => {
+    expect(qaJs).toContain("if (!q || (!faqId && countWords(q) < MIN_WORD_COUNT)) return;");
+  });
+
+  it("keeps the five-word minimum for normal questions", () => {
+    expect(qaJs).toContain("!faqId && countWords(q) < MIN_WORD_COUNT");
+  });
+});
+
+describe("Program contact details", () => {
+  it("loads the GitHub branch URL from runtime config", () => {
     expect(qaJs).toContain('fetch("./github-config")');
     expect(qaJs).toContain("runtimeConfig.githubBranchBaseUrl");
+  });
+
+  it("opens the contact document in the in-page viewer", () => {
     expect(qaJs).toContain("docs/program-contact-details.md");
     expect(qaJs).toContain('class="ref-doc-link"');
     expect(qaJs).toContain('data-name="program-contact-details"');
@@ -129,9 +141,10 @@ describe("Consent Overlay", () => {
 
     it("should display the personal information warning", () => {
       const overlay = document.getElementById("consent-overlay");
-      expect(overlay.textContent).toContain("does not need any personal information");
-      expect(overlay.textContent).toContain("Please do not share any such information");
+      expect(overlay.textContent).toContain("will never ask for personal information");
+      expect(overlay.textContent).toContain("Please do not share this information");
       expect(overlay.textContent).toContain("name, phone number, or email address");
+      expect(overlay.textContent).toContain("report it");
     });
 
     it("should display inaccurate information warning", () => {

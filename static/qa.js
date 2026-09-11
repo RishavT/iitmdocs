@@ -494,7 +494,10 @@ async function askQuestion(e, faqId = null) {
   if (e) e.preventDefault();
 
   const q = questionInput.value.trim();
-  if (!q || countWords(q) < MIN_WORD_COUNT) return;
+  // Direct FAQ suggestions may be short (for example, "Fees?"). The FAQ id
+  // identifies an exact database row, so the normal minimum-word rule does
+  // not apply to that lookup. Normal user questions still require five words.
+  if (!q || (!faqId && countWords(q) < MIN_WORD_COUNT)) return;
 
   questionInput.value = "";
   askButton.disabled = true;
